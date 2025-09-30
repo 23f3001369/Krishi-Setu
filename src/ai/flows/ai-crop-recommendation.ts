@@ -12,7 +12,13 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AICropRecommendationInputSchema = z.object({
-  soilAnalysis: z.string().describe('The analysis of the soil on the farm.'),
+  soilAnalysis: z.string().optional().describe('The analysis of the soil on the farm.'),
+  soilHealthCardImage: z
+    .string()
+    .optional()
+    .describe(
+      "A photo of the soil health card, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'. The AI will extract soil analysis from this."
+    ),
   realTimeWeatherConditions: z
     .string()
     .describe('The real time weather conditions on the farm.'),
@@ -38,7 +44,14 @@ const prompt = ai.definePrompt({
   output: {schema: AICropRecommendationOutputSchema},
   prompt: `You are an expert agricultural advisor. You will analyze the farm\'s soil analysis, real-time weather conditions, and seasonal data to suggest the most optimal crops for planting.
 
+{{#if soilHealthCardImage}}
+You have been provided an image of a soil health report. Extract the soil analysis details from this image.
+Soil Health Report Image: {{media url=soilHealthCardImage}}
+{{else}}
+Use the provided soil analysis text.
 Soil Analysis: {{{soilAnalysis}}}
+{{/if}}
+
 Real-time Weather Conditions: {{{realTimeWeatherConditions}}}
 Seasonal Data: {{{seasonalData}}}
 
