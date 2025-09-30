@@ -238,13 +238,17 @@ export default function KrishiYantraMitraPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="price">Rental Price (per hour)</Label>
-                            <Input
-                                id="price"
-                                type="number"
-                                value={newEquipment.price}
-                                onChange={(e) => setNewEquipment(prev => ({ ...prev, price: e.target.value }))}
-                                placeholder="e.g., 1200"
-                            />
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">₹</span>
+                                <Input
+                                    id="price"
+                                    type="number"
+                                    value={newEquipment.price}
+                                    onChange={(e) => setNewEquipment(prev => ({ ...prev, price: e.target.value }))}
+                                    placeholder="e.g., 1200"
+                                    className="pl-7"
+                                />
+                            </div>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="photo">Equipment Photo</Label>

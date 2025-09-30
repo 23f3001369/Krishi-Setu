@@ -274,4 +274,3 @@ function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'i
         </DialogContent>
     );
 }
-
