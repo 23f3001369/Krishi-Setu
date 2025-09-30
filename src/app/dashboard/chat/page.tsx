@@ -62,7 +62,7 @@ export default function ChatPage() {
     }, [initialUser]);
 
   return (
-    <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)]">
+    <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] max-w-7xl mx-auto w-full">
          <h1 className="text-3xl font-bold tracking-tight font-headline sr-only">Chat</h1>
         <div className="grid grid-cols-1 md:grid-cols-3 h-full gap-4">
             <Card className={cn(

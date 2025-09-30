@@ -59,32 +59,34 @@ export default function FarmRegistrationPage() {
 
   if (isSubmitted) {
     return (
-        <Card className="w-full max-w-2xl mx-auto">
-            <CardHeader className="items-center text-center">
-                 <div className="bg-primary/10 p-3 rounded-full mb-4">
-                    <Check className="h-10 w-10 text-primary" />
-                 </div>
-                 <CardTitle className="text-2xl font-headline">Registration Complete!</CardTitle>
-                 <CardDescription>Your farm has been successfully registered. You can now access all features.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Alert>
-                    <Send className="h-4 w-4" />
-                    <AlertTitle>What's Next?</AlertTitle>
-                    <AlertDescription>
-                        Explore your dashboard to view weather forecasts or try our AI Crop Recommendation tool.
-                    </AlertDescription>
-                </Alert>
-            </CardContent>
-            <CardFooter>
-                 <Button className="w-full" onClick={() => window.location.href = '/dashboard'}>Go to Dashboard</Button>
-            </CardFooter>
-        </Card>
+        <div className="max-w-7xl mx-auto">
+            <Card className="w-full max-w-2xl mx-auto">
+                <CardHeader className="items-center text-center">
+                    <div className="bg-primary/10 p-3 rounded-full mb-4">
+                        <Check className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl font-headline">Registration Complete!</CardTitle>
+                    <CardDescription>Your farm has been successfully registered. You can now access all features.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Alert>
+                        <Send className="h-4 w-4" />
+                        <AlertTitle>What's Next?</AlertTitle>
+                        <AlertDescription>
+                            Explore your dashboard to view weather forecasts or try our AI Crop Recommendation tool.
+                        </AlertDescription>
+                    </Alert>
+                </CardContent>
+                <CardFooter>
+                    <Button className="w-full" onClick={() => window.location.href = '/dashboard'}>Go to Dashboard</Button>
+                </CardFooter>
+            </Card>
+        </div>
     )
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
         <div>
             <h1 className="text-3xl font-bold tracking-tight font-headline">Register Your Farm</h1>
             <p className="text-muted-foreground">Follow the steps to add your farm details to AgriAssist.</p>

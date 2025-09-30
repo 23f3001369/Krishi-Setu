@@ -274,7 +274,7 @@ function AskAgriVaani() {
 
 export default function LearningHubPage() {
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 max-w-7xl mx-auto">
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight font-headline">
           AgriVaani

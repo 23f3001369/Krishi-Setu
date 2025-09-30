@@ -138,7 +138,7 @@ export default function UserManagementPage() {
 
   return (
     <>
-      <div className="space-y-8">
+      <div className="space-y-8 max-w-7xl mx-auto">
         <div>
             <h1 className="text-3xl font-bold font-headline">User Management</h1>
             <p className="text-muted-foreground">View and manage farmer accounts.</p>

@@ -125,7 +125,7 @@ export default function ContentManagementPage() {
     
     return (
       <>
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-7xl mx-auto">
             <div>
                 <h1 className="text-3xl font-bold font-headline">Content Management</h1>
                 <p className="text-muted-foreground">Manage the articles and videos available in the Learning Hub.</p>

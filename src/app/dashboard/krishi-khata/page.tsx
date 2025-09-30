@@ -86,7 +86,7 @@ export default function KrishiKhataPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight font-headline">Krishi Khata</h1>
         <p className="text-muted-foreground">Your digital ledger for tracking farm finances.</p>

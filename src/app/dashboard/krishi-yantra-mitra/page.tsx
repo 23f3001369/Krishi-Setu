@@ -106,7 +106,7 @@ export default function KrishiYantraMitraPage() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-7xl mx-auto">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight font-headline">Krishi Yantra Mitra</h1>
                 <p className="text-muted-foreground">Peer-to-peer equipment rental portal to book machines on demand.</p>
@@ -205,7 +205,7 @@ export default function KrishiYantraMitraPage() {
                                 <span>{item.price}</span>
                             </div>
                         </CardContent>
-                        <CardFooter className="flex gap-2">
+                        <CardFooter className="flex flex-col items-stretch gap-2">
                             <Button className="w-full" disabled={!item.available}>
                                 <Phone className="mr-2 h-4 w-4" /> Call
                             </Button>

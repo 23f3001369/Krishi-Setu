@@ -49,7 +49,7 @@ export default function SystemSettingsPage() {
     }
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 max-w-7xl mx-auto">
         <div>
             <h1 className="text-3xl font-bold font-headline">System Settings</h1>
             <p className="text-muted-foreground">Manage application-wide settings and configurations.</p>

@@ -69,7 +69,7 @@ export default function AgriBazarPage() {
     }
     
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-7xl mx-auto">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight font-headline">Agri Bazar</h1>
                 <p className="text-muted-foreground">Find nearby shops for your agricultural needs.</p>
@@ -152,7 +152,7 @@ export default function AgriBazarPage() {
                                 ))}
                             </div>
                         </CardContent>
-                        <CardFooter className="flex-col gap-2">
+                        <CardFooter className="flex flex-col items-stretch gap-2">
                             <Button className="w-full" onClick={() => handleViewProducts(supplier)}>View Products & Contact</Button>
                             <Button variant="outline" className="w-full" asChild>
                                 <Link href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(supplier.address)}`} target="_blank">

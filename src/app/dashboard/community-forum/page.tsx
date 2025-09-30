@@ -42,7 +42,7 @@ export default function CommunityForumPage() {
     const [posts, setPosts] = useState(initialPosts);
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-7xl mx-auto">
              <div>
                 <h1 className="text-3xl font-bold tracking-tight font-headline">Community Forum</h1>
                 <p className="text-muted-foreground">Ask questions, share knowledge, and connect with fellow farmers.</p>

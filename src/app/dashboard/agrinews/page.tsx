@@ -84,7 +84,7 @@ const governmentSchemes = [
 
 export default function AgriNewsPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight font-headline">AgriNews & Updates</h1>
         <p className="text-muted-foreground">Your daily source for agricultural news, market prices, and government schemes.</p>
@@ -190,5 +190,6 @@ export default function AgriNewsPage() {
     </div>
   );
 }
+
 
 
