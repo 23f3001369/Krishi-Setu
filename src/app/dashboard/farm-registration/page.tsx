@@ -60,7 +60,7 @@ export default function FarmRegistrationPage() {
 
   if (isSubmitted) {
     return (
-        <div className="w-full">
+        <div className="w-full max-w-2xl mx-auto">
             <Card className="w-full">
                 <CardHeader className="items-center text-center p-6">
                     <div className="bg-primary/10 p-3 rounded-full mb-4">
@@ -139,7 +139,7 @@ type StepProps = {
 
 function Step1({ formData, handleChange }: StepProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-2xl mx-auto">
       <div className="space-y-2">
         <Label htmlFor="farmName">Farm Name</Label>
         <Input id="farmName" placeholder="e.g., Sunny Meadows Farm" required value={formData.farmName} onChange={handleChange} />
@@ -159,7 +159,7 @@ function Step1({ formData, handleChange }: StepProps) {
 function Step2({ formData, handleChange }: StepProps) {
   return (
     <div className="space-y-4">
-        <div className="space-y-2">
+        <div className="space-y-2 max-w-2xl mx-auto">
             <Label htmlFor="address">Address or general location</Label>
             <Textarea id="address" placeholder="e.g., Near Springfield, Main road" required value={formData.address} onChange={handleChange} />
         </div>
@@ -176,7 +176,7 @@ function Step2({ formData, handleChange }: StepProps) {
 
 function Step3({image}: {image?: {imageUrl: string, description: string, imageHint: string}}) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-2xl mx-auto">
         <div className="space-y-2">
             <Label>Upload Farm Photos</Label>
             <div className="border-2 border-dashed border-muted-foreground/50 rounded-lg p-8 text-center bg-muted/20 hover:bg-muted/40 cursor-pointer">

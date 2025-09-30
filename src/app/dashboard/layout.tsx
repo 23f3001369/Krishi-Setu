@@ -126,7 +126,7 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col h-screen">
             <DashboardHeader />
             <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-              <div className="w-full max-w-7xl mx-auto">
+              <div className={cn(!isFarmRegistrationPage && "w-full max-w-7xl mx-auto")}>
                 {children}
               </div>
             </main>
@@ -140,7 +140,6 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
 function MobileDashboardLayout({children}: {children: React.ReactNode}){
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
-  const isFarmRegistrationPage = pathname === '/dashboard/farm-registration';
 
   return (
      <div className="flex min-h-screen w-full flex-col">
@@ -163,7 +162,10 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${pathname === item.href ? 'text-primary bg-muted' : 'text-muted-foreground hover:text-primary'}`}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 transition-all',
+                    pathname === item.href ? 'text-primary bg-muted' : 'text-muted-foreground hover:text-primary'
+                  )}
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
@@ -172,7 +174,7 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
                <Link
                   href={logoutItem.href}
                   onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all text-muted-foreground hover:text-primary`}
+                  className={'flex items-center gap-3 rounded-lg px-3 py-2 transition-all text-muted-foreground hover:text-primary'}
                 >
                   <logoutItem.icon className="h-4 w-4" />
                   {logoutItem.label}
@@ -188,7 +190,7 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="w-full max-w-7xl mx-auto">
+        <div className="w-full">
           {children}
         </div>
       </main>
