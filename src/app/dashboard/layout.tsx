@@ -14,6 +14,7 @@ import {
   TestTubeDiagonal,
   Wallet,
   ClipboardList,
+  Newspaper,
 } from 'lucide-react';
 
 import {
@@ -44,6 +45,7 @@ const navItems = [
   { href: '/dashboard/crop-recommendation', icon: BrainCircuit, label: 'AI Crop Tool' },
   { href: '/dashboard/disease-detection', icon: TestTubeDiagonal, label: 'AI Disease Detection' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'Learning Hub' },
+  { href: '/dashboard/agrinews', icon: Newspaper, label: 'AgriNews & Updates' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
 
