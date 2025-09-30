@@ -16,6 +16,7 @@ import {
   ClipboardList,
   Newspaper,
   Users,
+  ShoppingCart,
 } from 'lucide-react';
 
 import {
@@ -48,6 +49,7 @@ const navItems = [
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'AgriVaani' },
   { href: '/dashboard/agrinews', icon: Newspaper, label: 'AgriNews & Updates' },
   { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
+  { href: '/dashboard/agri-bazar', icon: ShoppingCart, label: 'Agri Bazar' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
 
