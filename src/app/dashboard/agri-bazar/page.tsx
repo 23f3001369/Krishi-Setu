@@ -38,7 +38,7 @@ const suppliers = [
     phone: '9871234560',
     rating: 4.8,
     distance: '5 km',
-    products: ['Equipment', 'Tools'],
+    products: ['Equipment', 'Tools', 'Shovels', 'Hoes', 'Rakes'],
      image: PlaceHolderImages.find(p => p.id === 'learning-hub-video-2')
   },
   {
