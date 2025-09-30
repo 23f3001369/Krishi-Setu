@@ -1,3 +1,13 @@
+import { Bell } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 
 export function DashboardHeader() {
@@ -5,8 +15,35 @@ export function DashboardHeader() {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
       {/* Breadcrumbs could go here */}
       <div className="ml-auto flex items-center gap-2">
+        <NotificationMenu />
         <ThemeToggle />
       </div>
     </header>
+  );
+}
+
+function NotificationMenu() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="icon">
+          <Bell className="h-[1.2rem] w-[1.2rem]" />
+          <span className="sr-only">Toggle notifications</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="flex-col items-start gap-1">
+            <p className="font-bold">Price Alert: Wheat</p>
+            <p className="text-xs text-muted-foreground">Mandi prices have increased by 5% in your region.</p>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="flex-col items-start gap-1">
+            <p className="font-bold">New Govt. Scheme</p>
+            <p className="text-xs text-muted-foreground">The PM Fasal Bima Yojana deadline has been extended.</p>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
