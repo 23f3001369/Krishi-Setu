@@ -127,21 +127,14 @@ function Step2() {
   return (
     <div className="space-y-4">
         <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" placeholder="123 Farm Lane, Countryside" />
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="gps">GPS Coordinates</Label>
-            <div className="flex gap-2">
-                <Input id="gps-lat" placeholder="Latitude" />
-                <Input id="gps-lon" placeholder="Longitude" />
-            </div>
+            <Label htmlFor="address">Address or general location</Label>
+            <Textarea id="address" placeholder="e.g., Near Springfield, Main road" />
         </div>
         <div className="aspect-video w-full bg-muted rounded-lg flex items-center justify-center mt-4">
             <div className="text-center text-muted-foreground p-4">
                 <MapPin className="mx-auto h-8 w-8 mb-2" />
                 <p>Map view will be available here.</p>
-                <p className="text-xs">(Enter coordinates or use a map tool)</p>
+                <p className="text-xs">(Future feature)</p>
             </div>
         </div>
     </div>
