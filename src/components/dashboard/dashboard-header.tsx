@@ -13,7 +13,7 @@ import Link from 'next/link';
 
 export function DashboardHeader() {
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
       {/* Breadcrumbs could go here */}
       <div className="ml-auto flex items-center gap-2">
         <NotificationMenu />

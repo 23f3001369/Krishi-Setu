@@ -170,7 +170,7 @@ function ChatPageContent() {
 
 export default function ChatPage() {
     return (
-        <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] w-full max-w-7xl mx-auto">
+        <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] w-full">
              <h1 className="text-3xl font-bold tracking-tight font-headline sr-only">Chat</h1>
              <Suspense fallback={<ChatSkeleton />}>
                 <ChatPageContent />
