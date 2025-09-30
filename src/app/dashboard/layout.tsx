@@ -121,7 +121,7 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
         </Sidebar>
         <SidebarInset>
           <DashboardHeader />
-          <main className="p-4 sm:py-6 lg:py-8">{children}</main>
+          <main className="p-4 sm:p-6 lg:p-8">{children}</main>
         </SidebarInset>
       </div>
     </SidebarProvider>
