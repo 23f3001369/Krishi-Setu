@@ -71,6 +71,12 @@
       "description": "A hero image for the Krishi Yantra Mitra page, showing various farm equipment.",
       "imageUrl": "https://images.unsplash.com/photo-1537963562638-7a24a331a986?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmYXJtJTIwZXF1aXBtZW50fGVufDB8fHx8MTc2MDAxMjMxOXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "farm equipment"
+    },
+    {
+      "id": "user-equipment-1",
+      "description": "A placeholder image for equipment added by a user.",
+      "imageUrl": "https://images.unsplash.com/photo-1568285577180-2c70176d6642?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0cmFjdG9yfGVufDB8fHx8MTc2MDExNzE4MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "farm tractor"
     }
   ]
 }
