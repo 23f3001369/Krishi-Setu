@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -139,7 +140,9 @@ export default function AdminDashboardPage() {
               </CardHeader>
               <CardContent>
                   <p className="text-sm text-muted-foreground">Manage articles and videos in the Learning Hub.</p>
-                  <Button variant="outline" className="mt-4 w-full">Manage Content</Button>
+                  <Button variant="outline" className="mt-4 w-full" asChild>
+                    <Link href="/admin/content">Manage Content</Link>
+                  </Button>
               </CardContent>
           </Card>
           <Card>
