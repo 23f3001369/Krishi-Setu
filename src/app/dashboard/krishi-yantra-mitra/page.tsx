@@ -15,9 +15,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Phone, MessageSquare, Tractor, Info, Tag } from "lucide-react";
+import { Search, MapPin, Phone, MessageSquare, Tractor, Info, Tag, Crosshair } from "lucide-react";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
+
 
 const heroImage = PlaceHolderImages.find(p => p.id === "krishi-yantra-mitra-hero");
 
@@ -77,14 +79,34 @@ export default function KrishiYantraMitraPage() {
                     <CardDescription>Search for tractors, tillers, harvesters, and more from other farmers.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Search for equipment (e.g., Tractor, Tiller...)" className="pl-8" />
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                        <div className="space-y-2">
+                             <Label htmlFor="product-search">What equipment do you need?</Label>
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input id="product-search" placeholder="e.g., Tractor, Tiller..." className="pl-8" />
+                            </div>
                         </div>
-                        <Button>Search</Button>
+                         <div className="space-y-2">
+                             <Label htmlFor="location-search">Your Location</Label>
+                            <div className="flex gap-2">
+                                <div className="relative flex-grow">
+                                    <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input id="location-search" placeholder="Enter your city or area" className="pl-8" />
+                                </div>
+                                <Button variant="outline" size="icon" aria-label="Detect current location">
+                                    <Crosshair className="h-4 w-4"/>
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
+                 <CardFooter>
+                    <Button>
+                        <Search className="mr-2 h-4 w-4" />
+                        Search Equipment
+                    </Button>
+                </CardFooter>
             </Card>
 
             <Alert>
