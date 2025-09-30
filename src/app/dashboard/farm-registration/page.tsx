@@ -60,9 +60,9 @@ export default function FarmRegistrationPage() {
 
   if (isSubmitted) {
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full">
             <Card className="w-full">
-                <CardHeader className="items-center text-center">
+                <CardHeader className="items-center text-center p-6">
                     <div className="bg-primary/10 p-3 rounded-full mb-4">
                         <Check className="h-10 w-10 text-primary" />
                     </div>
@@ -87,13 +87,13 @@ export default function FarmRegistrationPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full">
         <div className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight font-headline">Register Your Farm</h1>
             <p className="text-muted-foreground">Follow the steps to add your farm details to AgriAssist.</p>
         </div>
-        <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader>
+        <Card className="w-full">
+        <CardHeader className="p-6">
             <CardTitle>Step {step}: {step === 1 ? 'Farm Details' : step === 2 ? 'Location' : 'Photos'}</CardTitle>
             <CardDescription>
                 {step === 1 ? 'Provide basic information about your farm.' : step === 2 ? 'Pin your farm\'s location.' : 'Upload some photos of your farm.'}
