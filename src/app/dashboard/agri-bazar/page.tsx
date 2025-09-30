@@ -14,11 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Phone, Star, Tractor, Wheat, Crosshair, ShoppingCart, X } from "lucide-react";
+import { Search, MapPin, Phone, Star, Tractor, Wheat, Crosshair, ShoppingCart, X, Navigation } from "lucide-react";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Link from 'next/link';
 
 const heroImage = PlaceHolderImages.find(p => p.id === "agri-bazar-hero");
 
@@ -41,7 +42,7 @@ const initialSuppliers = [
   {
     id: 2,
     name: 'Kisan Agri Tools',
-    address: 'Shop 4, Tractor Market',
+    address: 'Shop 4, Tractor Market, Rampur',
     phone: '9871234560',
     rating: 4.8,
     distance: '5 km',
@@ -56,7 +57,7 @@ const initialSuppliers = [
   {
     id: 3,
     name: 'Modern Agro Solutions',
-    address: 'NH-24, Near Petrol Pump',
+    address: 'NH-24, Near Petrol Pump, Rampur',
     phone: '9988776655',
     rating: 4.2,
     distance: '7 km',
@@ -165,8 +166,14 @@ export default function AgriBazarPage() {
                                 ))}
                             </div>
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className="flex-col sm:flex-row gap-2">
                             <Button className="w-full" onClick={() => handleViewProducts(supplier)}>View Products & Contact</Button>
+                            <Button variant="outline" className="w-full" asChild>
+                                <Link href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(supplier.address)}`} target="_blank">
+                                    <Navigation className="mr-2 h-4 w-4"/>
+                                    Get Directions
+                                </Link>
+                            </Button>
                         </CardFooter>
                     </Card>
                 ))}
@@ -178,6 +185,7 @@ export default function AgriBazarPage() {
                         <>
                             <DialogHeader>
                                 <DialogTitle>Products at {selectedSupplier.name}</DialogTitle>
+
                                 <DialogDescription>
                                     Here is a list of available products. Please contact the supplier directly to purchase or inquire.
                                 </DialogDescription>
@@ -207,9 +215,17 @@ export default function AgriBazarPage() {
                                         <Phone className="w-4 h-4" /> {selectedSupplier.phone}
                                    </p>
                                 </div>
-                               <DialogClose asChild>
-                                    <Button>Close</Button>
-                                </DialogClose>
+                               <div className="flex gap-2">
+                                    <Button variant="outline" asChild>
+                                        <Link href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedSupplier.address)}`} target="_blank">
+                                            <Navigation className="mr-2 h-4 w-4"/>
+                                            Directions
+                                        </Link>
+                                    </Button>
+                                    <DialogClose asChild>
+                                        <Button>Close</Button>
+                                    </DialogClose>
+                               </div>
                            </DialogFooter>
                         </>
                     )}
