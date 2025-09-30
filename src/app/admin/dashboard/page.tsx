@@ -160,7 +160,9 @@ export default function AdminDashboardPage() {
               </CardHeader>
               <CardContent>
                   <p className="text-sm text-muted-foreground">Configure application-wide settings.</p>
-                  <Button variant="outline" className="mt-4 w-full">System Settings</Button>
+                  <Button variant="outline" className="mt-4 w-full" asChild>
+                    <Link href="/admin/settings">System Settings</Link>
+                  </Button>
               </CardContent>
           </Card>
         </div>
