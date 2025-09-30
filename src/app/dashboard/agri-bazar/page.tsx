@@ -171,6 +171,7 @@ export default function AgriBazarPage() {
                         <>
                             <DialogHeader>
                                 <DialogTitle>Products at {selectedSupplier.name}</DialogTitle>
+
                                 <DialogDescription>
                                     This supplier offers the following categories of products. Please contact them directly to inquire about specific items and availability.
                                 </DialogDescription>
