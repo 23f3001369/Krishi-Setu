@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Phone, Star, Tractor, Wheat, Crosshair, ShoppingCart, X } from "lucide-react";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const heroImage = PlaceHolderImages.find(p => p.id === "agri-bazar-hero");
@@ -166,7 +166,7 @@ export default function AgriBazarPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button className="w-full" onClick={() => handleViewProducts(supplier)}>View Products &amp; Order</Button>
+                            <Button className="w-full" onClick={() => handleViewProducts(supplier)}>View Products & Contact</Button>
                         </CardFooter>
                     </Card>
                 ))}
@@ -179,7 +179,7 @@ export default function AgriBazarPage() {
                             <DialogHeader>
                                 <DialogTitle>Products at {selectedSupplier.name}</DialogTitle>
                                 <DialogDescription>
-                                    Browse available products. Contact the supplier directly to order.
+                                    Here is a list of available products. Please contact the supplier directly to purchase or inquire.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="py-4">
@@ -188,7 +188,6 @@ export default function AgriBazarPage() {
                                         <TableRow>
                                             <TableHead>Product Name</TableHead>
                                             <TableHead className="text-right">Price</TableHead>
-                                            <TableHead className="text-right sr-only">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -196,19 +195,21 @@ export default function AgriBazarPage() {
                                         <TableRow key={item.id}>
                                             <TableCell className="font-medium">{item.name}</TableCell>
                                             <TableCell className="text-right">₹{item.price.toLocaleString()}</TableCell>
-                                            <TableCell className="text-right">
-                                                 <Button variant="outline" size="sm">Add to Cart</Button>
-                                            </TableCell>
                                         </TableRow>
                                         ))}
                                     </TableBody>
                                 </Table>
                             </div>
-                            <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-2">
-                               <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                   <Phone className="w-4 h-4" /> {selectedSupplier.phone}
-                               </p>
-                               <Button><ShoppingCart className="mr-2 h-4 w-4"/> Proceed to Checkout</Button>
+                            <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-4 bg-muted/50 p-4 rounded-lg items-center">
+                               <div className="text-sm text-muted-foreground">
+                                   <p>To order, contact the supplier:</p>
+                                   <p className="font-semibold flex items-center gap-2 text-foreground">
+                                        <Phone className="w-4 h-4" /> {selectedSupplier.phone}
+                                   </p>
+                                </div>
+                               <DialogClose asChild>
+                                    <Button>Close</Button>
+                                </DialogClose>
                            </DialogFooter>
                         </>
                     )}
