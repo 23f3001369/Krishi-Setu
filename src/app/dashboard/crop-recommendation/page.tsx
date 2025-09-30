@@ -1,5 +1,8 @@
-'use server';
 
+'use client';
+
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { aiCropRecommendation } from '@/ai/flows/ai-crop-recommendation';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,8 +17,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Leaf, Lightbulb } from 'lucide-react';
-import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
 
 type State = {
   data?: {
@@ -23,8 +24,18 @@ type State = {
     reasoning: string;
   };
   error?: string;
-  loading: boolean;
 };
+
+const initialState: State = {};
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? 'Getting Recommendations...' : 'Get Recommendations'}
+    </Button>
+  );
+}
 
 async function recommendCrops(
   prevState: State,
@@ -37,7 +48,7 @@ async function recommendCrops(
   const seasonalData = formData.get('seasonalData') as string;
 
   if (!soilAnalysis || !realTimeWeatherConditions || !seasonalData) {
-    return { ...prevState, loading: false, error: 'All fields are required.' };
+    return { error: 'All fields are required.' };
   }
 
   try {
@@ -46,36 +57,17 @@ async function recommendCrops(
       realTimeWeatherConditions,
       seasonalData,
     });
-    return { data: result, loading: false };
+    return { data: result };
   } catch (e) {
     console.error(e);
     return {
-      ...prevState,
-      loading: false,
       error: 'Failed to get recommendations. Please try again.',
     };
   }
 }
 
-async function formAction(prevState: State, formData: FormData) {
-  'use server';
-  const result = await recommendCrops(prevState, formData);
-  const searchParams = new URLSearchParams();
-  searchParams.set('state', JSON.stringify(result));
-  const pathname = headers().get('next-url');
-  redirect(`${pathname}?${searchParams.toString()}`);
-}
-
-// A trick to use `useFormState` on the page and re-render the server component.
-// We are not actually using `useFormState` here, but this is how you would
-// if this was a client component.
-export default async function CropRecommendationPage(props: {
-  searchParams: {
-    state: string;
-  };
-}) {
-  const { state: stateParam } = props.searchParams;
-  const state: State = stateParam ? JSON.parse(stateParam) : { loading: false };
+export default function CropRecommendationPage() {
+  const [state, formAction] = useActionState(recommendCrops, initialState);
 
   return (
     <div className="space-y-8">
@@ -89,7 +81,7 @@ export default async function CropRecommendationPage(props: {
       </div>
 
       <Card>
-        <form action={formAction.bind(null, state)}>
+        <form action={formAction}>
           <CardHeader>
             <CardTitle>Farm Data</CardTitle>
             <CardDescription>
@@ -135,9 +127,7 @@ export default async function CropRecommendationPage(props: {
             )}
           </CardContent>
           <CardFooter>
-            <Button type="submit">
-              {state.loading ? 'Getting Recommendations...' : 'Get Recommendations'}
-            </Button>
+            <SubmitButton />
           </CardFooter>
         </form>
       </Card>
