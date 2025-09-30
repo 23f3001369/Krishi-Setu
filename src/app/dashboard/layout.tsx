@@ -50,6 +50,7 @@ const navItems = [
   { href: '/dashboard/agrinews', icon: Newspaper, label: 'AgriNews & Updates' },
   { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
   { href: '/dashboard/agri-bazar', icon: ShoppingCart, label: 'Agri Bazar' },
+  { href: '/dashboard/krishi-yantra-mitra', icon: Tractor, label: 'Krishi Yantra Mitra' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
 
