@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Leaf, Lightbulb } from 'lucide-react';
+import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 
 type State = {
   data?: {
@@ -55,6 +57,15 @@ async function recommendCrops(
   }
 }
 
+async function formAction(prevState: State, formData: FormData) {
+  'use server';
+  const result = await recommendCrops(prevState, formData);
+  const searchParams = new URLSearchParams();
+  searchParams.set('state', JSON.stringify(result));
+  const pathname = headers().get('next-url');
+  redirect(`${pathname}?${searchParams.toString()}`);
+}
+
 // A trick to use `useFormState` on the page and re-render the server component.
 // We are not actually using `useFormState` here, but this is how you would
 // if this was a client component.
@@ -78,19 +89,7 @@ export default async function CropRecommendationPage(props: {
       </div>
 
       <Card>
-        <form
-          action={async (formData) => {
-            const result = await recommendCrops(state, formData);
-            const searchParams = new URLSearchParams();
-            searchParams.set('state', JSON.stringify(result));
-            // A simple way to re-render the page with new state.
-            // In a real app, you might use `router.refresh()` from a client component.
-            const { headers } = await import('next/headers');
-            const pathname = headers().get('next-url');
-            const { redirect } = await import('next/navigation');
-            redirect(`${pathname}?${searchParams.toString()}`);
-          }}
-        >
+        <form action={formAction.bind(null, state)}>
           <CardHeader>
             <CardTitle>Farm Data</CardTitle>
             <CardDescription>
