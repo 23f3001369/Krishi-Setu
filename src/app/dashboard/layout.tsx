@@ -40,6 +40,7 @@ const navItems = [
   { href: '/dashboard/crop-recommendation', icon: BrainCircuit, label: 'AI Crop Tool' },
   { href: '/dashboard/disease-detection', icon: TestTubeDiagonal, label: 'AI Disease Detection' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'Learning Hub' },
+  { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
 
 export default function DashboardLayout({
@@ -163,9 +164,11 @@ function UserMenu() {
       <DropdownMenuContent align="start" className='w-56'>
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/profile">
+            <User className="mr-2 h-4 w-4" />
+            <span>Profile</span>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
