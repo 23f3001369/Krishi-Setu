@@ -126,8 +126,10 @@ export default function KrishiYantraMitraPage() {
                             <Button className="w-full" disabled={!item.available}>
                                 <Phone className="mr-2 h-4 w-4" /> Call
                             </Button>
-                             <Button variant="outline" className="w-full" disabled={!item.available}>
-                                <MessageSquare className="mr-2 h-4 w-4" /> Chat
+                            <Button variant="outline" className="w-full" asChild disabled={!item.available}>
+                                <Link href={`/dashboard/chat?with=${encodeURIComponent(item.owner)}`}>
+                                    <MessageSquare className="mr-2 h-4 w-4" /> Chat
+                                </Link>
                             </Button>
                         </CardFooter>
                     </Card>

@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -85,15 +86,22 @@ export default function CommunityForumPage() {
                                     <p className="text-sm">{post.question}</p>
                                 </CardContent>
                                 <CardFooter className="flex justify-between items-center">
-                                    <div className="flex gap-4 text-sm text-muted-foreground">
+                                    <div className="flex gap-2 text-sm text-muted-foreground">
                                         <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                                            <ThumbsUp size={16} /> {post.likes} Likes
+                                            <ThumbsUp size={16} /> {post.likes}
                                         </Button>
                                         <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                                            <MessageSquare size={16} /> {post.comments} Comments
+                                            <MessageSquare size={16} /> {post.comments}
                                         </Button>
                                     </div>
-                                    <Button variant="outline" size="sm">View Post</Button>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm">View Post</Button>
+                                        <Button size="sm" asChild>
+                                            <Link href={`/dashboard/chat?with=${encodeURIComponent(post.author)}`}>
+                                                <MessageSquare className="mr-2 h-4 w-4"/> Chat with Author
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 </CardFooter>
                             </Card>
                         ))}
