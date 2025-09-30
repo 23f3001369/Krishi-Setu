@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Logo from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { Button } from "../ui/button";
+import { LogOut } from "lucide-react";
 
 export default function AdminHeader() {
   return (
@@ -13,6 +15,12 @@ export default function AdminHeader() {
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
+          <Button variant="ghost" asChild>
+            <Link href="/">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Link>
+          </Button>
           <ThemeToggle />
         </div>
       </div>
