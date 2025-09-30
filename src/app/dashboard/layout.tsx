@@ -40,6 +40,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 
 const navItems = [
@@ -81,6 +82,7 @@ export default function DashboardLayout({
 
 function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isFarmRegistrationPage = pathname === '/dashboard/farm-registration';
 
   return (
     <SidebarProvider>
@@ -124,7 +126,7 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col h-screen">
             <DashboardHeader />
             <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-              <div className="max-w-7xl mx-auto w-full">
+              <div className={cn(!isFarmRegistrationPage && "max-w-7xl mx-auto w-full")}>
                 {children}
               </div>
             </main>
@@ -138,6 +140,7 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
 function MobileDashboardLayout({children}: {children: React.ReactNode}){
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
+  const isFarmRegistrationPage = pathname === '/dashboard/farm-registration';
 
   return (
      <div className="flex min-h-screen w-full flex-col">
@@ -185,7 +188,7 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="max-w-7xl mx-auto w-full">
+        <div className={cn(!isFarmRegistrationPage && "max-w-7xl mx-auto w-full")}>
           {children}
         </div>
       </main>
