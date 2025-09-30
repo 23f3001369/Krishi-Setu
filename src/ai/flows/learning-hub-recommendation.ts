@@ -22,7 +22,7 @@ const VideoSchema = z.object({
   description: z.string().describe('A brief description of the video.'),
 });
 
-export const LearningHubRecommendationInputSchema = z.object({
+const LearningHubRecommendationInputSchema = z.object({
   query: z.string().describe('The user\'s question about farming or crops.'),
   articles: z.array(ArticleSchema).describe('A list of available articles.'),
   videos: z.array(VideoSchema).describe('A list of available videos.'),
@@ -40,7 +40,7 @@ const RecommendedItemSchema = z.object({
     .describe('A brief, user-facing explanation for why this item was recommended.'),
 });
 
-export const LearningHubRecommendationOutputSchema = z.object({
+const LearningHubRecommendationOutputSchema = z.object({
   articles: z
     .array(RecommendedItemSchema)
     .describe('A list of recommended articles. Return at most 2.'),
