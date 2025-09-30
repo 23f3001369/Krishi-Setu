@@ -47,6 +47,12 @@
       "description": "A placeholder image for the Krishi Khata page, showing a farmer with a notebook.",
       "imageUrl": "https://images.unsplash.com/photo-1473554198449-fd330ccd766e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmYXJtZXIlMjBhY2NvdW50aW5nfGVufDB8fHx8MTc1OTIxODAwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "farmer accounting"
+    },
+    {
+      "id": "cultivation-guide-hero",
+      "description": "A hero image for the Cultivation Guide page, showing a close-up of a healthy plant.",
+      "imageUrl": "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjdWx0aXZhdGlvbnxlbnwwfHx8fDE3NTk1NDMzODR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "crop cultivation"
     }
   ]
 }
