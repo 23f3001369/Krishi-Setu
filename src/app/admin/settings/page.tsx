@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SystemSettingsPage() {
     
@@ -32,6 +33,8 @@ export default function SystemSettingsPage() {
         aiModel: 'gemini-2.5-flash',
     });
 
+    const { toast } = useToast();
+
     const handleSettingChange = (key: keyof typeof settings, value: any) => {
         setSettings(prev => ({...prev, [key]: value}))
     }
@@ -39,7 +42,10 @@ export default function SystemSettingsPage() {
     const handleSave = () => {
         // Mock save action
         console.log("Saving settings:", settings);
-        // In a real app, you would show a toast notification here
+        toast({
+            title: 'Settings Saved',
+            description: 'Your changes have been successfully saved.',
+        });
     }
 
     return (
