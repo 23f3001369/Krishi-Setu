@@ -109,15 +109,15 @@ function Step1() {
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="farmName">Farm Name</Label>
-        <Input id="farmName" placeholder="e.g., Sunny Meadows Farm" />
+        <Input id="farmName" placeholder="e.g., Sunny Meadows Farm" required />
       </div>
       <div className="space-y-2">
         <Label htmlFor="farmSize">Farm Size (in acres)</Label>
-        <Input id="farmSize" type="number" placeholder="e.g., 50" />
+        <Input id="farmSize" type="number" placeholder="e.g., 50" required />
       </div>
       <div className="space-y-2">
         <Label htmlFor="mainCrops">Main Crops</Label>
-        <Textarea id="mainCrops" placeholder="e.g., Corn, Soybeans, Wheat" />
+        <Textarea id="mainCrops" placeholder="e.g., Corn, Soybeans, Wheat" required />
       </div>
     </div>
   );
@@ -128,7 +128,7 @@ function Step2() {
     <div className="space-y-4">
         <div className="space-y-2">
             <Label htmlFor="address">Address or general location</Label>
-            <Textarea id="address" placeholder="e.g., Near Springfield, Main road" />
+            <Textarea id="address" placeholder="e.g., Near Springfield, Main road" required />
         </div>
         <div className="aspect-video w-full bg-muted rounded-lg flex items-center justify-center mt-4">
             <div className="text-center text-muted-foreground p-4">
