@@ -41,6 +41,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
 
 
 const navItems = [
@@ -186,6 +187,7 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
             <div className="ml-auto flex items-center gap-2">
               <NotificationMenu />
                <UserMenu />
+               <ThemeToggle />
             </div>
         </div>
       </header>
@@ -210,7 +212,7 @@ function UserMenu() {
           <span className="group-data-[collapsible=icon]:hidden">Farmer</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className='w-56'>
+      <DropdownMenuContent align="end" className='w-56'>
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -260,3 +262,5 @@ function NotificationMenu() {
     </DropdownMenu>
   );
 }
+
+    
