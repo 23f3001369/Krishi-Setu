@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Send, Search, ArrowLeft, MessageSquare } from "lucide-react";
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Mock Data
 const conversations = [
@@ -47,7 +48,7 @@ const conversations = [
   },
 ];
 
-export default function ChatPage() {
+function ChatPageContent() {
     const searchParams = useSearchParams();
     const initialUser = searchParams.get('with');
     const [selectedUser, setSelectedUser] = useState<typeof conversations[0] | null>(null);
@@ -62,8 +63,6 @@ export default function ChatPage() {
     }, [initialUser]);
 
   return (
-    <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] w-full">
-         <h1 className="text-3xl font-bold tracking-tight font-headline sr-only">Chat</h1>
         <div className="grid grid-cols-1 md:grid-cols-3 h-full gap-4">
             <Card className={cn(
                 "md:flex flex-col",
@@ -166,6 +165,53 @@ export default function ChatPage() {
                 )}
             </Card>
         </div>
-    </div>
   );
+}
+
+export default function ChatPage() {
+    return (
+        <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] w-full max-w-7xl mx-auto">
+             <h1 className="text-3xl font-bold tracking-tight font-headline sr-only">Chat</h1>
+             <Suspense fallback={<ChatSkeleton />}>
+                <ChatPageContent />
+             </Suspense>
+        </div>
+    );
+}
+
+function ChatSkeleton() {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-3 h-full gap-4">
+            <Card className="hidden md:flex flex-col">
+                <CardHeader>
+                    <Skeleton className="h-8 w-32" />
+                    <Skeleton className="h-10 w-full mt-2" />
+                </CardHeader>
+                <CardContent className="flex-1 space-y-2 p-2">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="flex items-center gap-3 p-2">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="flex-1 space-y-1">
+                                <Skeleton className="h-4 w-24" />
+                                <Skeleton className="h-3 w-32" />
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+            <Card className="md:col-span-2 flex flex-col">
+                 <CardHeader className="flex flex-row items-center gap-4 border-b p-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <Skeleton className="h-6 w-32" />
+                </CardHeader>
+                <CardContent className="flex-1 p-4" />
+                <CardFooter className="border-t p-4">
+                     <div className="flex w-full items-center gap-2">
+                        <Skeleton className="h-10 flex-grow" />
+                        <Skeleton className="h-10 w-20" />
+                    </div>
+                </CardFooter>
+            </Card>
+        </div>
+    )
 }
