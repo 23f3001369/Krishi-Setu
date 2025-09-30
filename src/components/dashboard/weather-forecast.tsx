@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Sun, Cloud, CloudRain, CloudSun, AlertTriangle, Wind, Droplets } from "lucide-react";
+import { Sun, Cloud, CloudRain, CloudSun, AlertTriangle, Wind, Droplets, History } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription as AlertDescriptionShadcn } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 
@@ -32,6 +32,16 @@ const mockWeeklyForecast = [
   { day: "Sat", temp: 28, icon: Sun },
   { day: "Sun", temp: 25, icon: CloudRain },
   { day: "Mon", temp: 23, icon: CloudSun },
+];
+
+const mockPastWeek = [
+    { day: "Yesterday", temp: 27, icon: Sun },
+    { day: "Sat", temp: 28, icon: Sun },
+    { day: "Fri", temp: 26, icon: CloudRain },
+    { day: "Thu", temp: 24, icon: CloudSun },
+    { day: "Wed", temp: 23, icon: Cloud },
+    { day: "Tue", temp: 25, icon: Sun },
+    { day: "Mon", temp: 26, icon: Sun },
 ];
 
 const mockAlerts = [
@@ -102,6 +112,24 @@ export default function WeatherForecast() {
                         <div className="font-semibold">{day.day}</div>
                         <Icon className="w-8 h-8 text-accent" />
                         <div className="text-muted-foreground">{day.temp}°</div>
+                    </div>
+                    );
+                })}
+            </div>
+        </div>
+        
+        <Separator />
+
+        <div>
+            <h3 className="font-semibold mb-2 text-lg flex items-center gap-2"><History className="w-5 h-5"/>Past 7-Day Summary</h3>
+            <div className="flex justify-between items-center space-x-2">
+                {mockPastWeek.map((day) => {
+                    const Icon = day.icon;
+                    return (
+                    <div key={day.day} className="flex flex-col items-center p-2 rounded-lg hover:bg-muted w-full text-center space-y-1">
+                        <div className="font-semibold text-xs">{day.day}</div>
+                        <Icon className="w-6 h-6 text-muted-foreground" />
+                        <div className="text-sm text-muted-foreground">{day.temp}°</div>
                     </div>
                     );
                 })}
