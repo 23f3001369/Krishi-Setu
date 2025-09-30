@@ -13,7 +13,7 @@ export default function FarmerLoginPage() {
     <Card>
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-headline">Farmer Login</CardTitle>
-        <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
+        <CardDescription>Enter your email or mobile number to access your dashboard.</CardDescription>
       </CardHeader>
       <CardContent>
         <FarmerLoginForm />

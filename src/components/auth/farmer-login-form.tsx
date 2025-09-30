@@ -19,9 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
 const formSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
+  identifier: z.string().min(1, "Please enter your email or mobile number."),
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
   }),
@@ -35,14 +33,14 @@ export function FarmerLoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      identifier: "",
       password: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    // TODO: Implement Firebase login logic here
+    // TODO: Implement Firebase login logic here for both email and phone
     console.log(values);
 
     // Mock successful login
@@ -69,12 +67,12 @@ export function FarmerLoginForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="email"
+          name="identifier"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email or Mobile Number</FormLabel>
               <FormControl>
-                <Input placeholder="name@example.com" {...field} />
+                <Input placeholder="name@example.com or 9876543210" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

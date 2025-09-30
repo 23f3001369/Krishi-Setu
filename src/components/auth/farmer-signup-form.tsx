@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,10 +25,14 @@ const formSchema = z.object({
   }),
   email: z.string().email({
     message: "Please enter a valid email address.",
-  }),
+  }).optional().or(z.literal('')),
+  mobile: z.string().optional().or(z.literal('')),
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
   }),
+}).refine(data => data.email || data.mobile, {
+    message: "Either email or mobile number is required.",
+    path: ["email"], // Show error on email field
 });
 
 export function FarmerSignUpForm() {
@@ -40,6 +45,7 @@ export function FarmerSignUpForm() {
     defaultValues: {
       name: "",
       email: "",
+      mobile: "",
       password: "",
     },
   });
@@ -82,9 +88,25 @@ export function FarmerSignUpForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Email Address</FormLabel>
               <FormControl>
                 <Input placeholder="name@example.com" {...field} />
+              </FormControl>
+              <FormDescription>
+                You can sign up with an email or a mobile number.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="mobile"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Mobile Number</FormLabel>
+              <FormControl>
+                <Input placeholder="9876543210" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
