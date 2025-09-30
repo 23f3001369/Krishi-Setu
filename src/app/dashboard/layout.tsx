@@ -224,6 +224,11 @@ function NotificationMenu() {
         <DropdownMenuLabel>Notifications</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="flex-col items-start gap-1">
+            <p className="font-bold text-destructive">Weather Alert: Heavy Rain</p>
+            <p className="text-xs text-muted-foreground">Heavy rain expected today. Ensure proper drainage.</p>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="flex-col items-start gap-1">
             <p className="font-bold">Price Alert: Wheat</p>
             <p className="text-xs text-muted-foreground">Mandi prices have increased by 5% in your region.</p>
         </DropdownMenuItem>
