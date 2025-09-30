@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import {
   Card,
@@ -14,13 +14,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Phone, Star, Tractor, Wheat, Crosshair } from "lucide-react";
+import { Search, MapPin, Phone, Star, Tractor, Wheat, Crosshair, ShoppingCart, X } from "lucide-react";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const heroImage = PlaceHolderImages.find(p => p.id === "agri-bazar-hero");
 
-const suppliers = [
+const initialSuppliers = [
   {
     id: 1,
     name: 'Gupta Fertilizers & Seeds',
@@ -29,7 +31,12 @@ const suppliers = [
     rating: 4.5,
     distance: '2.5 km',
     products: ['Fertilizers', 'Seeds', 'Pesticides'],
-    image: PlaceHolderImages.find(p => p.id === 'learning-hub-article-3')
+    image: PlaceHolderImages.find(p => p.id === 'learning-hub-article-3'),
+    inventory: [
+        { id: 'prod1', name: 'Urea Fertilizer (45kg)', price: 300 },
+        { id: 'prod2', name: 'DAP Fertilizer (45kg)', price: 1350 },
+        { id: 'prod3', name: 'Pioneer Corn Seeds (5kg)', price: 1200 },
+    ]
   },
   {
     id: 2,
@@ -39,7 +46,12 @@ const suppliers = [
     rating: 4.8,
     distance: '5 km',
     products: ['Equipment', 'Tools', 'Shovels', 'Hoes', 'Rakes'],
-     image: PlaceHolderImages.find(p => p.id === 'learning-hub-video-2')
+     image: PlaceHolderImages.find(p => p.id === 'learning-hub-video-2'),
+     inventory: [
+        { id: 'prod4', name: 'Hand Hoe', price: 250 },
+        { id: 'prod5', name: 'Garden Rake', price: 400 },
+        { id: 'prod6', name: 'Spade', price: 350 },
+     ]
   },
   {
     id: 3,
@@ -49,11 +61,26 @@ const suppliers = [
     rating: 4.2,
     distance: '7 km',
     products: ['Drip Irrigation', 'Fertilizers', 'Seeds'],
-    image: PlaceHolderImages.find(p => p.id === 'learning-hub-article-2')
+    image: PlaceHolderImages.find(p => p.id === 'learning-hub-article-2'),
+    inventory: [
+        { id: 'prod7', name: 'Drip Irrigation Kit (1 acre)', price: 15000 },
+        { id: 'prod8', name: 'NPK Fertilizer (50kg)', price: 1500 },
+    ]
   }
 ];
 
+type Supplier = typeof initialSuppliers[0];
+
 export default function AgriBazarPage() {
+    const [suppliers, setSuppliers] = useState(initialSuppliers);
+    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const handleViewProducts = (supplier: Supplier) => {
+        setSelectedSupplier(supplier);
+        setIsDialogOpen(true);
+    }
+    
     return (
         <div className="space-y-8">
             <div>
@@ -139,11 +166,54 @@ export default function AgriBazarPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button className="w-full">View Products & Order</Button>
+                            <Button className="w-full" onClick={() => handleViewProducts(supplier)}>View Products &amp; Order</Button>
                         </CardFooter>
                     </Card>
                 ))}
             </div>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="sm:max-w-2xl">
+                    {selectedSupplier && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle>Products at {selectedSupplier.name}</DialogTitle>
+                                <DialogDescription>
+                                    Browse available products. Contact the supplier directly to order.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Product Name</TableHead>
+                                            <TableHead className="text-right">Price</TableHead>
+                                            <TableHead className="text-right sr-only">Action</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {selectedSupplier.inventory.map((item) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="font-medium">{item.name}</TableCell>
+                                            <TableCell className="text-right">₹{item.price.toLocaleString()}</TableCell>
+                                            <TableCell className="text-right">
+                                                 <Button variant="outline" size="sm">Add to Cart</Button>
+                                            </TableCell>
+                                        </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                            <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-2">
+                               <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                   <Phone className="w-4 h-4" /> {selectedSupplier.phone}
+                               </p>
+                               <Button><ShoppingCart className="mr-2 h-4 w-4"/> Proceed to Checkout</Button>
+                           </DialogFooter>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+
         </div>
     )
-}
