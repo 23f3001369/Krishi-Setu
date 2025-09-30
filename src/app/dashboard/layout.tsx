@@ -43,6 +43,8 @@ const navItems = [
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
 
+const logoutItem = { href: '/', icon: LogOut, label: 'Log out' };
+
 export default function DashboardLayout({
   children,
 }: {
@@ -90,6 +92,16 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
+              <SidebarMenu>
+                 <SidebarMenuItem>
+                    <Link href={logoutItem.href}>
+                      <SidebarMenuButton tooltip={logoutItem.label}>
+                          <logoutItem.icon />
+                          <span>{logoutItem.label}</span>
+                      </SidebarMenuButton>
+                    </Link>
+                 </SidebarMenuItem>
+              </SidebarMenu>
               <UserMenu/>
           </SidebarFooter>
         </Sidebar>
@@ -133,6 +145,14 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
                   {item.label}
                 </Link>
               ))}
+               <Link
+                  href={logoutItem.href}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all text-muted-foreground hover:text-primary`}
+                >
+                  <logoutItem.icon className="h-4 w-4" />
+                  {logoutItem.label}
+                </Link>
             </nav>
           </SheetContent>
         </Sheet>
@@ -168,13 +188,6 @@ function UserMenu() {
           <Link href="/dashboard/profile">
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/">
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
