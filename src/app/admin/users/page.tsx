@@ -138,8 +138,8 @@ export default function UserManagementPage() {
 
   return (
     <>
-      <div className="space-y-8 max-w-7xl mx-auto">
-        <div>
+      <div className="space-y-8">
+        <div className="mb-8">
             <h1 className="text-3xl font-bold font-headline">User Management</h1>
             <p className="text-muted-foreground">View and manage farmer accounts.</p>
         </div>
@@ -168,7 +168,7 @@ export default function UserManagementPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <Table>
               <TableHeader>
                 <TableRow>

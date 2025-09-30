@@ -108,8 +108,8 @@ export default function CropRecommendationPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div>
+    <div className="space-y-8">
+      <div className='mb-8'>
         <h1 className="text-3xl font-bold tracking-tight font-headline">
           AI Crop Recommendation
         </h1>
@@ -127,7 +127,7 @@ export default function CropRecommendationPage() {
               recommendations.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 p-6">
             <div className="space-y-2">
               <Label>Soil Details</Label>
               <Tabs defaultValue="manual" className="w-full">
@@ -215,7 +215,7 @@ export default function CropRecommendationPage() {
               </Alert>
             )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="p-6">
             <SubmitButton />
           </CardFooter>
         </form>
@@ -229,7 +229,7 @@ export default function CropRecommendationPage() {
               Based on the data provided, here are the suggested crops.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 p-6">
             <Alert className="bg-primary/5 border-primary/20">
               <Leaf className="h-4 w-4 !text-primary" />
               <AlertTitle className="text-primary">Optimal Crops</AlertTitle>

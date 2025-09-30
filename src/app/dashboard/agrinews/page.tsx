@@ -72,7 +72,7 @@ const governmentSchemes = [
         id: 'fby',
         title: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
         description: "The government-sponsored crop insurance scheme that integrates multiple stakeholders on a single platform.",
-        link: "#"
+link: "#"
     },
     {
         id: 'kcc',
@@ -84,8 +84,8 @@ const governmentSchemes = [
 
 export default function AgriNewsPage() {
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div>
+    <div className="space-y-8">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">AgriNews & Updates</h1>
         <p className="text-muted-foreground">Your daily source for agricultural news, market prices, and government schemes.</p>
       </div>
@@ -111,7 +111,7 @@ export default function AgriNewsPage() {
               <CardTitle>Latest Agricultural News</CardTitle>
               <CardDescription>Top headlines from the world of agriculture.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 p-6">
                 {newsArticles.map(article => (
                     <div key={article.id} className="p-4 border rounded-lg hover:bg-muted/50">
                         <h3 className="font-semibold text-lg">{article.title}</h3>
@@ -132,7 +132,7 @@ export default function AgriNewsPage() {
                 <CardTitle>Live Mandi Prices</CardTitle>
                 <CardDescription>Real-time commodity prices from your local market.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                 <Table>
                     <TableHeader>
                     <TableRow>
@@ -167,13 +167,13 @@ export default function AgriNewsPage() {
                 <CardTitle>Government Schemes & Subsidies</CardTitle>
                 <CardDescription>Explore and apply for beneficial government programs.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 p-6">
                     {governmentSchemes.map(scheme => (
                         <Card key={scheme.id} className="flex flex-col">
                             <CardHeader>
-                                <CardTitle className="text-lg">{scheme.title}</CardTitle>
+                                <CardTitle>{scheme.title}</CardTitle>
                             </CardHeader>
-                             <CardContent className="flex-grow">
+                             <CardContent className="flex-grow p-6">
                                 <p className="text-sm text-muted-foreground">{scheme.description}</p>
                             </CardContent>
                             <CardFooter>
@@ -190,6 +190,3 @@ export default function AgriNewsPage() {
     </div>
   );
 }
-
-
-

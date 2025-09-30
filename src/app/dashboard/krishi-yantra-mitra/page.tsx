@@ -106,8 +106,8 @@ export default function KrishiYantraMitraPage() {
     };
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto">
-            <div>
+        <div className="space-y-8">
+            <div className="mb-8">
                 <h1 className="text-3xl font-bold tracking-tight font-headline">Krishi Yantra Mitra</h1>
                 <p className="text-muted-foreground">Peer-to-peer equipment rental portal to book machines on demand.</p>
             </div>
@@ -128,7 +128,7 @@ export default function KrishiYantraMitraPage() {
                             <CardTitle>Find Equipment</CardTitle>
                             <CardDescription>Search for tractors, tillers, harvesters, and more from other farmers.</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-6">
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                                 <div className="space-y-2">
                                      <Label htmlFor="product-search">What equipment do you need?</Label>
@@ -151,7 +151,7 @@ export default function KrishiYantraMitraPage() {
                                 </div>
                             </div>
                         </CardContent>
-                         <CardFooter>
+                         <CardFooter className="p-6">
                             <Button>
                                 <Search className="mr-2 h-4 w-4" />
                                 Search Equipment
@@ -178,7 +178,7 @@ export default function KrishiYantraMitraPage() {
                  </Card>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {equipment.map(item => (
                     <Card key={item.id} className="flex flex-col">
                         {item.image &&
@@ -195,7 +195,7 @@ export default function KrishiYantraMitraPage() {
                                 <Tractor className="w-4 h-4 mr-2" /> Owned by {item.owner}
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-grow space-y-3">
+                        <CardContent className="flex-grow space-y-3 p-6">
                              <div className="flex items-start gap-2 text-sm">
                                 <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground" />
                                 <span>{item.location}</span>
@@ -205,7 +205,7 @@ export default function KrishiYantraMitraPage() {
                                 <span>{item.price}</span>
                             </div>
                         </CardContent>
-                        <CardFooter className="flex flex-col items-stretch gap-2">
+                        <CardFooter className="flex flex-col items-stretch gap-2 p-6">
                             <Button className="w-full" disabled={!item.available}>
                                 <Phone className="mr-2 h-4 w-4" /> Call
                             </Button>

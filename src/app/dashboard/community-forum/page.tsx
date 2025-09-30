@@ -42,8 +42,8 @@ export default function CommunityForumPage() {
     const [posts, setPosts] = useState(initialPosts);
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto">
-             <div>
+        <div className="space-y-8">
+             <div className="mb-8">
                 <h1 className="text-3xl font-bold tracking-tight font-headline">Community Forum</h1>
                 <p className="text-muted-foreground">Ask questions, share knowledge, and connect with fellow farmers.</p>
             </div>
@@ -82,10 +82,10 @@ export default function CommunityForumPage() {
                                         </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="p-6">
                                     <p className="text-sm">{post.question}</p>
                                 </CardContent>
-                                <CardFooter className="flex justify-between items-center">
+                                <CardFooter className="flex justify-between items-center p-6">
                                     <div className="flex gap-2 text-sm text-muted-foreground">
                                         <Button variant="ghost" size="sm" className="flex items-center gap-1">
                                             <ThumbsUp size={16} /> {post.likes}
@@ -114,7 +114,7 @@ export default function CommunityForumPage() {
                         <CardHeader>
                             <CardTitle>Search Forum</CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-6">
                             <div className="relative">
                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                <Input placeholder="Search posts..." className="pl-8"/>
@@ -126,7 +126,7 @@ export default function CommunityForumPage() {
                         <CardHeader>
                             <CardTitle>Top Contributors</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-4 p-6">
                            {/* Mock Data */}
                            <div className="flex items-center gap-3">
                                <Avatar className="h-9 w-9">

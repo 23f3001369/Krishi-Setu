@@ -38,8 +38,14 @@ export default function AdminLayout({
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
+        <div className="flex flex-col h-screen">
           <AdminHeader />
-          <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <div className="max-w-7xl mx-auto w-full">
+              {children}
+            </div>
+          </main>
+          </div>
         </SidebarInset>
       </div>
     </SidebarProvider>

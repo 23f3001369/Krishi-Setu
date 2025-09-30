@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -59,16 +60,16 @@ export default function FarmRegistrationPage() {
 
   if (isSubmitted) {
     return (
-        <div className="max-w-7xl mx-auto">
-            <Card className="w-full max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto">
+            <Card className="w-full">
                 <CardHeader className="items-center text-center">
                     <div className="bg-primary/10 p-3 rounded-full mb-4">
                         <Check className="h-10 w-10 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl font-headline">Registration Complete!</CardTitle>
+                    <CardTitle>Registration Complete!</CardTitle>
                     <CardDescription>Your farm has been successfully registered. You can now access all features.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <Alert>
                         <Send className="h-4 w-4" />
                         <AlertTitle>What's Next?</AlertTitle>
@@ -77,7 +78,7 @@ export default function FarmRegistrationPage() {
                         </AlertDescription>
                     </Alert>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="p-6">
                     <Button className="w-full" onClick={() => window.location.href = '/dashboard'}>Go to Dashboard</Button>
                 </CardFooter>
             </Card>
@@ -86,8 +87,8 @@ export default function FarmRegistrationPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-        <div>
+    <div className="space-y-8">
+        <div className="mb-8">
             <h1 className="text-3xl font-bold tracking-tight font-headline">Register Your Farm</h1>
             <p className="text-muted-foreground">Follow the steps to add your farm details to AgriAssist.</p>
         </div>
@@ -99,12 +100,12 @@ export default function FarmRegistrationPage() {
             </CardDescription>
             <Progress value={progress} className="w-full mt-2" />
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
             {step === 1 && <Step1 formData={formData} handleChange={handleChange} />}
             {step === 2 && <Step2 formData={formData} handleChange={handleChange} />}
             {step === 3 && <Step3 image={farmImage} />}
         </CardContent>
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex justify-between p-6">
             <Button variant="outline" onClick={handleBack} disabled={step === 1}>
                 <ChevronsLeft className="mr-2 h-4 w-4" />
                 Back

@@ -85,8 +85,8 @@ export default function CultivationGuidePage() {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div>
+    <div className="space-y-8">
+      <div className='mb-8'>
         <h1 className="text-3xl font-bold tracking-tight font-headline">Cultivation Guide</h1>
         <p className="text-muted-foreground">Agronomy-powered, stage-wise planning for your crops.</p>
       </div>
@@ -105,7 +105,7 @@ export default function CultivationGuidePage() {
           <CardHeader>
               <CardTitle>Full Crop Overview</CardTitle>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm p-6">
                 <div className="flex items-center gap-3">
                     <Sprout className="w-8 h-8 text-primary"/>
                     <div>
@@ -165,7 +165,7 @@ export default function CultivationGuidePage() {
                     </CardTitle>
                     <CardDescription>{stageDetails.title}</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <p className="text-sm text-muted-foreground">{stageDetails.aiInstruction}</p>
                 </CardContent>
             </Card>
@@ -186,7 +186,7 @@ export default function CultivationGuidePage() {
                 </CardTitle>
                 <CardDescription>Key tasks for the current crop stage.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
                 <div className="space-y-4">
                 {tasks.map(task => (
                     <div key={task.id} className="flex items-center space-x-3">
@@ -207,7 +207,7 @@ export default function CultivationGuidePage() {
                 ))}
                 </div>
             </CardContent>
-            <CardFooter className="flex-col items-stretch gap-y-4">
+            <CardFooter className="flex-col items-stretch gap-y-4 p-6">
                 <Separator />
                  <Button>Mark All as Complete</Button>
             </CardFooter>

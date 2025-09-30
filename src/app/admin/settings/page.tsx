@@ -49,8 +49,8 @@ export default function SystemSettingsPage() {
     }
 
     return (
-      <div className="space-y-8 max-w-7xl mx-auto">
-        <div>
+      <div className="space-y-8">
+        <div className="mb-8">
             <h1 className="text-3xl font-bold font-headline">System Settings</h1>
             <p className="text-muted-foreground">Manage application-wide settings and configurations.</p>
         </div>
@@ -60,7 +60,7 @@ export default function SystemSettingsPage() {
                 <CardTitle>Appearance</CardTitle>
                 <CardDescription>Customize the look and feel of the application for all users.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="space-y-0.5">
                         <Label htmlFor="theme">Theme</Label>
@@ -87,7 +87,7 @@ export default function SystemSettingsPage() {
                 <CardTitle>Notifications</CardTitle>
                 <CardDescription>Configure how system-wide notifications are sent.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="space-y-0.5">
                         <Label htmlFor="email-notifications">Email Notifications</Label>
@@ -122,7 +122,7 @@ export default function SystemSettingsPage() {
                 <CardTitle>AI Configuration</CardTitle>
                 <CardDescription>Manage the AI models used for various features.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
                  <div className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="space-y-0.5">
                         <Label htmlFor="ai-model">Default AI Model</Label>
@@ -141,7 +141,7 @@ export default function SystemSettingsPage() {
                     </Select>
                 </div>
             </CardContent>
-            <CardFooter className="flex-col items-stretch gap-y-4">
+            <CardFooter className="flex-col items-stretch gap-y-4 p-6">
                 <Separator />
                  <Button onClick={handleSave}>Save Changes</Button>
             </CardFooter>

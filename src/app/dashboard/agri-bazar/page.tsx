@@ -69,8 +69,8 @@ export default function AgriBazarPage() {
     }
     
     return (
-        <div className="space-y-8 max-w-7xl mx-auto">
-            <div>
+        <div className="space-y-8">
+            <div className='mb-8'>
                 <h1 className="text-3xl font-bold tracking-tight font-headline">Agri Bazar</h1>
                 <p className="text-muted-foreground">Find nearby shops for your agricultural needs.</p>
             </div>
@@ -89,7 +89,7 @@ export default function AgriBazarPage() {
                     <CardTitle>Find Products & Suppliers</CardTitle>
                     <CardDescription>Search for seeds, fertilizers, equipment, and more from local suppliers.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                         <div className="space-y-2">
                              <Label htmlFor="product-search">What are you looking for?</Label>
@@ -120,7 +120,7 @@ export default function AgriBazarPage() {
                 </CardFooter>
             </Card>
 
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {suppliers.map(supplier => (
                     <Card key={supplier.id} className="flex flex-col">
                         {supplier.image &&
@@ -137,7 +137,7 @@ export default function AgriBazarPage() {
                                 <span className="font-semibold">{supplier.distance} away</span>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-grow space-y-3">
+                        <CardContent className="flex-grow space-y-3 p-6">
                              <div className="flex items-start gap-2 text-sm">
                                 <MapPin className="w-4 h-4 mt-0.5 text-muted-foreground" />
                                 <span>{supplier.address}</span>
@@ -152,7 +152,7 @@ export default function AgriBazarPage() {
                                 ))}
                             </div>
                         </CardContent>
-                        <CardFooter className="flex flex-col items-stretch gap-2">
+                        <CardFooter className="flex flex-col items-stretch gap-2 p-6">
                             <Button className="w-full" onClick={() => handleViewProducts(supplier)}>View Products & Contact</Button>
                             <Button variant="outline" className="w-full" asChild>
                                 <Link href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(supplier.address)}`} target="_blank">

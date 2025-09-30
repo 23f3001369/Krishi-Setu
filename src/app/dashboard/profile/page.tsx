@@ -109,8 +109,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-       <div>
+    <div className="space-y-8">
+       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">
           My Profile
         </h1>
@@ -128,7 +128,7 @@ export default function ProfilePage() {
                             <CardTitle>Account Information</CardTitle>
                             <CardDescription>Update your personal details here.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
+                        <CardContent className="space-y-6 p-6">
                              <div className="flex items-center gap-4">
                                 <div className="relative">
                                     <Avatar className="h-20 w-20">
@@ -172,7 +172,7 @@ export default function ProfilePage() {
                                 )}
                                 />
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className="p-6">
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? 'Saving...' : 'Save Changes'}
                             </Button>
@@ -191,7 +191,7 @@ export default function ProfilePage() {
                             </CardTitle>
                             <CardDescription>Change your password.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-4 p-6">
                              <FormField
                                 control={passwordForm.control}
                                 name="currentPassword"
@@ -232,7 +232,7 @@ export default function ProfilePage() {
                                 )}
                                 />
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className="p-6">
                             <Button type="submit" disabled={isPasswordLoading}>
                                 {isPasswordLoading ? 'Updating...' : 'Change Password'}
                             </Button>
@@ -248,7 +248,7 @@ export default function ProfilePage() {
                         <CardTitle>Registered Farm</CardTitle>
                         <CardDescription>Details of your registered farm.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4 text-sm">
+                    <CardContent className="space-y-4 text-sm p-6">
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Farm Name:</span>
                             <span className="font-medium">{mockFarmDetails.name}</span>
@@ -266,7 +266,7 @@ export default function ProfilePage() {
                             <span className="font-medium">{mockFarmDetails.location}</span>
                         </div>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="p-6">
                         <Button variant="outline" asChild className="w-full">
                             <Link href="/dashboard/farm-registration">
                                <Edit className="w-4 h-4 mr-2" />

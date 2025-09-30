@@ -86,8 +86,8 @@ export default function KrishiKhataPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div>
+    <div className="space-y-8">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Krishi Khata</h1>
         <p className="text-muted-foreground">Your digital ledger for tracking farm finances.</p>
       </div>
@@ -101,31 +101,31 @@ export default function KrishiKhataPage() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+            <CardTitle>Total Income</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="text-2xl font-bold">₹{totalIncome.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <CardTitle>Total Expenses</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="text-2xl font-bold">₹{totalExpenses.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card className={profitLoss >= 0 ? 'border-green-500/50' : 'border-red-500/50'}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profit / Loss</CardTitle>
+            <CardTitle>Profit / Loss</CardTitle>
             <MinusCircle className={`h-4 w-4 ${profitLoss >= 0 ? 'text-green-500' : 'text-red-500'}`} />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className={`text-2xl font-bold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               ₹{Math.abs(profitLoss).toLocaleString()}
             </div>
@@ -150,7 +150,7 @@ export default function KrishiKhataPage() {
             <TransactionDialog onSubmit={addTransaction} />
           </Dialog>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
             <Table>
                 <TableHeader>
                     <TableRow>

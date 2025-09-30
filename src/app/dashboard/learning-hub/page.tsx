@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -153,7 +154,7 @@ function AskAgriVaani() {
             Ask a question about your crops, and our AI will suggest relevant learning materials for you.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="flex gap-2">
             <Input
               placeholder="e.g., How do I treat pests on my tomato plants?"
@@ -171,7 +172,7 @@ function AskAgriVaani() {
           </div>
         </CardContent>
         {isLoading && (
-            <CardFooter>
+            <CardFooter className="p-6">
                  <p className="text-sm text-muted-foreground flex items-center">
                     <Bot className="mr-2 h-4 w-4 animate-pulse" />
                     AgriVaani is thinking...
@@ -179,7 +180,7 @@ function AskAgriVaani() {
             </CardFooter>
         )}
         {error && (
-             <CardFooter>
+             <CardFooter className="p-6">
                 <Alert variant="destructive">
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
@@ -187,7 +188,7 @@ function AskAgriVaani() {
             </CardFooter>
         )}
         {recommendations && (
-           <CardFooter className="flex-col items-start gap-4">
+           <CardFooter className="flex-col items-start gap-4 p-6">
                {recommendedArticles && recommendedArticles.length > 0 && (
                  <div className="w-full">
                     <h3 className="font-semibold mb-2 flex items-center gap-2"><Badge variant="secondary">Suggested Articles</Badge> - {recommendations.articles[0].reasoning}</h3>
@@ -203,10 +204,10 @@ function AskAgriVaani() {
                                              </div>
                                          )}
                                      </CardHeader>
-                                     <CardContent className="flex-grow pt-4">
-                                         <CardTitle className="text-base">{article!.title}</CardTitle>
+                                     <CardContent className="flex-grow pt-4 p-6">
+                                         <CardTitle>{article!.title}</CardTitle>
                                      </CardContent>
-                                     <CardFooter>
+                                     <CardFooter className="p-6">
                                          <Button variant="outline" size="sm" asChild>
                                              <Link href="#">
                                                  Read More <ArrowRight className="ml-2 h-4 w-4" />
@@ -237,7 +238,7 @@ function AskAgriVaani() {
                                        </div>
                                        </div>
                                        <div className="sm:w-2/3 flex flex-col p-4">
-                                            <CardTitle className="text-base">{video!.title}</CardTitle>
+                                            <CardTitle>{video!.title}</CardTitle>
                                             <CardDescription className="text-xs mt-1 flex-grow">{video!.description}</CardDescription>
                                             <div className="mt-2">
                                                  <Button size="sm" asChild>
@@ -274,8 +275,8 @@ function AskAgriVaani() {
 
 export default function LearningHubPage() {
   return (
-    <div className="space-y-12 max-w-7xl mx-auto">
-      <div className="text-center">
+    <div className="space-y-12">
+      <div className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight font-headline">
           AgriVaani
         </h1>
@@ -291,7 +292,7 @@ export default function LearningHubPage() {
       
       <section>
         <h2 className="text-2xl font-bold font-headline mb-4">Upcoming Features</h2>
-         <div className="grid gap-6 md:grid-cols-2">
+         <div className="grid gap-4 md:grid-cols-2">
             <Card className="bg-muted/40">
               <CardHeader className="flex flex-row items-center gap-4">
                   <Radio className="w-8 h-8 text-primary" />
@@ -331,7 +332,7 @@ export default function LearningHubPage() {
         <h2 className="text-2xl font-bold font-headline mb-4">
           Featured Articles
         </h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {articles.map((article) => {
             const image = PlaceHolderImages.find(
               (p) => p.id === article.imageId
@@ -351,13 +352,13 @@ export default function LearningHubPage() {
                     </div>
                   )}
                 </CardHeader>
-                <CardContent className="flex-grow">
-                  <CardTitle className="text-lg">{article.title}</CardTitle>
+                <CardContent className="flex-grow p-6">
+                  <CardTitle>{article.title}</CardTitle>
                   <CardDescription className="mt-2">
                     {article.description}
                   </CardDescription>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="p-6">
                   <Button variant="outline" asChild>
                     <Link href="#">
                       Read More <ArrowRight className="ml-2 h-4 w-4" />
@@ -374,7 +375,7 @@ export default function LearningHubPage() {
         <h2 className="text-2xl font-bold font-headline mb-4">
           Video Tutorials
         </h2>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {videos.map((video) => {
             const image = PlaceHolderImages.find(
               (p) => p.id === video.imageId
@@ -398,12 +399,12 @@ export default function LearningHubPage() {
                   </div>
                   <div className="sm:w-2/3 flex flex-col">
                     <CardHeader>
-                      <CardTitle className="text-lg">{video.title}</CardTitle>
+                      <CardTitle>{video.title}</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex-grow">
+                    <CardContent className="flex-grow p-6">
                       <CardDescription>{video.description}</CardDescription>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="p-6">
                       <Button asChild>
                         <Link href="#">
                           Watch Video <PlayCircle className="ml-2 h-4 w-4" />

@@ -62,7 +62,7 @@ export default function ChatPage() {
     }, [initialUser]);
 
   return (
-    <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] max-w-7xl mx-auto w-full">
+    <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] w-full">
          <h1 className="text-3xl font-bold tracking-tight font-headline sr-only">Chat</h1>
         <div className="grid grid-cols-1 md:grid-cols-3 h-full gap-4">
             <Card className={cn(
@@ -112,7 +112,7 @@ export default function ChatPage() {
             )}>
                 {selectedUser ? (
                     <>
-                        <CardHeader className="flex flex-row items-center gap-4 border-b">
+                        <CardHeader className="flex flex-row items-center gap-4 border-b p-4">
                              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedUser(null)}>
                                 <ArrowLeft />
                             </Button>
@@ -120,7 +120,7 @@ export default function ChatPage() {
                                 <AvatarImage src={selectedUser.avatar} />
                                 <AvatarFallback>{selectedUser.name.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            <CardTitle className="text-lg">{selectedUser.name}</CardTitle>
+                            <CardTitle>{selectedUser.name}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
                            {selectedUser.messages.map(msg => (
@@ -148,7 +148,7 @@ export default function ChatPage() {
                                </div>
                            ))}
                         </CardContent>
-                        <CardFooter className="border-t pt-4">
+                        <CardFooter className="border-t p-4">
                             <div className="flex w-full items-center gap-2">
                                 <Input placeholder="Type a message..." />
                                 <Button>

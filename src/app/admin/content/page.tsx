@@ -125,8 +125,8 @@ export default function ContentManagementPage() {
     
     return (
       <>
-        <div className="space-y-8 max-w-7xl mx-auto">
-            <div>
+        <div className="space-y-8">
+            <div className='mb-8'>
                 <h1 className="text-3xl font-bold font-headline">Content Management</h1>
                 <p className="text-muted-foreground">Manage the articles and videos available in the Learning Hub.</p>
             </div>
@@ -145,7 +145,7 @@ export default function ContentManagementPage() {
                 </div>
                 <CardDescription>Total: {articles.length} articles.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
                 <Table>
                 <TableHeader>
                     <TableRow>
@@ -195,7 +195,7 @@ export default function ContentManagementPage() {
                 </div>
                 <CardDescription>Total: {videos.length} videos.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
                 <Table>
                 <TableHeader>
                     <TableRow>

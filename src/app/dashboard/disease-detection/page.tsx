@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -87,8 +88,8 @@ export default function DiseaseDetectionPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div>
+    <div className="space-y-8">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">
           AI Disease Detection
         </h1>
@@ -105,7 +106,7 @@ export default function DiseaseDetectionPage() {
             stem, fruit).
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {!imagePreview ? (
             <div
               className="border-2 border-dashed border-muted-foreground/50 rounded-lg p-12 text-center bg-muted/20 hover:bg-muted/40 cursor-pointer"
@@ -140,7 +141,7 @@ export default function DiseaseDetectionPage() {
             </div>
           )}
         </CardContent>
-        <CardFooter className="flex flex-col items-stretch gap-4">
+        <CardFooter className="flex flex-col items-stretch gap-4 p-6">
           <Button onClick={handleDiagnose} disabled={!imageData || isLoading}>
             <Bot className="mr-2 h-4 w-4" />
             {isLoading ? 'Diagnosing...' : 'Diagnose with AI'}
@@ -160,7 +161,7 @@ export default function DiseaseDetectionPage() {
           <CardHeader>
             <CardTitle>Diagnosis Result</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 p-6">
             <Alert variant={result.isHealthy ? 'default' : 'destructive'} className={result.isHealthy ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : ''}>
               {result.isHealthy ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
               <AlertTitle>{result.isHealthy ? 'Plant Appears Healthy' : 'Disease Detected'}</AlertTitle>
