@@ -24,7 +24,7 @@ const RemedySchema = z.object({
   description: z
     .string()
     .describe(
-      'A detailed description of the remedy, including how to prepare and apply it.'
+      'A brief, one to two-line description of the remedy and how to apply it.'
     ),
 });
 
@@ -68,8 +68,8 @@ Analyze the following image of a crop:
 Your tasks are:
 1.  Identify if the crop is showing signs of any disease.
 2.  If a disease is present, identify it. If not, state that the plant appears healthy.
-3.  Suggest appropriate chemical remedies. For each remedy, provide its name and a detailed description including application instructions.
-4.  Suggest appropriate homemade or organic remedies. For each remedy, provide its name and a detailed description including how to prepare and apply it.
+3.  Suggest appropriate chemical remedies. For each remedy, provide its name and a brief, one to two-line description including application instructions.
+4.  Suggest appropriate homemade or organic remedies. For each remedy, provide its name and a brief, one to two-line description of how to prepare and apply it.
 5.  Set the 'isHealthy' flag to true if no disease is detected, and false otherwise.
 `,
 });
