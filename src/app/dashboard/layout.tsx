@@ -38,10 +38,11 @@ import { Button } from '@/components/ui/button';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
+import { VisuallyHidden } from '@/components/ui/visually-hidden';
 
 
 const navItems = [
@@ -124,11 +125,13 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <div className="flex flex-col h-screen">
+           <div className="flex flex-col h-screen">
             <DashboardHeader />
-            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-              <div className={cn(!isFarmRegistrationPage && "w-full max-w-7xl mx-auto")}>
-                {children}
+            <main className="flex-1 overflow-y-auto">
+              <div className={cn("w-full", !isFarmRegistrationPage && "p-4 sm:p-6 lg:p-8")}>
+                <div className={cn(!isFarmRegistrationPage && "w-full max-w-7xl mx-auto")}>
+                  {children}
+                </div>
               </div>
             </main>
           </div>
@@ -152,8 +155,14 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left">
-            <nav className="grid gap-6 text-lg font-medium">
+          <SheetContent side="left" className="p-0">
+            <SheetHeader className="p-2">
+                <VisuallyHidden>
+                    <SheetTitle>Navigation Menu</SheetTitle>
+                    <SheetDescription>Main navigation for the application.</SheetDescription>
+                </VisuallyHidden>
+            </SheetHeader>
+            <nav className="grid gap-6 text-lg font-medium p-4">
               <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
                 <Logo />
                 <span className="sr-only">AgriAssist</span>
@@ -262,5 +271,7 @@ function NotificationMenu() {
     </DropdownMenu>
   );
 }
+
+    
 
     
