@@ -217,3 +217,4 @@ export default function AgriBazarPage() {
 
         </div>
     )
+}
