@@ -15,6 +15,7 @@ import {
   Wallet,
   ClipboardList,
   Newspaper,
+  Users,
 } from 'lucide-react';
 
 import {
@@ -44,8 +45,9 @@ const navItems = [
   { href: '/dashboard/cultivation-guide', icon: ClipboardList, label: 'Cultivation Guide' },
   { href: '/dashboard/crop-recommendation', icon: BrainCircuit, label: 'AI Crop Tool' },
   { href: '/dashboard/disease-detection', icon: TestTubeDiagonal, label: 'AI Disease Detection' },
-  { href: '/dashboard/learning-hub', icon: BookOpen, label: 'Learning Hub' },
+  { href: '/dashboard/learning-hub', icon: BookOpen, label: 'AgriVaani' },
   { href: '/dashboard/agrinews', icon: Newspaper, label: 'AgriNews & Updates' },
+  { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
 

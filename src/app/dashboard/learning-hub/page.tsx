@@ -17,7 +17,15 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { ArrowRight, PlayCircle, Mic, Send, Bot } from 'lucide-react';
+import {
+  ArrowRight,
+  PlayCircle,
+  Mic,
+  Send,
+  Bot,
+  Radio,
+  Library,
+} from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
@@ -267,17 +275,43 @@ function AskAgriVaani() {
 export default function LearningHubPage() {
   return (
     <div className="space-y-12">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight font-headline">
-          Learning Hub (AgriVaani)
+      <div className="text-center">
+        <h1 className="text-4xl font-bold tracking-tight font-headline">
+          AgriVaani
         </h1>
-        <p className="text-muted-foreground">
-          Your knowledge base for smart farming. Find answers, articles, and
-          videos.
+        <p className="text-xl text-primary font-semibold mt-1">
+         “आवाज़ कृषि की , तरक्की किसान की ”
+        </p>
+        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
+          A multilingual audio-video platform covering 50+ crops and modern techniques, designed to support farmers' continuous learning.
         </p>
       </div>
       
       <AskAgriVaani />
+      
+      <section>
+        <h2 className="text-2xl font-bold font-headline mb-4">Upcoming Features</h2>
+         <div className="grid gap-6 md:grid-cols-2">
+            <Card className="bg-muted/40">
+              <CardHeader className="flex flex-row items-center gap-4">
+                  <Radio className="w-8 h-8 text-primary" />
+                  <div>
+                    <CardTitle>Agri Radio</CardTitle>
+                    <CardDescription>A radio stream with expert interviews, weather alerts, and farming practices, accessible offline.</CardDescription>
+                  </div>
+              </CardHeader>
+            </Card>
+             <Card className="bg-muted/40">
+              <CardHeader className="flex flex-row items-center gap-4">
+                   <Library className="w-8 h-8 text-primary" />
+                  <div>
+                    <CardTitle>E-Crop Library</CardTitle>
+                    <CardDescription>A digital collection of crop guides and resources in regional languages for easy reading and sharing.</CardDescription>
+                  </div>
+              </CardHeader>
+            </Card>
+         </div>
+      </section>
 
       <section>
         <h2 className="text-2xl font-bold font-headline mb-4">
