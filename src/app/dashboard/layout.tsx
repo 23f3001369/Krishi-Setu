@@ -12,6 +12,7 @@ import {
   LogOut,
   User,
   TestTubeDiagonal,
+  Wallet,
 } from 'lucide-react';
 
 import {
@@ -37,6 +38,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/farm-registration', icon: Tractor, label: 'Farm Registration' },
+  { href: '/dashboard/krishi-khata', icon: Wallet, label: 'Krishi Khata' },
   { href: '/dashboard/crop-recommendation', icon: BrainCircuit, label: 'AI Crop Tool' },
   { href: '/dashboard/disease-detection', icon: TestTubeDiagonal, label: 'AI Disease Detection' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'Learning Hub' },
