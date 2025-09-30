@@ -25,13 +25,33 @@ const totalSteps = 3;
 export default function FarmRegistrationPage() {
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
+    farmName: "",
+    farmSize: "",
+    mainCrops: "",
+    address: "",
+  });
   const farmImage = PlaceHolderImages.find(p => p.id === 'farm-photo-1');
 
-  const handleNext = () => setStep((prev) => Math.min(prev + 1, totalSteps));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const isStep1Valid = formData.farmName.trim() !== "" && formData.farmSize.trim() !== "" && formData.mainCrops.trim() !== "";
+  const isStep2Valid = formData.address.trim() !== "";
+
+  const handleNext = () => {
+    if (step === 1 && !isStep1Valid) return;
+    if (step === 2 && !isStep2Valid) return;
+    setStep((prev) => Math.min(prev + 1, totalSteps));
+  };
+  
   const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
+  
   const handleSubmit = () => {
     // Handle form submission logic
-    console.log("Form submitted");
+    console.log("Form submitted", formData);
     setIsSubmitted(true);
   };
 
@@ -78,8 +98,8 @@ export default function FarmRegistrationPage() {
             <Progress value={progress} className="w-full mt-2" />
         </CardHeader>
         <CardContent>
-            {step === 1 && <Step1 />}
-            {step === 2 && <Step2 />}
+            {step === 1 && <Step1 formData={formData} handleChange={handleChange} />}
+            {step === 2 && <Step2 formData={formData} handleChange={handleChange} />}
             {step === 3 && <Step3 image={farmImage} />}
         </CardContent>
         <CardFooter className="flex justify-between">
@@ -88,7 +108,7 @@ export default function FarmRegistrationPage() {
                 Back
             </Button>
             {step < totalSteps ? (
-            <Button onClick={handleNext}>
+            <Button onClick={handleNext} disabled={(step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)}>
                 Next
                 <ChevronsRight className="ml-2 h-4 w-4" />
             </Button>
@@ -104,31 +124,41 @@ export default function FarmRegistrationPage() {
   );
 }
 
-function Step1() {
+type StepProps = {
+    formData: {
+        farmName: string;
+        farmSize: string;
+        mainCrops: string;
+        address: string;
+    };
+    handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+}
+
+function Step1({ formData, handleChange }: StepProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="farmName">Farm Name</Label>
-        <Input id="farmName" placeholder="e.g., Sunny Meadows Farm" required />
+        <Input id="farmName" placeholder="e.g., Sunny Meadows Farm" required value={formData.farmName} onChange={handleChange} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="farmSize">Farm Size (in acres)</Label>
-        <Input id="farmSize" type="number" placeholder="e.g., 50" required />
+        <Input id="farmSize" type="number" placeholder="e.g., 50" required value={formData.farmSize} onChange={handleChange} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="mainCrops">Main Crops</Label>
-        <Textarea id="mainCrops" placeholder="e.g., Corn, Soybeans, Wheat" required />
+        <Textarea id="mainCrops" placeholder="e.g., Corn, Soybeans, Wheat" required value={formData.mainCrops} onChange={handleChange} />
       </div>
     </div>
   );
 }
 
-function Step2() {
+function Step2({ formData, handleChange }: StepProps) {
   return (
     <div className="space-y-4">
         <div className="space-y-2">
             <Label htmlFor="address">Address or general location</Label>
-            <Textarea id="address" placeholder="e.g., Near Springfield, Main road" required />
+            <Textarea id="address" placeholder="e.g., Near Springfield, Main road" required value={formData.address} onChange={handleChange} />
         </div>
         <div className="aspect-video w-full bg-muted rounded-lg flex items-center justify-center mt-4">
             <div className="text-center text-muted-foreground p-4">
