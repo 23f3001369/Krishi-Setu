@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, BookOpen, Settings, Search, Users, Trash2, Eye, Ban, AlertTriangle } from "lucide-react";
+import { MoreHorizontal, BookOpen, Settings, Search, Users, Trash2, Eye, Ban, AlertTriangle, Wheat } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,6 +60,8 @@ const initialUsers = [
     farmName: "Sunny Meadows Farm",
     status: "Active",
     joined: "2023-10-26",
+    majorCrops: "Corn, Soybeans",
+    profilePicUrl: "https://i.pravatar.cc/150?u=usr_1",
   },
   {
     id: "usr_2",
@@ -68,6 +70,8 @@ const initialUsers = [
     farmName: "Green Acres",
     status: "Active",
     joined: "2023-09-15",
+    majorCrops: "Wheat, Barley",
+    profilePicUrl: "https://i.pravatar.cc/150?u=usr_2",
   },
   {
     id: "usr_3",
@@ -76,6 +80,8 @@ const initialUsers = [
     farmName: "Harvest Moon Fields",
     status: "Pending",
     joined: "2023-11-01",
+    majorCrops: "Potatoes, Carrots",
+    profilePicUrl: "https://i.pravatar.cc/150?u=usr_3",
   },
    {
     id: "usr_4",
@@ -84,6 +90,8 @@ const initialUsers = [
     farmName: "El Sol Ranch",
     status: "Inactive",
     joined: "2023-05-20",
+    majorCrops: "Tomatoes, Peppers",
+    profilePicUrl: "https://i.pravatar.cc/150?u=usr_4",
   },
 ];
 
@@ -246,7 +254,7 @@ export default function AdminDashboardPage() {
       
       {/* User Details Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
             <DialogDescription>
@@ -257,7 +265,7 @@ export default function AdminDashboardPage() {
              <div className="space-y-4 py-4">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
-                        <AvatarImage src={`https://i.pravatar.cc/150?u=${selectedUser.id}`} alt={selectedUser.name} />
+                        <AvatarImage src={selectedUser.profilePicUrl} alt={selectedUser.name} />
                         <AvatarFallback>{selectedUser.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -266,18 +274,29 @@ export default function AdminDashboardPage() {
                     </div>
                 </div>
                 <Separator />
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <div className="font-semibold text-muted-foreground">Farm Name:</div>
-                    <div>{selectedUser.farmName}</div>
-                    <div className="font-semibold text-muted-foreground">Status:</div>
-                    <div>
-                         <Badge variant={selectedUser.status === 'Active' ? 'default' : selectedUser.status === 'Pending' ? 'secondary' : 'destructive'}>
-                            {selectedUser.status}
-                        </Badge>
-                    </div>
-                    <div className="font-semibold text-muted-foreground">Joined Date:</div>
-                    <div>{new Date(selectedUser.joined).toLocaleDateString()}</div>
+                <div className="text-sm space-y-3">
+                  <h4 className="font-medium text-base">Farm Details</h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                      <div className="font-semibold text-muted-foreground">Farm Name:</div>
+                      <div>{selectedUser.farmName}</div>
+                      <div className="font-semibold text-muted-foreground flex items-center gap-1"><Wheat className="w-3 h-3"/> Major Crops:</div>
+                      <div>{selectedUser.majorCrops}</div>
+                  </div>
                 </div>
+                <Separator />
+                 <div className="text-sm space-y-3">
+                    <h4 className="font-medium text-base">Account Details</h4>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <div className="font-semibold text-muted-foreground">Status:</div>
+                        <div>
+                            <Badge variant={selectedUser.status === 'Active' ? 'default' : selectedUser.status === 'Pending' ? 'secondary' : 'destructive'}>
+                                {selectedUser.status}
+                            </Badge>
+                        </div>
+                        <div className="font-semibold text-muted-foreground">Joined Date:</div>
+                        <div>{new Date(selectedUser.joined).toLocaleDateString()}</div>
+                    </div>
+                 </div>
             </div>
           )}
         </DialogContent>
