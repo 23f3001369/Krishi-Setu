@@ -152,7 +152,7 @@ export default function AgriBazarPage() {
                                 ))}
                             </div>
                         </CardContent>
-                        <CardFooter className="flex-col sm:flex-row gap-2">
+                        <CardFooter className="flex-col gap-2">
                             <Button className="w-full" onClick={() => handleViewProducts(supplier)}>View Products & Contact</Button>
                             <Button variant="outline" className="w-full" asChild>
                                 <Link href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(supplier.address)}`} target="_blank">
