@@ -126,7 +126,7 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col h-screen">
             <DashboardHeader />
             <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-              <div className={cn("w-full", !isFarmRegistrationPage && "max-w-7xl mx-auto")}>
+              <div className="w-full max-w-7xl mx-auto">
                 {children}
               </div>
             </main>
@@ -188,7 +188,7 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className={cn("w-full", !isFarmRegistrationPage && "max-w-7xl mx-auto")}>
+        <div className="w-full max-w-7xl mx-auto">
           {children}
         </div>
       </main>
