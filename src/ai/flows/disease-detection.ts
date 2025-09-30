@@ -19,13 +19,36 @@ const DiseaseDetectionInputSchema = z.object({
 });
 export type DiseaseDetectionInput = z.infer<typeof DiseaseDetectionInputSchema>;
 
-const DiseaseDetectionOutputSchema = z.object({
-  diseaseName: z.string().describe('The name of the detected disease. If no disease is detected, this should state that the plant appears healthy.'),
-  chemicalRemedies: z.string().describe('A list of suggested chemical remedies for the detected disease. Provide a comma-separated list.'),
-  homemadeRemedies: z.string().describe('A list of suggested homemade or organic remedies for the detected disease. Provide a comma-separated list.'),
-  isHealthy: z.boolean().describe('Whether the plant appears to be healthy or not.'),
+const RemedySchema = z.object({
+  name: z.string().describe('The name of the remedy.'),
+  description: z
+    .string()
+    .describe(
+      'A detailed description of the remedy, including how to prepare and apply it.'
+    ),
 });
-export type DiseaseDetectionOutput = z.infer<typeof DiseaseDetectionOutputSchema>;
+
+const DiseaseDetectionOutputSchema = z.object({
+  diseaseName: z
+    .string()
+    .describe(
+      'The name of the detected disease. If no disease is detected, this should state that the plant appears healthy.'
+    ),
+  chemicalRemedies: z
+    .array(RemedySchema)
+    .describe('A list of suggested chemical remedies for the detected disease.'),
+  homemadeRemedies: z
+    .array(RemedySchema)
+    .describe(
+      'A list of suggested homemade or organic remedies for the detected disease.'
+    ),
+  isHealthy: z
+    .boolean()
+    .describe('Whether the plant appears to be healthy or not.'),
+});
+export type DiseaseDetectionOutput = z.infer<
+  typeof DiseaseDetectionOutputSchema
+>;
 
 export async function diseaseDetection(
   input: DiseaseDetectionInput
@@ -43,13 +66,11 @@ Analyze the following image of a crop:
 {{media url=cropImage}}
 
 Your tasks are:
-1. Identify if the crop is showing signs of any disease.
-2. If a disease is present, identify it. If not, state that the plant appears healthy.
-3. Suggest appropriate chemical remedies for the identified disease.
-4. Suggest appropriate homemade or organic remedies for the identified disease.
-5. Set the 'isHealthy' flag to true if no disease is detected, and false otherwise.
-
-Provide the remedies as comma-separated lists.
+1.  Identify if the crop is showing signs of any disease.
+2.  If a disease is present, identify it. If not, state that the plant appears healthy.
+3.  Suggest appropriate chemical remedies. For each remedy, provide its name and a detailed description including application instructions.
+4.  Suggest appropriate homemade or organic remedies. For each remedy, provide its name and a detailed description including how to prepare and apply it.
+5.  Set the 'isHealthy' flag to true if no disease is detected, and false otherwise.
 `,
 });
 

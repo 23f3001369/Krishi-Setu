@@ -29,6 +29,7 @@ import {
   type DiseaseDetectionOutput,
 } from '@/ai/flows/disease-detection';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 export default function DiseaseDetectionPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -84,10 +85,6 @@ export default function DiseaseDetectionPage() {
         fileInputRef.current.value = '';
     }
   };
-
-  const renderRemedies = (remedies: string) => {
-    return remedies.split(',').map((remedy) => remedy.trim()).filter(r => r);
-  }
 
   return (
     <div className="space-y-8">
@@ -174,29 +171,41 @@ export default function DiseaseDetectionPage() {
 
             {!result.isHealthy && (
               <>
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Pill className="h-5 w-5 text-primary" />
-                    Chemical Remedies
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {renderRemedies(result.chemicalRemedies).map((remedy, i) => (
-                        <Badge key={i} variant="secondary">{remedy}</Badge>
-                    ))}
+                {(result.chemicalRemedies?.length ?? 0) > 0 && 
+                  <div className="space-y-4">
+                    <h3 className="font-semibold flex items-center gap-2 text-lg">
+                      <Pill className="h-5 w-5 text-primary" />
+                      Chemical Remedies
+                    </h3>
+                    <div className="space-y-4">
+                      {result.chemicalRemedies.map((remedy, i) => (
+                          <div key={`chem-${i}`} className="text-sm p-3 rounded-md bg-muted/50">
+                              <p className="font-semibold">{remedy.name}</p>
+                              <p className="text-muted-foreground mt-1">{remedy.description}</p>
+                          </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                }
 
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Leaf className="h-5 w-5 text-primary" />
-                    Homemade & Organic Remedies
-                  </h3>
-                   <div className="flex flex-wrap gap-2">
-                    {renderRemedies(result.homemadeRemedies).map((remedy, i) => (
-                        <Badge key={i} variant="outline">{remedy}</Badge>
-                    ))}
+                <Separator />
+
+                {(result.homemadeRemedies?.length ?? 0) > 0 &&
+                  <div className="space-y-4">
+                    <h3 className="font-semibold flex items-center gap-2 text-lg">
+                      <Leaf className="h-5 w-5 text-primary" />
+                      Homemade & Organic Remedies
+                    </h3>
+                    <div className="space-y-4">
+                      {result.homemadeRemedies.map((remedy, i) => (
+                          <div key={`home-${i}`} className="text-sm p-3 rounded-md bg-muted/50">
+                              <p className="font-semibold">{remedy.name}</p>
+                              <p className="text-muted-foreground mt-1">{remedy.description}</p>
+                          </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                }
               </>
             )}
             <Alert variant="default" className="text-xs">
