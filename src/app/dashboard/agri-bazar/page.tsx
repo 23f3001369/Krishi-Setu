@@ -33,11 +33,6 @@ const initialSuppliers = [
     distance: '2.5 km',
     products: ['Fertilizers', 'Seeds', 'Pesticides'],
     image: PlaceHolderImages.find(p => p.id === 'learning-hub-article-3'),
-    inventory: [
-        { id: 'prod1', name: 'Urea Fertilizer (45kg)', price: 300 },
-        { id: 'prod2', name: 'DAP Fertilizer (45kg)', price: 1350 },
-        { id: 'prod3', name: 'Pioneer Corn Seeds (5kg)', price: 1200 },
-    ]
   },
   {
     id: 2,
@@ -48,11 +43,6 @@ const initialSuppliers = [
     distance: '5 km',
     products: ['Equipment', 'Tools', 'Shovels', 'Hoes', 'Rakes'],
      image: PlaceHolderImages.find(p => p.id === 'learning-hub-video-2'),
-     inventory: [
-        { id: 'prod4', name: 'Hand Hoe', price: 250 },
-        { id: 'prod5', name: 'Garden Rake', price: 400 },
-        { id: 'prod6', name: 'Spade', price: 350 },
-     ]
   },
   {
     id: 3,
@@ -63,10 +53,6 @@ const initialSuppliers = [
     distance: '7 km',
     products: ['Drip Irrigation', 'Fertilizers', 'Seeds'],
     image: PlaceHolderImages.find(p => p.id === 'learning-hub-article-2'),
-    inventory: [
-        { id: 'prod7', name: 'Drip Irrigation Kit (1 acre)', price: 15000 },
-        { id: 'prod8', name: 'NPK Fertilizer (50kg)', price: 1500 },
-    ]
   }
 ];
 
@@ -180,33 +166,21 @@ export default function AgriBazarPage() {
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-2xl">
+                <DialogContent className="sm:max-w-lg">
                     {selectedSupplier && (
                         <>
                             <DialogHeader>
                                 <DialogTitle>Products at {selectedSupplier.name}</DialogTitle>
-
                                 <DialogDescription>
-                                    Here is a list of available products. Please contact the supplier directly to purchase or inquire.
+                                    This supplier offers the following categories of products. Please contact them directly to inquire about specific items and availability.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="py-4">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Product Name</TableHead>
-                                            <TableHead className="text-right">Price</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {selectedSupplier.inventory.map((item) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell className="font-medium">{item.name}</TableCell>
-                                            <TableCell className="text-right">₹{item.price.toLocaleString()}</TableCell>
-                                        </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedSupplier.products.map(product => (
+                                        <Badge key={product} variant="default" className="text-base px-3 py-1">{product}</Badge>
+                                    ))}
+                                </div>
                             </div>
                             <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-4 bg-muted/50 p-4 rounded-lg items-center">
                                <div className="text-sm text-muted-foreground">
