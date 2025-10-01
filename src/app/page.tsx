@@ -1,9 +1,11 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/shared/logo';
 import { Leaf, Shield } from 'lucide-react';
 import Image from 'next/image';
 import {PlaceHolderImages} from '@/lib/placeholder-images';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find(p => p.id === "hero-image");
@@ -15,7 +17,7 @@ export default function Home() {
           <Logo />
           <span className="sr-only">AgriAssist</span>
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
+        <nav className="ml-auto flex items-center gap-4 sm:gap-6">
           <Button asChild variant="ghost">
             <Link href="/login" className="flex items-center gap-2" prefetch={false}>
               <Leaf className="h-4 w-4" />
@@ -28,6 +30,7 @@ export default function Home() {
               Admin Login
             </Link>
           </Button>
+          <ThemeToggle />
         </nav>
       </header>
       <main className="flex-1">
