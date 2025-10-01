@@ -35,8 +35,8 @@ const formSchema = z.object({
     message: "Password must be at least 6 characters.",
   }),
 }).refine(data => data.email, {
-    message: "Email is required.", // Firebase requires email for email/password auth
-    path: ["email"], // Show error on email field
+    message: "Email is required for login.",
+    path: ["email"],
 });
 
 export function FarmerSignUpForm() {
