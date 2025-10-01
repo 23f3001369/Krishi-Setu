@@ -1,9 +1,12 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { auth, db } from "@/lib/firebase";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -30,8 +34,8 @@ const formSchema = z.object({
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
   }),
-}).refine(data => data.email || data.mobile, {
-    message: "Either email or mobile number is required.",
+}).refine(data => data.email, {
+    message: "Email is required.", // Firebase requires email for email/password auth
     path: ["email"], // Show error on email field
 });
 
@@ -52,19 +56,65 @@ export function FarmerSignUpForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    // TODO: Implement Firebase signup logic here
-    console.log(values);
 
-    // Mock successful signup
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Account Created",
-      description: "You have been successfully signed up. Redirecting to login...",
-    });
-    router.push("/login");
+    if (!values.email) {
+      toast({
+        variant: "destructive",
+        title: "Sign-up Failed",
+        description: "Email is a required field.",
+      });
+      setIsLoading(false);
+      return;
+    }
 
-    setIsLoading(false);
+    try {
+      // 1. Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      // 2. Store user info in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        name: values.name,
+        email: values.email,
+        mobile: values.mobile || "",
+        createdAt: new Date(),
+      });
+      
+      toast({
+        title: "Account Created",
+        description: "You have been successfully signed up. Redirecting to login...",
+      });
+      router.push("/login");
+
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      let description = "An unknown error occurred during sign up.";
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          description = "This email address is already in use by another account.";
+          break;
+        case "auth/invalid-email":
+          description = "The email address you entered is not valid.";
+          break;
+        case "auth/operation-not-allowed":
+          description = "Email/password accounts are not enabled. Please contact support.";
+          break;
+        case "auth/weak-password":
+          description = "The password is too weak. Please choose a stronger password.";
+          break;
+        case "auth/configuration-not-found":
+            description = "Firebase configuration is missing. Please contact support.";
+            break;
+      }
+      toast({
+        variant: "destructive",
+        title: "Sign-up Failed",
+        description: description,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -93,7 +143,7 @@ export function FarmerSignUpForm() {
                 <Input placeholder="name@example.com" {...field} />
               </FormControl>
               <FormDescription>
-                You can sign up with an email or a mobile number.
+                Email is required for login. You can add a mobile number too.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -104,7 +154,7 @@ export function FarmerSignUpForm() {
           name="mobile"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Mobile Number</FormLabel>
+              <FormLabel>Mobile Number (Optional)</FormLabel>
               <FormControl>
                 <Input placeholder="9876543210" {...field} />
               </FormControl>
