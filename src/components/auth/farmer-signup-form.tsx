@@ -34,8 +34,8 @@ const formSchema = z.object({
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
   }),
-}).refine(data => data.email, {
-    message: "Email is required for login.",
+}).refine(data => data.email || data.mobile, {
+    message: "Either email or mobile number is required.",
     path: ["email"],
 });
 
@@ -61,7 +61,7 @@ export function FarmerSignUpForm() {
       toast({
         variant: "destructive",
         title: "Sign-up Failed",
-        description: "Email is a required field.",
+        description: "Email is a required field for web-based signup.",
       });
       setIsLoading(false);
       return;
@@ -104,7 +104,10 @@ export function FarmerSignUpForm() {
           description = "The password is too weak. Please choose a stronger password.";
           break;
         case "auth/configuration-not-found":
-            description = "Firebase configuration is missing. Please contact support.";
+            description = "Firebase configuration is missing or invalid. Please contact support.";
+            break;
+        default:
+            description = error.message;
             break;
       }
       toast({
