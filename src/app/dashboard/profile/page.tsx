@@ -25,8 +25,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Camera, Edit, Shield } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useUser } from '@/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -49,11 +51,6 @@ const passwordFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
-// Mock user data
-const defaultValues: Partial<ProfileFormValues> = {
-  name: 'Farmer',
-  email: 'farmer@agriassist.com',
-};
 
 const mockFarmDetails = {
     name: 'Sunny Meadows Farm',
@@ -66,10 +63,11 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const { user, isUserLoading } = useUser();
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues,
+    defaultValues: { name: '', email: '' },
     mode: 'onChange',
   });
 
@@ -82,11 +80,23 @@ export default function ProfilePage() {
     },
     mode: 'onChange',
   });
+  
+  useEffect(() => {
+    if (user) {
+      profileForm.reset({
+        name: user.displayName || '',
+        email: user.email || '',
+      });
+    }
+  }, [user, profileForm]);
+
 
   async function onProfileSubmit(data: ProfileFormValues) {
     setIsLoading(true);
     console.log(data);
-    // Mock API call
+    // TODO: Implement logic to update user profile in Firebase Auth
+    // (e.g., updateProfile(auth.currentUser, { displayName: data.name }))
+    // and in Firestore.
     await new Promise((resolve) => setTimeout(resolve, 1000));
     toast({
       title: 'Profile Updated',
@@ -98,7 +108,7 @@ export default function ProfilePage() {
   async function onPasswordSubmit(data: PasswordFormValues) {
     setIsPasswordLoading(true);
     console.log(data);
-     // Mock API call
+    // TODO: Implement Firebase password change logic
     await new Promise((resolve) => setTimeout(resolve, 1000));
     toast({
       title: 'Password Changed',
@@ -132,18 +142,25 @@ export default function ProfilePage() {
                              <div className="flex items-center gap-4">
                                 <div className="relative">
                                     <Avatar className="h-20 w-20">
-                                        <AvatarImage src="https://picsum.photos/seed/avatar/200/200" alt="Farmer" />
-                                        <AvatarFallback>F</AvatarFallback>
+                                        <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/avatar/200/200"} alt={user?.displayName || "Farmer"} />
+                                        <AvatarFallback>{user?.displayName?.charAt(0) || 'F'}</AvatarFallback>
                                     </Avatar>
                                     <Button size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full h-7 w-7">
                                         <Camera className="h-4 w-4" />
                                         <span className="sr-only">Change Photo</span>
                                     </Button>
                                 </div>
-                                <div>
-                                    <h2 className="text-xl font-semibold">{profileForm.getValues('name')}</h2>
-                                    <p className="text-sm text-muted-foreground">{profileForm.getValues('email')}</p>
-                                </div>
+                                {isUserLoading ? (
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-6 w-32" />
+                                        <Skeleton className="h-4 w-48" />
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <h2 className="text-xl font-semibold">{profileForm.watch('name') || 'No Name'}</h2>
+                                        <p className="text-sm text-muted-foreground">{profileForm.watch('email')}</p>
+                                    </div>
+                                )}
                             </div>
                             <FormField
                                 control={profileForm.control}
@@ -152,7 +169,7 @@ export default function ProfilePage() {
                                     <FormItem>
                                     <FormLabel>Full Name</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Your Name" {...field} />
+                                        <Input placeholder="Your Name" {...field} disabled={isUserLoading} />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -165,7 +182,7 @@ export default function ProfilePage() {
                                     <FormItem>
                                     <FormLabel>Email Address</FormLabel>
                                     <FormControl>
-                                        <Input type="email" placeholder="your.email@example.com" {...field} />
+                                        <Input type="email" placeholder="your.email@example.com" {...field} disabled />
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -173,7 +190,7 @@ export default function ProfilePage() {
                                 />
                         </CardContent>
                         <CardFooter className="p-6">
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" disabled={isLoading || isUserLoading}>
                                 {isLoading ? 'Saving...' : 'Save Changes'}
                             </Button>
                         </CardFooter>
