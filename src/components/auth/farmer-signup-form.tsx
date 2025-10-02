@@ -116,7 +116,15 @@ export function FarmerSignUpForm() {
       let description = "An unknown error occurred during sign up.";
       switch (error.code) {
         case "auth/email-already-in-use":
-          description = "This email is already registered. Please try logging in instead.";
+          description = (
+            <span>
+              This email is already registered. Please{' '}
+              <Link href="/login" className="underline font-bold">
+                log in
+              </Link>{' '}
+              instead.
+            </span>
+          );
           break;
         case "auth/invalid-email":
           description = "The email address you entered is not valid.";
