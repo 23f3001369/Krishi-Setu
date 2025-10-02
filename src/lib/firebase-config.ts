@@ -4,7 +4,7 @@ export const firebaseConfig = {
   apiKey: "AIzaSyA_...REDACTED_FOR_SECURITY...", // This key has been corrected.
   authDomain: "studio-2008248492-c4457.firebaseapp.com",
   projectId: "studio-2008248492-c4457",
-  storageBucket: "studio-2008248492-c4457.appspot.com",
+  storageBucket: "studio-200824_...REDACTED_FOR_SECURITY...",
   messagingSenderId: "876344628825",
   appId: "1:876344628825:web:9def08508c85db3e210348",
 };
