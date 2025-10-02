@@ -106,6 +106,9 @@ export function FarmerSignUpForm() {
         case "auth/weak-password":
           description = "The password is too weak. Please choose a stronger password.";
           break;
+        case "auth/api-key-not-valid":
+          description = "The API key for Firebase is not valid. Please contact support.";
+          break;
         default:
             description = error.message;
             break;

@@ -6,6 +6,7 @@ import type { FirebaseContextType } from './provider';
 import { FirebaseProvider } from './provider';
 import { initializeFirebase } from './index';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 export function FirebaseClientProvider({
   children,
@@ -22,7 +23,9 @@ export function FirebaseClientProvider({
       setFirebase({ firebaseApp, auth, firestore });
     };
 
-    init();
+    if (typeof window !== 'undefined') {
+        init();
+    }
   }, []);
 
   // While Firebase is initializing, we return a loading state.
@@ -31,8 +34,24 @@ export function FirebaseClientProvider({
   if (!firebase) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-muted/40 p-4">
-            <div className="w-full max-w-md space-y-4">
-                <Skeleton className="h-[300px] w-full" />
+            <div className="w-full max-w-md">
+                 <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-48" />
+                        <Skeleton className="h-4 w-64" />
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                             <Skeleton className="h-4 w-24" />
+                             <Skeleton className="h-10 w-full" />
+                        </div>
+                         <div className="space-y-2">
+                             <Skeleton className="h-4 w-24" />
+                             <Skeleton className="h-10 w-full" />
+                        </div>
+                        <Skeleton className="h-10 w-full" />
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
