@@ -62,8 +62,19 @@ export function FarmerSignUpForm() {
 
     try {
       // Check for mobile number uniqueness before creating the user
-      const q = query(collection(db, "farmers"), where("mobile", "==", values.mobile));
-      const querySnapshot = await getDocs(q);
+      const farmersCollectionRef = collection(db, "farmers");
+      const q = query(farmersCollectionRef, where("mobile", "==", values.mobile));
+      
+      const querySnapshot = await getDocs(q).catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: 'farmers',
+          operation: 'list'
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        // Re-throw the error to stop execution
+        throw serverError;
+      });
+
       
       if (!querySnapshot.empty) {
         toast({
@@ -112,41 +123,49 @@ export function FarmerSignUpForm() {
       router.push("/login");
 
     } catch (error: any) {
-      console.error("Signup error:", error);
-      let description = "An unknown error occurred during sign up.";
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          description = (
-            <span>
-              This email is already registered. Please{' '}
-              <Link href="/login" className="underline font-bold">
-                log in
-              </Link>{' '}
-              instead.
-            </span>
-          );
-          break;
-        case "auth/invalid-email":
-          description = "The email address you entered is not valid.";
-          break;
-        case "auth/operation-not-allowed":
-          description = "Email/password accounts are not enabled. Please contact support.";
-          break;
-        case "auth/weak-password":
-          description = "The password is too weak. Please choose a stronger password.";
-          break;
-        case "auth/api-key-not-valid":
-          description = "There's an issue with the application configuration. Please contact support.";
-          break;
-        default:
-            description = "An unexpected error occurred. Please try again.";
-            break;
+      // This will catch the re-thrown Firestore error as well as Auth errors
+      if (error.name === 'FirebaseError') {
+          console.error("Signup error:", error);
+          let description: React.ReactNode = "An unknown error occurred during sign up.";
+          switch (error.code) {
+            case "auth/email-already-in-use":
+              description = (
+                <span>
+                  This email is already registered. Please{' '}
+                  <Link href="/login" className="underline font-bold">
+                    log in
+                  </Link>{' '}
+                  instead.
+                </span>
+              );
+              break;
+            case "auth/invalid-email":
+              description = "The email address you entered is not valid.";
+              break;
+            case "auth/operation-not-allowed":
+              description = "Email/password accounts are not enabled. Please contact support.";
+              break;
+            case "auth/weak-password":
+              description = "The password is too weak. Please choose a stronger password.";
+              break;
+            case "auth/api-key-not-valid":
+              description = "There's an issue with the application configuration. Please contact support.";
+              break;
+            case "permission-denied":
+                 // This case will likely not be hit if the global handler is working, but it is good practice
+                 description = "You do not have permission to perform this action. Please check the security rules.";
+                 break;
+            default:
+                description = "An unexpected error occurred. Please try again.";
+                break;
+          }
+          toast({
+            variant: "destructive",
+            title: "Sign-up Failed",
+            description: description,
+          });
       }
-      toast({
-        variant: "destructive",
-        title: "Sign-up Failed",
-        description: description,
-      });
+      // The global error handler will catch the FirestorePermissionError and display it
     } finally {
       setIsLoading(false);
     }
