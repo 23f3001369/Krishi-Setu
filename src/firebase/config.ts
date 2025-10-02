@@ -1,5 +1,4 @@
-// This file is intentionally separate to ensure the config is loaded correctly by Next.js.
-// IMPORTANT: This file was manually corrected to fix an invalid API key from the tool.
+// src/firebase/config.ts
 export const firebaseConfig = {
   apiKey: "AIzaSyDsK0FwgyTAtXCh1yZ6JT-pVpIIhXYueOI",
   authDomain: "studio-2008248492-c4457.firebaseapp.com",

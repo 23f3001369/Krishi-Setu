@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
-import '@/lib/firebase';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'AgriAssist',
@@ -28,7 +28,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <FirebaseClientProvider>
+            {children}
+          </FirebaseClientProvider>
           <Toaster />
         </ThemeProvider>
       </body>
