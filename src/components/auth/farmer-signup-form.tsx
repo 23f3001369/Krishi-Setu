@@ -105,9 +105,6 @@ export function FarmerSignUpForm() {
         case "auth/weak-password":
           description = "The password is too weak. Please choose a stronger password.";
           break;
-        case "auth/configuration-not-found":
-            description = "Firebase configuration is missing or invalid. Please contact support.";
-            break;
         default:
             description = error.message;
             break;

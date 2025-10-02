@@ -7,22 +7,14 @@ import { firebaseConfig } from './config';
 export { FirebaseProvider, useFirebase, useFirebaseApp, useAuth, useFirestore } from './provider';
 export { FirebaseClientProvider } from './client-provider';
 
-let firebaseApp: FirebaseApp;
-let auth: Auth;
-let firestore: Firestore;
-
 export async function initializeFirebase(): Promise<{
   firebaseApp: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
 }> {
-  if (!getApps().length) {
-    firebaseApp = initializeApp(firebaseConfig);
-  } else {
-    firebaseApp = getApp();
-  }
-  auth = getAuth(firebaseApp);
-  firestore = getFirestore(firebaseApp);
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const firestore = getFirestore(app);
 
-  return { firebaseApp, auth, firestore };
+  return { firebaseApp: app, auth, firestore };
 }
