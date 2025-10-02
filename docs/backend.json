@@ -1,0 +1,257 @@
+{
+  "entities": {
+    "Farm": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Farm",
+      "type": "object",
+      "description": "Represents a farm registered by a farmer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Farm entity."
+        },
+        "farmerId": {
+          "type": "string",
+          "description": "Reference to the Farmer who owns this farm. (Relationship: Farmer 1:N Farm)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the farm."
+        },
+        "location": {
+          "type": "string",
+          "description": "GPS coordinates of the farm location."
+        },
+        "photos": {
+          "type": "array",
+          "description": "Array of URLs pointing to photos of the farm.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "details": {
+          "type": "string",
+          "description": "Additional details about the farm."
+        }
+      },
+      "required": [
+        "id",
+        "farmerId",
+        "name",
+        "location"
+      ]
+    },
+    "Farmer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Farmer",
+      "type": "object",
+      "description": "Represents a farmer using the application. User authentication is handled by Firebase.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Farmer entity. This ID corresponds to the Firebase user ID."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the farmer."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the farmer.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the farmer."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email"
+      ]
+    },
+    "WeatherForecast": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "WeatherForecast",
+      "type": "object",
+      "description": "Represents weather forecast data for a specific location and time.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the WeatherForecast entry."
+        },
+        "location": {
+          "type": "string",
+          "description": "The location (e.g., GPS coordinates) for which the forecast is relevant."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp of the forecast data.",
+          "format": "date-time"
+        },
+        "temperature": {
+          "type": "number",
+          "description": "The temperature in Celsius."
+        },
+        "humidity": {
+          "type": "number",
+          "description": "The humidity percentage."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the weather condition."
+        },
+        "alerts": {
+          "type": "array",
+          "description": "Weather alerts and corresponding suggested actions.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "location",
+        "timestamp",
+        "temperature",
+        "humidity",
+        "description"
+      ]
+    },
+    "LearningArticle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LearningArticle",
+      "type": "object",
+      "description": "Represents an article in the Learning Hub (AgriVaani).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the LearningArticle entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the learning article."
+        },
+        "content": {
+          "type": "string",
+          "description": "The article content (e.g., HTML or Markdown)."
+        },
+        "author": {
+          "type": "string",
+          "description": "The author of the article."
+        },
+        "publicationDate": {
+          "type": "string",
+          "description": "Date when the article was published.",
+          "format": "date-time"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Tags associated with the article.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "author",
+        "publicationDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/farmers/{farmerId}",
+        "definition": {
+          "entityName": "Farmer",
+          "schema": {
+            "$ref": "#/backend/entities/Farmer"
+          },
+          "description": "Stores farmer profiles.  The 'farmerId' corresponds to the Firebase Auth UID, establishing path-based ownership.",
+          "params": [
+            {
+              "name": "farmerId",
+              "description": "The Firebase Auth UID of the farmer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/farms/{farmId}",
+        "definition": {
+          "entityName": "Farm",
+          "schema": {
+            "$ref": "#/backend/entities/Farm"
+          },
+          "description": "Stores farm data. Includes 'farmerId' to indicate ownership.",
+          "params": [
+            {
+              "name": "farmId",
+              "description": "Unique ID of the farm."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/weather_forecasts/{weatherForecastId}",
+        "definition": {
+          "entityName": "WeatherForecast",
+          "schema": {
+            "$ref": "#/backend/entities/WeatherForecast"
+          },
+          "description": "Stores weather forecast data.",
+          "params": [
+            {
+              "name": "weatherForecastId",
+              "description": "Unique ID of the weather forecast entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/learning_articles/{learningArticleId}",
+        "definition": {
+          "entityName": "LearningArticle",
+          "schema": {
+            "$ref": "#/backend/entities/LearningArticle"
+          },
+          "description": "Stores learning articles.",
+          "params": [
+            {
+              "name": "learningArticleId",
+              "description": "Unique ID of the learning article."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{uid}",
+        "definition": {
+          "entityName": "roles_admin",
+          "schema": {
+            "$ref": "#/backend/entities/Farmer"
+          },
+          "description": "Collection to store admin roles.  Existence of document determines admin status.",
+          "params": [
+            {
+              "name": "uid",
+              "description": "The Firebase Auth UID of the admin."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to address the error 'Firebase: Error (auth/requests-to-this-api-identitytoolkit-method-google.cloud.identitytoolkit.v1.authenticationservice.signup-are-blocked.)' by aligning the data structure with the application's authentication and authorization requirements and prioritizing security and scalability. This error suggests there may be an issue with the Firebase Authentication configuration related to blocking user sign-ups. While the data structure itself won't directly fix this, it is important to structure data in a secure and efficient manner to prevent authorization issues. The design emphasizes Authorization Independence, clarity, and simplicity in security rules.\n\n**Authorization Independence:** The Farmer documents are stored directly under `/farmers/{farmerId}` which uses the Firebase Auth UID as the document ID, directly linking the user's authentication to their data. This eliminates the need for complex `get()` calls in security rules, making them more efficient and easier to debug.  Farm documents are stored under `/farms/{farmId}`, and include the `farmerId`. WeatherForecast documents are stored under `/weather_forecasts/{weatherForecastId}`. LearningArticle documents are stored under `/learning_articles/{learningArticleId}`.\n\n**Structural Segregation:**  Different data types are stored in separate collections (e.g., `farmers`, `farms`, `weather_forecasts`, `learning_articles`). This segregation simplifies security rules as each collection can have its own specific access control policies.  For example, only authenticated farmers should be able to create or modify their own farm data, while the weather forecast data might have different access rules depending on the source of the data.  Admin users could potentially have read/write access to all collections through secure backend functions, rather than direct Firestore rules.\n\n**Access Modeling:** Farmers' personal data is stored under `/farmers/{farmerId}`, enabling path-based ownership. Farms are stored under `/farms/{farmId}` with a `farmerId` field, enabling querying and listing farms owned by a specific farmer. WeatherForecasts are globally available under `/weather_forecasts/{weatherForecastId}`. LearningArticles are also stored globally under `/learning_articles/{learningArticleId}`. Global roles are implemented via a separate `/roles_admin/{uid}` collection.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations. For instance, listing all farms owned by a specific farmer can be achieved by querying the `/farms` collection with a `where('farmerId', '==', request.auth.uid)` clause. The `farmerId` field is indexed to make this query efficient.  Separating data into distinct collections with clear ownership allows for rules to be easily applied to prevent unauthorized listing of data.\n\nBy adhering to these principles and mandates, the Firestore structure is designed to be scalable, secure, and easily maintainable, minimizing the risk of authorization-related issues and ensuring data integrity."
+  }
+}

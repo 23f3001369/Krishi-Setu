@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to farmer profile data.
+     * @path /farmers/{farmerId}
+     * @allow (create) Authenticated user can create their own profile if the farmerId matches their UID.
+     * @allow (get, list, update, delete) Authenticated user can only access their own profile.
+     * @deny (create) Authenticated user cannot create a profile with a different farmerId.
+     * @deny (get, list, update, delete) Unauthenticated user cannot access any profile.
+     * @principle Enforces document ownership for reads and writes.  Also enforces userId consistency on create and immutability.
+     */
+    match /farmers/{farmerId} {
+      //Function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      //Function to check if the user is the owner
+      function isOwner(farmerId) {
+        return request.auth.uid == farmerId;
+      }
+      function isExistingOwner(farmerId) {
+        return isSignedIn() && isOwner(farmerId);
+      }
+
+      // Read rules
+      allow get: if isSignedIn() && isOwner(farmerId);
+      allow list: if isSignedIn() && isOwner(farmerId);
+
+      // Write rules
+      allow create: if isSignedIn() && isOwner(farmerId) && request.auth.uid == farmerId;
+      allow update: if isExistingOwner(farmerId);
+      allow delete: if isExistingOwner(farmerId);
+    }
+
+    /**
+     * @description Controls access to farm data.
+     * @path /farms/{farmId}
+     * @allow (create) Authenticated user can create a farm if their UID matches the farm's farmerId.
+     * @allow (get, list) Publicly accessible.
+     * @allow (update, delete) Authenticated user can only update/delete their own farms.
+     * @deny (create) Authenticated user cannot create a farm for another farmer.
+     * @deny (update, delete) Unauthenticated user cannot update/delete any farm.
+     * @principle Enforces document ownership for writes, public read.
+     */
+    match /farms/{farmId} {
+      //Function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      //Function to check if the user is the owner
+      function isOwner() {
+        return request.auth.uid == resource.data.farmerId;
+      }
+      function isExistingOwner() {
+        return isSignedIn() && request.auth.uid == resource.data.farmerId;
+      }
+      //Function to check if the farmerId matches auth.uid when creating
+      function isCreatingOwnedBy() {
+          return isSignedIn() && request.auth.uid == request.resource.data.farmerId;
+      }
+
+      // Read rules
+      allow get: if true;
+      allow list: if true;
+
+      // Write rules
+      allow create: if isCreatingOwnedBy();
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
+
+    /**
+     * @description Controls access to weather forecast data.
+     * @path /weather_forecasts/{weatherForecastId}
+     * @allow (get, list) Publicly accessible.
+     * @deny (create, update, delete) No direct client-side writes allowed.
+     * @principle Public read, owner-only writes.
+     */
+    match /weather_forecasts/{weatherForecastId} {
+      // Read rules
+      allow get: if true;
+      allow list: if true;
+
+      // Write rules
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Controls access to learning articles.
+     * @path /learning_articles/{learningArticleId}
+     * @allow (get, list) Publicly accessible.
+     * @deny (create, update, delete) No direct client-side writes allowed.
+     * @principle Public read, owner-only writes.
+     */
+    match /learning_articles/{learningArticleId} {
+      // Read rules
+      allow get: if true;
+      allow list: if true;
+
+      // Write rules
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    /**
+     * @description Controls access to admin roles.
+     * @path /roles_admin/{uid}
+     * @allow (get) Any authenticated user can check for admin role.
+     * @allow (create, update, delete) Restricted to backend functions/admin SDK.
+     * @principle Admin role management, restricts access to only admins.
+     */
+    match /roles_admin/{uid} {
+        // Read rules
+        allow get: if isSignedIn();
+        allow list: if false;
+
+        // Write rules - only allow server to write
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+    }
+  }
+}
