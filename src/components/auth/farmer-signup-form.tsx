@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
@@ -75,7 +75,11 @@ export function FarmerSignUpForm() {
       // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
+      
+      // 2. Update the user's profile with their name
+      await updateProfile(user, { displayName: values.name });
 
+      // 3. Prepare user data for Firestore
       const userData = {
         uid: user.uid,
         name: values.name,
@@ -86,7 +90,7 @@ export function FarmerSignUpForm() {
       
       const userDocRef = doc(db, "farmers", user.uid);
 
-      // 2. Store user info in Firestore (non-blocking with custom error handling)
+      // 4. Store user info in Firestore (non-blocking with custom error handling)
       setDoc(userDocRef, userData)
         .catch((serverError) => {
             const permissionError = new FirestorePermissionError({
