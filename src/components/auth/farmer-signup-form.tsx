@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,14 +30,13 @@ const formSchema = z.object({
   }),
   email: z.string().email({
     message: "Please enter a valid email address.",
-  }).optional().or(z.literal('')),
-  mobile: z.string().optional().or(z.literal('')),
+  }),
+  mobile: z.string().min(10, {
+    message: "Please enter a valid 10-digit mobile number.",
+  }),
   password: z.string().min(6, {
     message: "Password must be at least 6 characters.",
   }),
-}).refine(data => data.email || data.mobile, {
-    message: "Either email or mobile number is required.",
-    path: ["email"],
 });
 
 export function FarmerSignUpForm() {
@@ -61,17 +60,21 @@ export function FarmerSignUpForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    if (!values.email) {
-      toast({
-        variant: "destructive",
-        title: "Sign-up Failed",
-        description: "Email is a required field for web-based signup.",
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      // Check for mobile number uniqueness before creating the user
+      const q = query(collection(db, "farmers"), where("mobile", "==", values.mobile));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        toast({
+          variant: "destructive",
+          title: "Sign-up Failed",
+          description: "This mobile number is already registered. Please try a different number or log in.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
@@ -84,7 +87,7 @@ export function FarmerSignUpForm() {
         uid: user.uid,
         name: values.name,
         email: values.email,
-        mobile: values.mobile || "",
+        mobile: values.mobile,
         createdAt: new Date(),
       };
       
@@ -166,9 +169,6 @@ export function FarmerSignUpForm() {
               <FormControl>
                 <Input placeholder="name@example.com" {...field} />
               </FormControl>
-              <FormDescription>
-                Email is required for login. You can add a mobile number too.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -178,7 +178,7 @@ export function FarmerSignUpForm() {
           name="mobile"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Mobile Number (Optional)</FormLabel>
+              <FormLabel>Mobile Number</FormLabel>
               <FormControl>
                 <Input placeholder="9876543210" {...field} />
               </FormControl>
