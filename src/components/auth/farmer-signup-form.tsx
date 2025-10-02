@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import Link from "next/link";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -83,7 +84,7 @@ export function FarmerSignUpForm() {
         createdAt: new Date(),
       };
       
-      const userDocRef = doc(db, "users", user.uid);
+      const userDocRef = doc(db, "farmers", user.uid);
 
       // 2. Store user info in Firestore (non-blocking with custom error handling)
       setDoc(userDocRef, userData)
@@ -108,7 +109,7 @@ export function FarmerSignUpForm() {
       let description = "An unknown error occurred during sign up.";
       switch (error.code) {
         case "auth/email-already-in-use":
-          description = "This email address is already in use by another account.";
+          description = "This email is already registered. Please try logging in instead.";
           break;
         case "auth/invalid-email":
           description = "The email address you entered is not valid.";
@@ -120,10 +121,10 @@ export function FarmerSignUpForm() {
           description = "The password is too weak. Please choose a stronger password.";
           break;
         case "auth/api-key-not-valid":
-          description = "The API key for Firebase is not valid. Please contact support.";
+          description = "There's an issue with the application configuration. Please contact support.";
           break;
         default:
-            description = error.message;
+            description = "An unexpected error occurred. Please try again.";
             break;
       }
       toast({
