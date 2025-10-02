@@ -16,6 +16,8 @@ export function FirebaseClientProvider({
   const [firebase, setFirebase] = useState<FirebaseContextType | null>(null);
 
   useEffect(() => {
+    // Firebase initialization is asynchronous.
+    // We use an effect to initialize it on the client.
     const init = async () => {
       const { firebaseApp, auth, firestore } = await initializeFirebase();
       setFirebase({ firebaseApp, auth, firestore });
@@ -24,10 +26,14 @@ export function FirebaseClientProvider({
     init();
   }, []);
 
+  // While Firebase is initializing, we can return a loading state or null.
+  // This prevents child components from rendering and trying to access
+  // Firebase services before they are ready.
   if (!firebase) {
-    // You can return a loading spinner here
     return null;
   }
 
+  // Once Firebase is initialized, we render the provider with the
+  // initialized services.
   return <FirebaseProvider {...firebase}>{children}</FirebaseProvider>;
 }
