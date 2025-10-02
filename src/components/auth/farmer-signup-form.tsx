@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { useAuth, useFirestore } from "@/firebase";
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -75,14 +75,27 @@ export function FarmerSignUpForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // 2. Store user info in Firestore
-      await setDoc(doc(db, "users", user.uid), {
+      const userData = {
         uid: user.uid,
         name: values.name,
         email: values.email,
         mobile: values.mobile || "",
         createdAt: new Date(),
-      });
+      };
+      
+      const userDocRef = doc(db, "users", user.uid);
+
+      // 2. Store user info in Firestore (non-blocking with custom error handling)
+      setDoc(userDocRef, userData)
+        .catch((serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'create',
+                requestResourceData: userData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+
       
       toast({
         title: "Account Created",
