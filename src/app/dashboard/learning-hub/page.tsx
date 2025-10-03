@@ -47,8 +47,7 @@ const qnaData = [
       'Improving soil fertility organically can be achieved through several methods. Regular application of compost adds rich organic matter. Cover cropping with legumes like clover or vetch fixes nitrogen in the soil. Crop rotation also prevents nutrient depletion by varying plant demands.',
   },
   {
-    question:
-      'How can I effectively manage pests without using using chemical pesticides?',
+    question: 'How can I effectively manage pests without using chemical pesticides?',
     answer:
       'Integrated Pest Management (IPM) is a great approach. Encourage natural predators like ladybugs and lacewings. Use physical barriers like row covers. Companion planting, such as marigolds with tomatoes, can deter pests. If needed, use organic-approved options like neem oil or insecticidal soap.',
   },
@@ -57,46 +56,69 @@ const qnaData = [
     answer:
       'Key signs of water stress include wilting or drooping leaves, especially during the hottest part of the day. The leaves might also appear to have a bluish-green tint or curl. Stunted growth and premature yellowing of lower leaves are also common indicators.',
   },
+  {
+    question: 'What is crop rotation and why is it important?',
+    answer:
+      'Crop rotation is the practice of planting different types of crops in the same area in sequenced seasons. It is important because it helps to reduce soil erosion, improves soil fertility and crop yield, and reduces the buildup of pests and weeds.'
+  },
+  {
+      question: 'How do I test my soil\'s pH level?',
+      answer:
+      'You can use a simple soil testing kit available at most garden stores. You take a soil sample, mix it with the provided solution, and compare the color to a chart. For more accurate results, you can send a soil sample to a professional agricultural lab.'
+  },
 ];
 
 const articles = [
   {
     id: '1',
-    title: 'The Ultimate Guide to Drip Irrigation Systems',
+    title: 'Integrated Pest Management (IPM) Principles',
     description:
-      'Learn how to set up, maintain, and optimize a drip irrigation system to conserve water and maximize crop yield.',
-    imageId: 'learning-hub-article-2',
+      'An overview of Integrated Pest Management from the official EPA website, a trusted source for environmental and agricultural safety.',
+    imageId: 'learning-hub-article-3',
+    link: 'https://www.epa.gov/safepestcontrol/integrated-pest-management-ipm-principles',
   },
   {
     id: '2',
-    title: 'Understanding Soil pH and Its Importance',
+    title: 'Soil Health',
     description:
-      'A deep dive into what soil pH means, how to test it, and how to adjust it for optimal plant health.',
+      'A comprehensive guide on soil health from the USDA\'s Natural Resources Conservation Service, covering key aspects of soil quality.',
     imageId: 'learning-hub-article-1',
+    link: 'https://www.nrcs.usda.gov/wps/portal/nrcs/main/soils/health/',
   },
   {
     id: '3',
-    title: 'Natural Pest Control Methods for Your Farm',
+    title: 'Drip Irrigation for Home Gardens',
     description:
-      'Explore effective and eco-friendly ways to manage common farm pests without resorting to harsh chemicals.',
-    imageId: 'learning-hub-article-3',
+      'A detailed guide from the University of California on how to implement efficient drip irrigation systems for gardens and small farms.',
+    imageId: 'learning-hub-article-2',
+    link: 'https://ucanr.edu/sites/scmg/files/27702.pdf',
   },
 ];
 
 const videos = [
   {
     id: '1',
-    title: 'How to Properly Plant Seeds for Maximum Germination',
+    title: 'How To Make Compost At Home',
     description:
-      'This step-by-step video guide shows you the best techniques for planting seeds to ensure a high germination rate.',
+      'A practical, step-by-step guide on creating your own compost pile to enrich your soil, from the popular YouTube channel "Garden Answer".',
     imageId: 'learning-hub-video-1',
+    link: 'https://www.youtube.com/watch?v=s8yGgS-14Sg'
   },
   {
     id: '2',
-    title: 'Techniques for a Successful and Efficient Harvest',
+    title: 'Top 6 Worst Garden Pests And How To Deal With Them',
     description:
-      'Watch expert farmers demonstrate their techniques for harvesting various crops quickly and without damage.',
+      'Learn to identify and manage common garden pests organically with this informative video from "The Gardening Channel With James Prigioni".',
+    imageId: 'learning-hub-article-3',
+    link: 'https://www.youtube.com/watch?v=F3-s3z7hT54'
+  },
+  {
+    id: '3',
+    title: 'How to Build a Raised Bed Garden',
+    description:
+        'A complete guide to building, filling, and planting in a raised garden bed, from "Epic Gardening".',
     imageId: 'learning-hub-video-2',
+    link: 'https://www.youtube.com/watch?v=fQe1-yYxG5g'
   },
 ];
 
@@ -126,7 +148,7 @@ function AskAgriVaani() {
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
+        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         mediaRecorderRef.current = recorder;
         audioChunksRef.current = [];
 
@@ -160,17 +182,29 @@ function AskAgriVaani() {
         recorder.start();
         setIsRecording(true);
       } catch (err) {
-        console.error("Error accessing microphone:", err);
-        let errorMessage = 'Could not access the microphone. Please check permissions and try again.';
+        console.error("Speech recognition error:", err);
+        let errorMessage: React.ReactNode = 'Could not access the microphone. Please check permissions and try again.';
         if (err instanceof DOMException) {
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                 errorMessage = "Microphone permission was denied. Please allow it in your browser settings.";
             } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
                 errorMessage = "No microphone was found. Please ensure one is connected and enabled.";
+            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                 errorMessage = (
+                    <div>
+                        <p>The microphone is currently in use or could not be accessed.</p>
+                        <ul className="list-disc pl-5 mt-2 text-xs">
+                            <li>Ensure no other browser tab or application is using your microphone.</li>
+                            <li>Check your browser's site permissions to make sure microphone access is allowed.</li>
+                            <li>Check your operating system's privacy settings to ensure your browser has permission to use the microphone.</li>
+                            <li>Try restarting your browser or computer.</li>
+                        </ul>
+                    </div>
+                );
             }
         }
-        setError(errorMessage);
-        setMicDisabled(true);
+         setError(errorMessage);
+         setMicDisabled(true);
       }
     }
   };
@@ -277,7 +311,7 @@ function AskAgriVaani() {
                                      </CardContent>
                                      <CardFooter className="p-6">
                                          <Button variant="outline" size="sm" asChild>
-                                             <Link href="#">
+                                             <Link href={article!.link} target="_blank">
                                                  Read More <ArrowRight className="ml-2 h-4 w-4" />
                                              </Link>
                                          </Button>
@@ -310,7 +344,7 @@ function AskAgriVaani() {
                                             <CardDescription className="text-xs mt-1 flex-grow">{video!.description}</CardDescription>
                                             <div className="mt-2">
                                                  <Button size="sm" asChild>
-                                                    <Link href="#">
+                                                    <Link href={video!.link} target="_blank">
                                                         Watch <PlayCircle className="ml-2 h-4 w-4" />
                                                     </Link>
                                                 </Button>
@@ -428,7 +462,7 @@ export default function LearningHubPage() {
                 </CardContent>
                 <CardFooter className="p-6">
                   <Button variant="outline" asChild>
-                    <Link href="#">
+                    <Link href={article.link} target="_blank">
                       Read More <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
@@ -474,7 +508,7 @@ export default function LearningHubPage() {
                     </CardContent>
                     <CardFooter className="p-6">
                       <Button asChild>
-                        <Link href="#">
+                        <Link href={video.link} target="_blank">
                           Watch Video <PlayCircle className="ml-2 h-4 w-4" />
                         </Link>
                       </Button>
