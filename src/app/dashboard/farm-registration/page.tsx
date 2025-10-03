@@ -19,8 +19,8 @@ import { Check, MapPin, Image as ImageIcon, ChevronsRight, ChevronsLeft, Send } 
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useUser, useFirestore, addDocumentNonBlocking } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { useUser, useFirestore } from "@/firebase";
+import { collection, addDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -78,7 +78,7 @@ export default function FarmRegistrationPage() {
 
     try {
         const farmsCollectionRef = collection(db, 'farms');
-        await addDocumentNonBlocking(farmsCollectionRef, farmData);
+        await addDoc(farmsCollectionRef, farmData);
         setIsSubmitted(true);
     } catch (error) {
         console.error("Error adding document: ", error);
