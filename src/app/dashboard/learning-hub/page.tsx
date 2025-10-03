@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -104,6 +105,7 @@ function AskAgriVaani() {
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<LearningHubRecommendationOutput | null>(null);
   const [error, setError] = useState<React.ReactNode | null>(null);
+  const [micDisabled, setMicDisabled] = useState(false);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
@@ -123,7 +125,6 @@ function AskAgriVaani() {
       recognition.onresult = (event) => {
         const transcript = event.results[event.results.length - 1][0].transcript.trim();
         setQuery(transcript);
-        setIsRecording(false);
       };
       
       recognition.onend = () => {
@@ -135,18 +136,15 @@ function AskAgriVaani() {
             setError('Network error for speech service. Please check your internet connection.');
         } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
             setError('Microphone permission was denied. Please allow it in your browser settings.');
+            setMicDisabled(true);
         } else if (event.error === 'audio-capture') {
             setError(
               <div>
-                <p className='font-bold mb-2'>Could not access the microphone.</p>
-                <ul className='list-disc pl-5 text-xs space-y-1'>
-                    <li>Ensure no other browser tab or application is using your microphone and try again.</li>
-                    <li>Check your browser's site permissions to make sure microphone access is allowed for this page.</li>
-                    <li>Check your operating system's privacy settings to ensure your browser has permission to use the microphone.</li>
-                    <li>Try restarting your browser or computer.</li>
-                </ul>
+                <p className='font-bold mb-2'>Microphone is unavailable.</p>
+                <p className="text-xs">The browser could not access your microphone. This can happen if another tab or application is using it. Please close other applications, check browser and OS permissions, then refresh the page to try again. For now, the microphone button has been disabled.</p>
               </div>
             );
+            setMicDisabled(true); // Gracefully disable the feature
         } else {
             setError(`Speech recognition error: ${event.error}. Please try again or type your question.`);
         }
@@ -154,12 +152,21 @@ function AskAgriVaani() {
       };
     } else if (typeof window !== 'undefined') {
         setError("Sorry, your browser doesn't support voice recognition.");
+        setMicDisabled(true);
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {}
+      }
     }
   }, []);
 
   const handleVoiceSearch = () => {
     const recognition = recognitionRef.current;
-    if (!recognition) return;
+    if (!recognition || micDisabled) return;
 
     if (isRecording) {
       try {
@@ -234,7 +241,13 @@ function AskAgriVaani() {
               onChange={(e) => setQuery(e.target.value)}
               disabled={isLoading}
             />
-            <Button variant="ghost" size="icon" onClick={handleVoiceSearch} disabled={isLoading || !recognitionRef.current}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleVoiceSearch} 
+              disabled={isLoading || !recognitionRef.current || micDisabled}
+              title={micDisabled ? "Microphone is unavailable" : "Use microphone"}
+            >
               <Mic className={isRecording ? 'text-primary animate-pulse' : ''} />
             </Button>
             <Button onClick={handleSearch} disabled={isLoading || !query}>
@@ -501,3 +514,5 @@ declare global {
         webkitSpeechRecognition: any;
     }
 }
+
+    
