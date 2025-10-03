@@ -45,7 +45,7 @@ const qnaData = [
   },
   {
     question:
-      'How can I effectively manage pests without using chemical pesticides?',
+      'How can I effectively manage pests without using using chemical pesticides?',
     answer:
       'Integrated Pest Management (IPM) is a great approach. Encourage natural predators like ladybugs and lacewings. Use physical barriers like row covers. Companion planting, such as marigolds with tomatoes, can deter pests. If needed, use organic-approved options like neem oil or insecticidal soap.',
   },
@@ -121,8 +121,7 @@ function AskAgriVaani() {
         };
 
         recognition.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
-           if (event.error === 'network') {
+          if (event.error === 'network') {
             setError('Network error for speech service. Please check your internet connection or browser settings.');
           } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
             setError('Microphone permission was denied. Please allow it in your browser settings.');
