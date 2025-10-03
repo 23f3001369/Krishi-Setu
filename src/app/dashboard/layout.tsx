@@ -72,8 +72,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
 
+  const [mounted, setMounted] = React.useState(false);
   const isMobile = useIsMobile();
-  if (isMobile === undefined) {
+  
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
     return null; // or a loading skeleton
   }
 
