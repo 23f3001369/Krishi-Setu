@@ -109,6 +109,14 @@ const articles = [
     imageId: 'learning-hub-video-2',
     link: 'https://rodaleinstitute.org/science/articles/crop-rotation-on-organic-farms/',
   },
+   {
+    id: '7',
+    title: 'Organic Farming for Beginners',
+    description:
+      'A foundational guide from the USDA covering the basics of what organic farming entails, from soil management to certification.',
+    imageId: 'hero-image',
+    link: 'https://www.usda.gov/topics/organic',
+  },
 ];
 
 const videos = [
@@ -153,36 +161,20 @@ const videos = [
     link: 'https://www.youtube.com/watch?v=p-I8n2-H-Lw'
   },
   {
-    id: '6',
-    title: 'Organic Farming for Beginners',
-    description:
-        'An introductory guide to the principles and practices of organic farming, covering everything from soil health to certification.',
-    imageId: 'hero-image',
-    link: 'https://www.youtube.com/watch?v=JPA01hM72i8'
-  },
-  {
-    id: '7',
-    title: 'Understanding No-Till Farming',
-    description:
-      'A visual explanation of no-till farming techniques and their benefits for soil health and sustainability, by the USDA.',
-    imageId: 'hero-image',
-    link: 'https://www.youtube.com/watch?v=a-s1y8g2w4c',
-  },
-  {
-    id: '8',
-    title: 'The Role of Cover Crops in Regenerative Agriculture',
-    description:
-      'A deep dive into how cover crops work to improve soil structure, water retention, and biodiversity from "Understanding Ag".',
-    imageId: 'learning-hub-article-1',
-    link: 'https://www.youtube.com/watch?v=jw3Zp0-7p5c',
-  },
-  {
     id: '9',
     title: 'A Guide to Crop Rotation',
     description:
       'From "Nature\'s Always Right", this video explains the basics of crop rotation in a simple and easy-to-understand way for any scale.',
     imageId: 'learning-hub-video-2',
     link: 'https://www.youtube.com/watch?v=ma932h2gAkc',
+  },
+  {
+    id: '6',
+    title: 'Organic Farming for Beginners',
+    description:
+        'An introductory guide to the principles and practices of organic farming, covering everything from soil health to certification.',
+    imageId: 'hero-image',
+    link: 'https://www.youtube.com/watch?v=JPA01hM72i8'
   },
 ];
 
