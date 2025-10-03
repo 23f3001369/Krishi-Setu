@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Transaction": {
@@ -197,6 +198,55 @@
         "author",
         "publicationDate"
       ]
+    },
+    "CultivationGuide": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CultivationGuide",
+      "description": "Represents a user-specific, AI-generated cultivation guide for a crop.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the farmer who owns this guide."
+        },
+        "crop": {
+          "type": "string",
+          "description": "The name of the crop."
+        },
+        "variety": {
+          "type": "string",
+          "description": "The specific crop variety."
+        },
+        "estimatedDurationDays": {
+          "type": "number",
+          "description": "The total estimated duration in days for the cultivation."
+        },
+        "estimatedExpenses": {
+          "type": "number",
+          "description": "The estimated total expenses."
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "status": { "type": "string", "enum": ["completed", "active", "upcoming"] },
+              "duration": { "type": "string" },
+              "aiInstruction": { "type": "string" },
+              "pestAndDiseaseAlert": { "type": "string" },
+              "tasks": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["name", "status", "duration", "aiInstruction", "tasks"]
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the guide was created."
+        }
+      },
+      "required": ["userId", "crop", "variety", "estimatedDurationDays", "stages", "createdAt"]
     }
   },
   "auth": {
@@ -241,6 +291,24 @@
                     "description": "The unique ID for the transaction."
                 }
             ]
+        }
+      },
+      {
+        "path": "/farmers/{farmerId}/cultivationGuides/{guideId}",
+        "definition": {
+          "entityName": "CultivationGuide",
+          "schema": { "$ref": "#/backend/entities/CultivationGuide" },
+          "description": "Stores all cultivation guides for a specific farmer.",
+          "params": [
+            {
+              "name": "farmerId",
+              "description": "The Firebase Auth UID of the farmer."
+            },
+            {
+              "name": "guideId",
+              "description": "The unique ID for the cultivation guide."
+            }
+          ]
         }
       },
       {

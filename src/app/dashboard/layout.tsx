@@ -20,6 +20,7 @@ import {
   ShoppingCart,
   MessageSquare,
   Bell,
+  List,
 } from 'lucide-react';
 
 import {
@@ -32,6 +33,7 @@ import {
   SidebarFooter,
   SidebarProvider,
   SidebarInset,
+  SidebarMenuBadge,
 } from '@/components/ui/sidebar';
 import Logo from '@/components/shared/logo';
 import { Button } from '@/components/ui/button';
@@ -49,7 +51,8 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/farm-registration', icon: Tractor, label: 'Farm Registration' },
   { href: '/dashboard/krishi-khata', icon: Wallet, label: 'Krishi Khata' },
-  { href: '/dashboard/cultivation-guide', icon: ClipboardList, label: 'Cultivation Guide' },
+  { href: '/dashboard/my-guides', icon: List, label: 'My Guides', badge: '1' },
+  { href: '/dashboard/cultivation-guide', icon: ClipboardList, label: 'New Guide' },
   { href: '/dashboard/crop-recommendation', icon: BrainCircuit, label: 'AI Crop Tool' },
   { href: '/dashboard/disease-detection', icon: TestTubeDiagonal, label: 'AI Disease Detection' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'AgriVaani' },
@@ -104,6 +107,7 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
                     >
                       <item.icon />
                       <span>{item.label}</span>
+                       {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
@@ -179,6 +183,7 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
+                   {item.badge && <span className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{item.badge}</span>}
                 </Link>
               ))}
                <Link

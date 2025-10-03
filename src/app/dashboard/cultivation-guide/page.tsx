@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   Card,
@@ -42,6 +43,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { z } from 'zod';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 
 const heroImage = PlaceHolderImages.find(p => p.id === "cultivation-guide-hero");
@@ -64,35 +68,30 @@ export default function CultivationGuidePage() {
     variety: ''
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [guide, setGuide] = useState<GenerateCultivationGuideOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tasks, setTasks] = useState<any[]>([]);
+
+  const { user } = useUser();
+  const db = useFirestore();
+  const { toast } = useToast();
+  const router = useRouter();
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
-  const handleTaskChange = (taskId: string) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-        case 'completed': return 'bg-green-500';
-        case 'active': return 'bg-blue-500 animate-pulse';
-        case 'upcoming': return 'bg-gray-400';
-        default: return 'bg-gray-300';
-    }
-  }
 
   const handleGenerateGuide = async () => {
+    if (!user || !db) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'You must be logged in to create a guide.',
+        });
+        return;
+    }
+
     setIsLoading(true);
-    setGuide(null);
     setError(null);
     try {
       const result = await generateCultivationGuide({
@@ -102,11 +101,22 @@ export default function CultivationGuidePage() {
         soilHealth: formData.soilHealth,
         variety: formData.variety,
       });
-      setGuide(result);
-      const activeStage = result.stages.find(s => s.status === 'active');
-      if (activeStage) {
-        setTasks(activeStage.tasks.map((task, index) => ({ id: `task-${index}`, text: task, completed: false })));
-      }
+      
+      // Save the generated guide to Firestore
+      const guidesCollectionRef = collection(db, 'farmers', user.uid, 'cultivationGuides');
+      await addDoc(guidesCollectionRef, {
+        ...result,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+      });
+      
+      toast({
+        title: 'Guide Created!',
+        description: `Your cultivation plan for ${result.crop} has been saved to "My Guides".`,
+      });
+
+      router.push('/dashboard/my-guides');
+
     } catch (e) {
       console.error(e);
       setError('Failed to generate the cultivation guide. Please try again.');
@@ -120,7 +130,7 @@ export default function CultivationGuidePage() {
     return (
         <div className="space-y-8">
              <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight font-headline">Cultivation Guide</h1>
+                <h1 className="text-3xl font-bold tracking-tight font-headline">New Cultivation Guide</h1>
                 <p className="text-muted-foreground">Agronomy-powered, stage-wise planning for your crops.</p>
             </div>
              <Card>
@@ -139,147 +149,10 @@ export default function CultivationGuidePage() {
     )
   }
 
-  if (guide) {
-      const activeStage = guide.stages.find(s => s.status === 'active');
-
-    return (
-        <div className="space-y-8">
-            <div className='mb-8'>
-                <h1 className="text-3xl font-bold tracking-tight font-headline">Your Custom Cultivation Guide</h1>
-                <p className="text-muted-foreground">Here is the AI-generated plan for your {guide.crop} crop.</p>
-            </div>
-
-            {heroImage && (
-                <div className="relative h-48 w-full overflow-hidden rounded-lg">
-                    <Image src={heroImage.imageUrl} alt={heroImage.description} data-ai-hint={heroImage.imageHint} fill className="object-cover" />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <h2 className="text-4xl font-bold text-white font-headline">{guide.crop}: {guide.variety}</h2>
-                    </div>
-                </div>
-            )}
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Full Crop Overview</CardTitle>
-                </CardHeader>
-                <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm p-6">
-                        <div className="flex items-center gap-3">
-                            <Sprout className="w-8 h-8 text-primary"/>
-                            <div>
-                                <p className="text-muted-foreground">Crop / Variety</p>
-                                <p className="font-bold">{guide.crop} / {guide.variety}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Clock className="w-8 h-8 text-primary"/>
-                            <div>
-                                <p className="text-muted-foreground">Est. Cultivation Days</p>
-                                <p className="font-bold">{guide.estimatedDurationDays} days</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Tractor className="w-8 h-8 text-primary"/>
-                            <div>
-                                <p className="text-muted-foreground">Current Stage</p>
-                                <p className="font-bold">{activeStage?.name || 'N/A'}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="text-lg font-bold">₹</div>
-                            <div>
-                                <p className="text-muted-foreground">Est. Expenses</p>
-                                <p className="font-bold">₹{guide.estimatedExpenses.toLocaleString()}</p>
-                            </div>
-                        </div>
-                </CardContent>
-            </Card>
-            
-            <div className="space-y-4">
-                <h2 className="text-2xl font-bold font-headline">Crop Timeline</h2>
-                <div className="relative w-full">
-                    <div className="absolute left-0 top-2.5 h-1 w-full bg-gray-200 dark:bg-gray-700"></div>
-                    <div className="flex justify-between relative">
-                    {guide.stages.map((stage, index) => (
-                        <div key={index} className="flex flex-col items-center z-10 w-1/6">
-                            <div className={`w-6 h-6 rounded-full border-4 border-background dark:border-card ${getStatusColor(stage.status)}`}></div>
-                            <p className="text-xs font-semibold mt-2 text-center">{stage.name}</p>
-                            <p className="text-xs text-muted-foreground">{stage.duration}</p>
-                        </div>
-                    ))}
-                    </div>
-                </div>
-            </div>
-
-            {activeStage && (
-                <div className="grid md:grid-cols-2 gap-8">
-                    <div className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Bot className="text-primary"/>
-                                    AI Instructions for {activeStage.name}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                                <p className="text-sm text-muted-foreground">{activeStage.aiInstruction}</p>
-                            </CardContent>
-                        </Card>
-
-                        {activeStage.pestAndDiseaseAlert &&
-                          <Alert variant="destructive">
-                              <Bug className="h-4 w-4" />
-                              <AlertTitle>Pest & Disease Alert</AlertTitle>
-                              <AlertDescription>{activeStage.pestAndDiseaseAlert}</AlertDescription>
-                          </Alert>
-                        }
-                    </div>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <CalendarCheck className="text-primary"/>
-                                Tasks for this Stage
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <div className="space-y-4">
-                            {tasks.map(task => (
-                                <div key={task.id} className="flex items-center space-x-3">
-                                    <Checkbox
-                                        id={task.id}
-                                        checked={task.completed}
-                                        onCheckedChange={() => handleTaskChange(task.id)}
-                                    />
-                                    <label
-                                        htmlFor={task.id}
-                                        className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
-                                        task.completed ? 'line-through text-muted-foreground' : ''
-                                        }`}
-                                    >
-                                        {task.text}
-                                    </label>
-                                </div>
-                            ))}
-                            </div>
-                        </CardContent>
-                        <CardFooter className="flex-col items-stretch gap-y-4 p-6">
-                            <Separator />
-                            <Button>Mark All as Complete</Button>
-                        </CardFooter>
-                    </Card>
-                </div>
-            )}
-             <div className="flex justify-center">
-                <Button variant="outline" onClick={() => setGuide(null)}>Start a New Guide</Button>
-            </div>
-        </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       <div className='mb-8'>
-        <h1 className="text-3xl font-bold tracking-tight font-headline">Cultivation Guide</h1>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">New Cultivation Guide</h1>
         <p className="text-muted-foreground">Agronomy-powered, stage-wise planning for your crops.</p>
       </div>
 
@@ -327,7 +200,7 @@ export default function CultivationGuidePage() {
         <CardFooter className="p-6">
             <Button onClick={handleGenerateGuide} disabled={!isFormValid}>
                 <Bot className="mr-2 h-4 w-4" />
-                Generate Guide
+                Generate & Save Guide
             </Button>
         </CardFooter>
        </Card>

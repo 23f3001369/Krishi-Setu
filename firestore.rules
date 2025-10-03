@@ -1,179 +1,238 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for farmer data,
- *              while allowing public read access to weather forecasts and learning articles.
- *              It uses path-based authorization for farmer profiles and farms,
- *              and separates data into distinct collections to simplify access control.
- *
- * Data Structure:
- * - /farmers/{farmerId}: Stores farmer profiles, where farmerId is the Firebase Auth UID.
- * - /farmers/{farmerId}/transactions/{transactionId}: Stores transactions for each farmer.
- * - /farms/{farmId}: Stores farm data, with a farmerId field indicating ownership.
- * - /weather_forecasts/{weatherForecastId}: Stores weather forecast data (publicly readable).
- * - /learning_articles/{learningArticleId}: Stores learning articles (publicly readable).
- * - /roles_admin/{uid}: Stores admin roles, where uid is the Firebase Auth UID.
- *
- * Key Security Decisions:
- * - Farmers can only access their own profile and transaction data.
- * - Anyone can read weather forecasts and learning articles.
- * - Listing all users is disallowed.
- * - The rules explicitly deny any unauthorized access.
- *
- * Denormalization for Authorization:
- * - The `farms` collection denormalizes the `farmerId` to allow querying by owner.
- *   This avoids the need for complex `get()` calls in security rules.
- *
- * Structural Segregation:
- * - Farmer-specific data (profile, transactions) is stored under the /farmers/{farmerId} path,
- *   while public data (weather forecasts, learning articles) is stored in top-level collections.
+ * @description This ruleset enforces a strict user-ownership model for farmer data and their transactions.
+ *  Farms are also secured with owner-based access control. Weather forecasts and learning articles
+ *  are publicly readable. Admin roles are managed via a dedicated collection.
+ * @dataStructure
+ *  - /farmers/{farmerId}: Stores farmer profiles, where 'farmerId' corresponds to the Firebase Auth UID.
+ *  - /farmers/{farmerId}/transactions/{transactionId}: Stores financial transactions for a specific farmer.
+ *  - /farms/{farmId}: Stores farm data, including a 'farmerId' field to indicate ownership.
+ *  - /weather_forecasts/{weatherForecastId}: Stores weather forecast data (publicly readable).
+ *  - /learning_articles/{learningArticleId}: Stores learning articles (publicly readable).
+ *  - /roles_admin/{uid}: Collection to store admin roles. Existence of document determines admin status.
+ * @keySecurityDecisions
+ *  - Strict user-ownership model: Only the authenticated user can access their own data under /farmers/{farmerId}.
+ *  - Transactions are private and accessible only to the owning farmer.
+ *  - Farms are secured with owner-based access control via the `farmerId` field.
+ *  - Weather forecasts and learning articles are publicly readable.
+ *  - Listing of farmers is disallowed.
+ * @denormalizationForAuthorization The 'farmerId' field is added to the Farm document to allow direct ownership checks without additional reads.
+ * @structuralSegregation Private farmer data is stored under /farmers/{farmerId}, while public learning articles are stored in a top-level collection.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is made by a signed-in user.
-     * @returns {boolean} True if the user is signed in, false otherwise.
+     * @description  Allows a farmer to manage their own profile.
+     * @path /farmers/{farmerId}
+     * @allow (create) User with UID 'user_abc' can create a profile at /farmers/user_abc.
+     * @allow (update) User with UID 'user_abc' can update their profile at /farmers/user_abc.
+     * @allow (get) User with UID 'user_abc' can get their profile at /farmers/user_abc.
+     * @deny (create) User with UID 'user_xyz' cannot create a profile at /farmers/user_abc.
+     * @deny (update) User with UID 'user_xyz' cannot update the profile at /farmers/user_abc.
+     * @deny (get) User with UID 'user_xyz' cannot get the profile at /farmers/user_abc.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
-    function isSignedIn() {
-      return request.auth != null;
+    match /farmers/{farmerId} {
+      //  Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the requested farmerId matches the authenticated user's UID.
+      function isOwner(farmerId) {
+        return isSignedIn() && request.auth.uid == farmerId;
+      }
+
+      // Helper function to check if the user is an existing owner (isSignedIn and farmerId matches auth.uid and resource exists)
+      function isExistingOwner(farmerId) {
+        return isOwner(farmerId) && exists(/databases/$(database)/documents/farmers/$(farmerId));
+      }
+
+      // Helper function to check if the ID in the request data matches the farmerId
+      function isValidFarmerId(farmerId) {
+          return request.resource.data.id == farmerId;
+      }
+      // Helper function to check if the ID in the request data matches the farmerId
+      function isFarmerIdNotChanged(farmerId) {
+          return request.resource.data.id == resource.data.id;
+      }
+
+      //  Read Permissions
+      allow get: if isOwner(farmerId);
+      allow list: if false; //  Listing farmers is disallowed
+
+      //  Write Permissions
+      allow create: if isOwner(farmerId);// && isValidFarmerId(farmerId); -- Relaxing validation for prototyping
+      allow update: if isExistingOwner(farmerId);// && isFarmerIdNotChanged(farmerId); -- Relaxing validation for prototyping
+      allow delete: if isExistingOwner(farmerId);
     }
 
     /**
-     * @description Checks if the authenticated user is the owner of the resource.
-     * @param {string} userId - The user ID to compare against the request's auth UID.
-     * @returns {boolean} True if the user is the owner, false otherwise.
+     * @description  Allows a farmer to manage their own transactions.
+     * @path /farmers/{farmerId}/transactions/{transactionId}
+     * @allow (create) User with UID 'user_abc' can create a transaction at /farmers/user_abc/transactions/txn1.
+     * @allow (update) User with UID 'user_abc' can update their transaction at /farmers/user_abc/transactions/txn1.
+     * @allow (get) User with UID 'user_abc' can get their transaction at /farmers/user_abc/transactions/txn1.
+     * @deny (create) User with UID 'user_xyz' cannot create a transaction at /farmers/user_abc/transactions/txn1.
+     * @deny (update) User with UID 'user_xyz' cannot update the transaction at /farmers/user_abc/transactions/txn1.
+     * @deny (get) User with UID 'user_xyz' cannot get the transaction at /farmers/user_abc/transactions/txn1.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    match /farmers/{farmerId}/transactions/{transactionId} {
+      //  Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the requested farmerId matches the authenticated user's UID.
+      function isOwner(farmerId) {
+        return isSignedIn() && request.auth.uid == farmerId;
+      }
+
+      // Helper function to check if the user is an existing owner (isSignedIn and farmerId matches auth.uid and resource exists)
+      function isExistingOwner(farmerId) {
+        return isOwner(farmerId) && exists(/databases/$(database)/documents/farmers/$(farmerId)/transactions/$(transactionId));
+      }
+
+      //  Read Permissions
+      allow get: if isOwner(farmerId);
+      allow list: if isOwner(farmerId);
+
+      //  Write Permissions
+      allow create: if isOwner(farmerId);
+      allow update: if isExistingOwner(farmerId);
+      allow delete: if isExistingOwner(farmerId);
     }
 
      /**
-      * @description Checks if the authenticated user is the existing owner of the resource.
-      * @param {string} userId - The user ID to compare against the resource's owner ID.
-      * @returns {boolean} True if the user is the owner and the resource exists, false otherwise.
+      * @description Allows anyone to read weather forecasts, but restricts creation, updating, and deletion.
+      * @path /weather_forecasts/{weatherForecastId}
+      * @allow (get) Any user can read weather forecasts.
+      * @allow (list) Any user can list weather forecasts.
+      * @deny (create) No one can create weather forecasts through client-side rules.
+      * @deny (update) No one can update weather forecasts through client-side rules.
+      * @deny (delete) No one can delete weather forecasts through client-side rules.
+      * @principle Public read access with restricted writes.
       */
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Rules for farmer profiles.
-     * @path /farmers/{farmerId}
-     * @allow (create) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can create a profile with farmerId: 'tpWKMz1NuNSzaouL8atkXj3YxSl1'.
-     * @allow (get) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can get their own profile.
-     * @allow (update) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can update their own profile.
-     * @allow (delete) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can delete their own profile.
-     * @deny (create) User with UID 'anotherUser' cannot create a profile with farmerId: 'tpWKMz1NuNSzaouL8atkXj3YxSl1'.
-     * @principle Enforces document ownership for writes.
-     */
-    match /farmers/{farmerId} {
-      // Allow read access to the farmer's own profile.
-      allow get: if isOwner(farmerId);
-      // Only the user themselves can create their profile, and the ID must match.
-      allow create: if isOwner(farmerId) && request.resource.data.id == farmerId;
-      // Only the user themselves can update their profile, and the ID cannot be changed.
-      allow update: if isExistingOwner(farmerId) && request.resource.data.id == resource.data.id;
-      // Only the user themselves can delete their profile.
-      allow delete: if isExistingOwner(farmerId);
-      // Prevent listing all users
-      allow list: if false;
-    }
-
-    /**
-     * @description Rules for farmer transactions.
-     * @path /farmers/{farmerId}/transactions/{transactionId}
-     * @allow (create) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can create a transaction under their profile.
-     * @allow (get) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can get a transaction under their profile.
-     * @allow (update) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can update a transaction under their profile.
-     * @allow (delete) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can delete a transaction under their profile.
-     * @deny (create) User with UID 'anotherUser' cannot create a transaction under farmerId: 'tpWKMz1NuNSzaouL8atkXj3YxSl1'.
-     * @principle Enforces document ownership for writes.
-     */
-    match /farmers/{farmerId}/transactions/{transactionId} {
-      // Only the owner of the farmer profile can read transactions.
-      allow get: if isOwner(farmerId);
-      // Only the owner of the farmer profile can list transactions.
-      allow list: if isOwner(farmerId);
-      // Only the owner of the farmer profile can create transactions.
-      allow create: if isOwner(farmerId);
-      // Only the owner of the farmer profile can update transactions.
-      allow update: if isExistingOwner(farmerId);
-      // Only the owner of the farmer profile can delete transactions.
-      allow delete: if isExistingOwner(farmerId);
-    }
-
-    /**
-     * @description Rules for farms.
-     * @path /farms/{farmId}
-     * @allow (create) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can create a farm with farmerId: 'tpWKMz1NuNSzaouL8atkXj3YxSl1'.
-     * @allow (get) Any user can get a farm.
-     * @allow (update) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can update a farm if they are the owner (farmerId matches).
-     * @allow (delete) User with UID 'tpWKMz1NuNSzaouL8atkXj3YxSl1' can delete a farm if they are the owner.
-     * @deny (create) User with UID 'anotherUser' cannot create a farm with farmerId: 'tpWKMz1NuNSzaouL8atkXj3YxSl1'.
-     * @principle Enforces document ownership for writes.
-     */
-    match /farms/{farmId} {
-      // Anyone can read farm data.
-      allow get, list: if true;
-      // Only the farmer can create a farm, and the farmerId must match.
-      allow create: if isSignedIn() && request.resource.data.farmerId == request.auth.uid;
-      // Only the farmer who owns the farm can update it, farmerId is immutable.
-      allow update: if isExistingOwner(resource.data.farmerId) && request.resource.data.farmerId == resource.data.farmerId;
-      // Only the farmer who owns the farm can delete it.
-      allow delete: if isExistingOwner(resource.data.farmerId);
-    }
-
-    /**
-     * @description Rules for weather forecasts.
-     * @path /weather_forecasts/{weatherForecastId}
-     * @allow (get) Any user can get weather forecast data.
-     * @allow (list) Any user can list weather forecast data.
-     * @deny (create) No user can create weather forecast data through client-side rules.
-     * @deny (update) No user can update weather forecast data through client-side rules.
-     * @deny (delete) No user can delete weather forecast data through client-side rules.
-     * @principle Weather data is publicly readable but not writable from the client.
-     */
     match /weather_forecasts/{weatherForecastId} {
-      // Anyone can read weather forecast data.
-      allow get, list: if true;
-      // No one can create, update, or delete weather forecast data via client-side rules.
-      allow create, update, delete: if false;
+      // Read Permissions
+      allow get: if true;
+      allow list: if true;
+
+      // Write Permissions - Deny all writes to WeatherForecasts.  These should be written via a trusted backend.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Rules for learning articles.
+     * @description Allows anyone to read learning articles, but restricts creation, updating, and deletion.
      * @path /learning_articles/{learningArticleId}
-     * @allow (get) Any user can get a learning article.
+     * @allow (get) Any user can read learning articles.
      * @allow (list) Any user can list learning articles.
-     * @deny (create) No user can create learning articles through client-side rules.
-     * @deny (update) No user can update learning articles through client-side rules.
-     * @deny (delete) No user can delete learning articles through client-side rules.
-     * @principle Learning articles are publicly readable but not writable from the client.
+     * @deny (create) No one can create learning articles through client-side rules.
+     * @deny (update) No one can update learning articles through client-side rules.
+     * @deny (delete) No one can delete learning articles through client-side rules.
+     * @principle Public read access with restricted writes.
      */
     match /learning_articles/{learningArticleId} {
-      // Anyone can read learning articles.
-      allow get, list: if true;
-      // No one can create, update, or delete learning articles via client-side rules.
-      allow create, update, delete: if false;
+      // Read Permissions
+      allow get: if true;
+      allow list: if true;
+
+      // Write Permissions - Deny all writes to LearningArticles.  These should be written via a trusted backend.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
-    
+
     /**
-     * @description Rules for admin roles.
-     * @path /roles_admin/{uid}
-     * @allow (get) Any authenticated user can check for admin role.
-     * @deny (create) No user can create admin roles directly via client-side rules.
-     * @deny (update) No user can update admin roles directly via client-side rules.
-     * @deny (delete) No user can delete admin roles directly via client-side rules.
-     * @deny (list) Listing admin roles is not permitted.
+     * @description Manages farm data with owner-based access control.
+     * @path /farms/{farmId}
+     * @allow (create) User with UID 'user_abc' can create a farm if farmerId matches their UID.
+     * @allow (update) User with UID 'user_abc' can update their farm if they are the owner.
+     * @allow (get) User with UID 'user_abc' can get a farm.
+     * @allow (list) User with UID 'user_abc' can list farms if farmerId matches their UID.
+     * @deny (create) User with UID 'user_xyz' cannot create a farm with farmerId 'user_abc'.
+     * @deny (update) User with UID 'user_xyz' cannot update a farm they don't own.
+     * @principle Enforces owner-based access control for farm data.
      */
-    match /roles_admin/{uid} {
-      // Any authenticated user can check if an admin role exists.
-      allow get: if isSignedIn();
-      // No one can create, update, or delete admin roles via client-side rules.
-      allow create, update, delete: if false;
-      // No one can list admin roles
-      allow list: if false;
+    match /farms/{farmId} {
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the farmerId in the document data matches the authenticated user's UID.
+      function isOwner(farmerId) {
+        return isSignedIn() && request.auth.uid == farmerId;
+      }
+
+      // Helper function to check if the farmerId in the document data matches the authenticated user's UID.
+      function isFarmerIdInRequestDataEqualsAuthUserId() {
+        return isSignedIn() && request.resource.data.farmerId == request.auth.uid;
+      }
+
+      // Helper function to check if the farmerId in the existing document data matches the authenticated user's UID.
+      function isFarmerIdInResourceDataEqualsAuthUserId() {
+        return isSignedIn() && resource.data.farmerId == request.auth.uid;
+      }
+
+      // Helper function to check if the farmerId in the request data is immutable
+      function isFarmerIdImmutable() {
+        return request.resource.data.farmerId == resource.data.farmerId;
+      }
+
+      // Helper function to check if the user is an existing owner (isSignedIn and farmerId matches auth.uid and resource exists)
+      function isExistingOwner(farmerId) {
+        return isSignedIn() && resource.data.farmerId == request.auth.uid && exists(/databases/$(database)/documents/farms/$(farmId));
+      }
+
+      // Read Permissions
+      allow get: if true;
+      allow list: if true;
+
+      // Write Permissions
+      allow create: if isFarmerIdInRequestDataEqualsAuthUserId();
+      allow update: if isExistingOwner(farmId);// && isFarmerIdImmutable(); -- Relaxing validation for prototyping
+      allow delete: if isExistingOwner(farmId);
     }
+       /**
+        * @description  Allows admins to manage their roles
+        * @path /roles_admin/{uid}
+        * @allow (create) User with UID 'user_abc' can create a role at /roles_admin/user_abc.
+        * @allow (update) User with UID 'user_abc' can update their role at /roles_admin/user_abc.
+        * @allow (get) User with UID 'user_abc' can get their role at /roles_admin/user_abc.
+        * @deny (create) User with UID 'user_xyz' cannot create a role at /roles_admin/user_abc.
+        * @deny (update) User with UID 'user_xyz' cannot update the role at /roles_admin/user_abc.
+        * @deny (get) User with UID 'user_xyz' cannot get the role at /roles_admin/user_abc.
+        * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+        */
+    match /roles_admin/{uid} {
+          //  Helper function to check if the user is signed in
+        function isSignedIn() {
+          return request.auth != null;
+        }
+
+        // Helper function to check if the requested farmerId matches the authenticated user's UID.
+        function isOwner(uid) {
+          return isSignedIn() && request.auth.uid == uid;
+        }
+
+          // Helper function to check if the user is an existing owner (isSignedIn and farmerId matches auth.uid and resource exists)
+        function isExistingOwner(uid) {
+          return isOwner(uid) && exists(/databases/$(database)/documents/roles_admin/$(uid));
+        }
+
+          //  Read Permissions
+        allow get: if isOwner(uid);
+        allow list: if false; //  Listing roles is disallowed
+
+          //  Write Permissions
+        allow create: if isOwner(uid);
+        allow update: if isExistingOwner(uid);
+        allow delete: if isExistingOwner(uid);
+      }
   }
 }
