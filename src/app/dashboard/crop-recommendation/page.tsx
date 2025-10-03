@@ -6,6 +6,7 @@ import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
 import { aiCropRecommendation } from '@/ai/flows/ai-crop-recommendation';
 import { agriQa } from '@/ai/flows/agri-qa';
+import { extractSoilHealthInfo } from '@/ai/flows/extract-soil-health-info';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,7 +19,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Leaf, Lightbulb, Upload, Bot, Sparkles } from 'lucide-react';
+import { Leaf, Lightbulb, Upload, Bot, Sparkles, Wand2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 
@@ -150,6 +151,12 @@ export default function CropRecommendationPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hiddenImageInputRef = useRef<HTMLInputElement>(null);
+  const soilAnalysisRef = useRef<HTMLTextAreaElement>(null);
+
+  const [activeTab, setActiveTab] = useState('manual');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -176,6 +183,27 @@ export default function CropRecommendationPage() {
     }
   };
 
+  const handleExtract = async () => {
+    if (!hiddenImageInputRef.current?.value) return;
+
+    setIsExtracting(true);
+    setExtractError(null);
+    try {
+        const result = await extractSoilHealthInfo({
+            soilHealthCardImage: hiddenImageInputRef.current.value
+        });
+        if (soilAnalysisRef.current) {
+            soilAnalysisRef.current.value = result.soilAnalysisText;
+        }
+        setActiveTab('manual'); // Switch to manual tab to show the result
+    } catch(e) {
+        console.error(e);
+        setExtractError('Failed to extract information from image. Please try again or enter details manually.');
+    } finally {
+        setIsExtracting(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className='mb-8'>
@@ -201,7 +229,7 @@ export default function CropRecommendationPage() {
           <CardContent className="space-y-6 p-6">
             <div className="space-y-2">
               <Label>Soil Details</Label>
-              <Tabs defaultValue="manual" className="w-full">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="manual">Manual Entry</TabsTrigger>
                   <TabsTrigger value="upload">Upload Report</TabsTrigger>
@@ -211,6 +239,7 @@ export default function CropRecommendationPage() {
                     name="soilAnalysis"
                     placeholder="e.g., pH: 6.8, Nitrogen: High, Phosphorus: Medium, Potassium: Low, Organic Matter: 3.5%"
                     id="soilAnalysis"
+                    ref={soilAnalysisRef}
                   />
                 </TabsContent>
                 <TabsContent value="upload" className="pt-4">
@@ -242,13 +271,26 @@ export default function CropRecommendationPage() {
                           className="object-contain"
                         />
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleRemoveImage}
-                      >
-                        Remove Image
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRemoveImage}
+                            disabled={isExtracting}
+                        >
+                            Remove Image
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleExtract}
+                            disabled={isExtracting}
+                        >
+                            <Wand2 className="mr-2 h-4 w-4" />
+                            {isExtracting ? 'Extracting...' : 'Extract'}
+                        </Button>
+                      </div>
                     </div>
                   )}
                   <input
@@ -256,6 +298,12 @@ export default function CropRecommendationPage() {
                     name="soilHealthCardImage"
                     ref={hiddenImageInputRef}
                   />
+                   {extractError && (
+                    <Alert variant="destructive" className="mt-4">
+                        <AlertTitle>Extraction Error</AlertTitle>
+                        <AlertDescription>{extractError}</AlertDescription>
+                    </Alert>
+                )}
                 </TabsContent>
               </Tabs>
             </div>
