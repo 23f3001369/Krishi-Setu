@@ -45,6 +45,7 @@ import { z } from 'zod';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const heroImage = PlaceHolderImages.find(p => p.id === "cultivation-guide-hero");
@@ -63,6 +64,13 @@ export const CultivationStageSchema = z.object({
   tasks: z.array(TaskSchema).describe('A list of key tasks to be completed during this stage.'),
 });
 
+const cropVarieties: Record<string, string[]> = {
+    'corn': ['Pioneer P1197', 'Dekalb DKC62-08', 'Sweet Corn 101'],
+    'tomato': ['Roma', 'Cherry', 'Beefsteak', 'San Marzano'],
+    'wheat': ['HD-3226', 'Durum', 'Einkorn'],
+    'soybean': ['Asgrow AG24X9', 'Pioneer P28A40X'],
+};
+
 
 export default function CultivationGuidePage() {
   const [formData, setFormData] = useState({
@@ -74,6 +82,7 @@ export default function CultivationGuidePage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOtherVariety, setShowOtherVariety] = useState(false);
 
   const { user } = useUser();
   const db = useFirestore();
@@ -85,6 +94,16 @@ export default function CultivationGuidePage() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+  
+  const handleVarietyChange = (value: string) => {
+    if (value === 'other') {
+        setShowOtherVariety(true);
+        setFormData(prev => ({...prev, variety: ''}));
+    } else {
+        setShowOtherVariety(false);
+        setFormData(prev => ({...prev, variety: value}));
+    }
+  }
 
   const handleGenerateGuide = async () => {
     if (!user || !db) {
@@ -130,6 +149,8 @@ export default function CultivationGuidePage() {
   };
   
   const isFormValid = formData.crop && formData.area && formData.weather && formData.soilHealth;
+
+  const suggestedVarieties = cropVarieties[formData.crop.toLowerCase()] || [];
 
   if (isLoading) {
     return (
@@ -178,14 +199,37 @@ export default function CultivationGuidePage() {
                 </div>
             </div>
              <div className="space-y-2">
-                <Label htmlFor="variety">Crop Variety (Optional)</Label>
-                <div className="flex gap-2">
-                    <Input id="variety" name="variety" placeholder="e.g., Pioneer P1197" value={formData.variety} onChange={handleInputChange} />
-                    <Button variant="outline">
-                        <Bot className="mr-2 h-4 w-4"/>
-                        Recommend
-                    </Button>
-                </div>
+                <Label htmlFor="variety">Crop Variety</Label>
+                 {suggestedVarieties.length > 0 ? (
+                    <div className="space-y-2">
+                        <Select onValueChange={handleVarietyChange} value={showOtherVariety ? 'other' : formData.variety}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a variety or let AI recommend" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {suggestedVarieties.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                                <SelectItem value="other">Other...</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {showOtherVariety && (
+                            <Input 
+                                name="variety" 
+                                placeholder="Please specify variety" 
+                                value={formData.variety} 
+                                onChange={handleInputChange} 
+                                className="mt-2"
+                            />
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex gap-2">
+                        <Input id="variety" name="variety" placeholder="e.g., Pioneer P1197 (or leave blank)" value={formData.variety} onChange={handleInputChange} />
+                        <Button variant="outline" type="button">
+                            <Bot className="mr-2 h-4 w-4"/>
+                            Recommend
+                        </Button>
+                    </div>
+                )}
             </div>
              <div className="space-y-2">
                 <Label htmlFor="weather" className="flex items-center gap-1"><Sun className="w-4 h-4"/> Current Weather</Label>
