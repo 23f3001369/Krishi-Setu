@@ -146,7 +146,6 @@ function AskAgriVaani() {
 
     if (isRecording) {
       recognitionRef.current.stop();
-      // onend will set isRecording to false
     } else {
       recognitionRef.current.start();
       setIsRecording(true);
