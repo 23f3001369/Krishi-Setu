@@ -28,7 +28,7 @@ import {
   Library,
 } from 'lucide-react';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import {
   learningHubRecommendation,
@@ -103,14 +103,49 @@ function AskAgriVaani() {
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<LearningHubRecommendationOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+   useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setQuery(transcript);
+        setIsRecording(false);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setError('Speech recognition failed. Please try again or type your question.');
+        setIsRecording(false);
+      };
+      
+      recognition.onend = () => {
+          setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
 
   const handleVoiceSearch = () => {
-    setIsRecording(!isRecording);
-    // TODO: Implement voice recognition
-    if (!isRecording) {
-      setQuery('Show me videos about harvesting corn...');
+    if (!recognitionRef.current) {
+        setError("Sorry, your browser doesn't support voice recognition.");
+        return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
     } else {
-      setQuery('');
+      recognitionRef.current.start();
+      setIsRecording(true);
+      setError(null);
     }
   };
 
@@ -163,7 +198,7 @@ function AskAgriVaani() {
               disabled={isLoading}
             />
             <Button variant="ghost" size="icon" onClick={handleVoiceSearch} disabled={isLoading}>
-              <Mic className={isRecording ? 'text-primary' : ''} />
+              <Mic className={isRecording ? 'text-primary animate-pulse' : ''} />
             </Button>
             <Button onClick={handleSearch} disabled={isLoading || !query}>
               <Send className="mr-2 h-4 w-4" />
@@ -420,4 +455,11 @@ export default function LearningHubPage() {
       </section>
     </div>
   );
+}
+
+declare global {
+    interface Window {
+        SpeechRecognition: any;
+        webkitSpeechRecognition: any;
+    }
 }
