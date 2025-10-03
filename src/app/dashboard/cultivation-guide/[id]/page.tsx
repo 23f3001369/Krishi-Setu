@@ -218,7 +218,7 @@ export default function ViewGuidePage() {
                     <Accordion type="single" collapsible defaultValue={`item-${activeStageIndex}`} className="w-full">
                         {stages.map((stage, index) => (
                             <AccordionItem value={`item-${index}`} key={index}>
-                                <AccordionTrigger className="text-lg" disabled={stage.status === 'upcoming'}>
+                                <AccordionTrigger className="text-lg">
                                     <div className="flex items-center gap-4">
                                         {stage.status === 'completed' && <CheckCircle className="h-6 w-6 text-green-500" />}
                                         {stage.status === 'active' && <Loader className="h-6 w-6 text-blue-500" />}
