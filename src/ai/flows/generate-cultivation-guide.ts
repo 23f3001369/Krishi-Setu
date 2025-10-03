@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent for generating a detailed crop cultivation guide.
@@ -19,7 +20,7 @@ const GenerateCultivationGuideInputSchema = z.object({
 });
 export type GenerateCultivationGuideInput = z.infer<typeof GenerateCultivationGuideInputSchema>;
 
-export const CultivationStageSchema = z.object({
+const CultivationStageSchema = z.object({
   name: z.string().describe('The name of the cultivation stage (e.g., "Planting", "Vegetative Growth").'),
   status: z.enum(['completed', 'active', 'upcoming']).describe('The current status of this stage.'),
   duration: z.string().describe('The estimated duration of this stage (e.g., "Day 1-5").'),

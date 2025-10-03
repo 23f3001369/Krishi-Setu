@@ -41,8 +41,19 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { z } from 'zod';
+
 
 const heroImage = PlaceHolderImages.find(p => p.id === "cultivation-guide-hero");
+
+export const CultivationStageSchema = z.object({
+  name: z.string().describe('The name of the cultivation stage (e.g., "Planting", "Vegetative Growth").'),
+  status: z.enum(['completed', 'active', 'upcoming']).describe('The current status of this stage.'),
+  duration: z.string().describe('The estimated duration of this stage (e.g., "Day 1-5").'),
+  aiInstruction: z.string().describe('A detailed, user-friendly instruction from the AI for this specific stage.'),
+  pestAndDiseaseAlert: z.string().optional().describe('A specific alert for pests or diseases relevant to this stage and region.'),
+  tasks: z.array(z.string()).describe('A list of key tasks to be completed during this stage.'),
+});
 
 export default function CultivationGuidePage() {
   const [formData, setFormData] = useState({
