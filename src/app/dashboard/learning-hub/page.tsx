@@ -26,6 +26,7 @@ import {
   Bot,
   Radio,
   Library,
+  AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
@@ -102,42 +103,57 @@ function AskAgriVaani() {
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<LearningHubRecommendationOutput | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<React.ReactNode | null>(null);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
+    // Initialize SpeechRecognition only on the client side
     if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!recognitionRef.current) {
         recognitionRef.current = new SpeechRecognition();
-        const recognition = recognitionRef.current;
+      }
+      const recognition = recognitionRef.current;
 
-        recognition.continuous = false;
-        recognition.lang = 'en-US';
-        recognition.interimResults = false;
+      recognition.continuous = false;
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
 
-        recognition.onresult = (event) => {
-            const transcript = event.results[event.results.length - 1][0].transcript.trim();
-            setQuery(transcript);
-        };
-        
-        recognition.onend = () => {
-            setIsRecording(false);
-        };
+      recognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript.trim();
+        setQuery(transcript);
+        setIsRecording(false);
+      };
+      
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
 
-        recognition.onerror = (event) => {
-            if (event.error === 'network') {
-                setError('Network error for speech service. Please check your internet connection.');
-            } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                setError('Microphone permission was denied. Please allow it in your browser settings.');
-            } else if (event.error === 'audio-capture') {
-                setError('Could not access the microphone. Please ensure no other application is using it and try again.');
-            } else {
-                setError(`Speech recognition error: ${event.error}. Please try again or type your question.`);
-            }
-            setIsRecording(false);
-        };
-    } else {
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'network') {
+            setError('Network error for speech service. Please check your internet connection.');
+        } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            setError('Microphone permission was denied. Please allow it in your browser settings.');
+        } else if (event.error === 'audio-capture') {
+            setError(
+              <div>
+                <p className='font-bold mb-2'>Could not access the microphone.</p>
+                <ul className='list-disc pl-5 text-xs space-y-1'>
+                    <li>Ensure no other browser tab or application is using your microphone and try again.</li>
+                    <li>Check your browser's site permissions to make sure microphone access is allowed for this page.</li>
+                    <li>Check your operating system's privacy settings to ensure your browser has permission to use the microphone.</li>
+                    <li>Try restarting your browser or computer.</li>
+                </ul>
+              </div>
+            );
+        } else {
+            setError(`Speech recognition error: ${event.error}. Please try again or type your question.`);
+        }
+        setIsRecording(false);
+      };
+    } else if (typeof window !== 'undefined') {
         setError("Sorry, your browser doesn't support voice recognition.");
     }
   }, []);
@@ -239,7 +255,8 @@ function AskAgriVaani() {
         {error && (
              <CardFooter className="p-6">
                 <Alert variant="destructive">
-                    <AlertTitle>Error</AlertTitle>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Microphone Error</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
             </CardFooter>
