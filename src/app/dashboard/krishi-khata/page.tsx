@@ -33,12 +33,17 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
-import { PlusCircle, ArrowUpCircle, ArrowDownCircle, Trash2, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { PlusCircle, ArrowUpCircle, ArrowDownCircle, Trash2, TrendingUp, TrendingDown, MinusCircle, CalendarIcon } from "lucide-react";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, deleteDoc, doc, query, where, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+
 
 type Transaction = {
     id: string;
@@ -83,13 +88,13 @@ export default function KrishiKhataPage() {
     };
   }, [transactions]);
 
-  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'date'> & { date: string }) => {
+  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'date'> & { date: Date }) => {
     if (!transactionsQuery) return;
     try {
         await addDoc(transactionsQuery, {
             ...transaction,
             createdAt: Timestamp.now(),
-            date: Timestamp.fromDate(new Date(transaction.date)),
+            date: Timestamp.fromDate(transaction.date),
         });
         toast({ title: 'Success', description: 'Transaction added.' });
         setIsDialogOpen(false);
@@ -112,9 +117,9 @@ export default function KrishiKhataPage() {
   
   const formatDate = (date: string | Timestamp) => {
       if (date instanceof Timestamp) {
-          return date.toDate().toISOString().split('T')[0];
+          return date.toDate().toLocaleDateString();
       }
-      return date;
+      return new Date(date).toLocaleDateString();
   }
 
   return (
@@ -240,12 +245,12 @@ export default function KrishiKhataPage() {
   );
 }
 
-function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'id' | 'date'> & { date: string }) => void}) {
+function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'id' | 'date'> & { date: Date }) => void}) {
     const [type, setType] = useState<'income' | 'expense'>('expense');
     const [category, setCategory] = useState('');
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState<Date | undefined>(new Date());
 
     const categories = type === 'income' ? incomeCategories : expenseCategories;
     
@@ -270,6 +275,7 @@ function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'i
         setCategory('');
         setAmount('');
         setDescription('');
+        setDate(new Date());
     }
 
     return (
@@ -315,7 +321,29 @@ function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'i
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="date">Date</Label>
-                        <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} required/>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !date && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={setDate}
+                                disabled={(date) => date > new Date()}
+                                initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
                 <DialogFooter>
@@ -328,3 +356,5 @@ function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'i
         </DialogContent>
     );
 }
+
+    
