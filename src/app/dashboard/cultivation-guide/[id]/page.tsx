@@ -217,8 +217,8 @@ export default function ViewGuidePage() {
                 <CardContent className="p-6">
                     <Accordion type="single" collapsible defaultValue={`item-${activeStageIndex}`} className="w-full">
                         {stages.map((stage, index) => (
-                            <AccordionItem value={`item-${index}`} key={index} disabled={stage.status === 'upcoming'}>
-                                <AccordionTrigger className="text-lg">
+                            <AccordionItem value={`item-${index}`} key={index}>
+                                <AccordionTrigger className="text-lg" disabled={stage.status === 'upcoming'}>
                                     <div className="flex items-center gap-4">
                                         {stage.status === 'completed' && <CheckCircle className="h-6 w-6 text-green-500" />}
                                         {stage.status === 'active' && <Loader className="h-6 w-6 text-blue-500 animate-spin" />}
@@ -311,3 +311,5 @@ function GuideSkeleton() {
         </div>
     )
 }
+
+    
