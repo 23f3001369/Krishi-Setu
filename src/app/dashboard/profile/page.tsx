@@ -362,7 +362,8 @@ export default function ProfilePage() {
                                 ) : farmsData && farmsData.length > 0 ? (
                                     <div className="space-y-6">
                                         {farmsData.map((farm, index) => (
-                                            <div key={farm.id}>
+                                          <AlertDialog key={farm.id}>
+                                            <div>
                                                 {index > 0 && <Separator className="my-4" />}
                                                 <div className="space-y-3 text-sm">
                                                     <div className="flex justify-between items-center">
@@ -394,6 +395,24 @@ export default function ProfilePage() {
                                                     </div>
                                                 </div>
                                             </div>
+                                             <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle className="flex items-center gap-2">
+                                                        <AlertTriangle className="text-destructive"/>
+                                                        Confirm Deletion
+                                                    </AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to delete the farm "<strong>{farm?.name}</strong>"? This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel onClick={() => setFarmToDelete(null)}>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleDeleteFarm} className="bg-destructive hover:bg-destructive/90">
+                                                        Delete
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                          </AlertDialog>
                                         ))}
                                     </div>
                                 ) : (
@@ -407,28 +426,6 @@ export default function ProfilePage() {
                 </div>
             </div>
         </div>
-
-        <AlertDialog open={!!farmToDelete} onOpenChange={(isOpen) => !isOpen && setFarmToDelete(null)}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="text-destructive"/>
-                        Confirm Deletion
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Are you sure you want to delete the farm "<strong>{farmToDelete?.name}</strong>"? This action cannot be undone.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteFarm} className="bg-destructive hover:bg-destructive/90">
-                        Delete
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
     </>
   );
 }
-
-    
