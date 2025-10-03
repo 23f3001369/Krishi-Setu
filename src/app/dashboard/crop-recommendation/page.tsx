@@ -49,17 +49,13 @@ async function recommendCrops(
 ): Promise<RecommendationState> {
   const soilAnalysis = formData.get('soilAnalysis') as string;
   const soilHealthCardImage = formData.get('soilHealthCardImage') as string;
-  const realTimeWeatherConditions = formData.get(
-    'realTimeWeatherConditions'
-  ) as string;
-  const seasonalData = formData.get('seasonalData') as string;
+  const realTimeWeatherConditions = "Temp: 25°C, Humidity: 70%, Wind: 10km/h, Last rainfall: 2 days ago";
+  const seasonalData = "Current season: Late Spring, Average rainfall for this period: 50mm, Frost risk: Low";
 
   if (
-    (!soilAnalysis && !soilHealthCardImage) ||
-    !realTimeWeatherConditions ||
-    !seasonalData
+    (!soilAnalysis && !soilHealthCardImage)
   ) {
-    return { error: 'All fields are required.' };
+    return { error: 'Soil details are required.' };
   }
 
   try {
@@ -328,26 +324,6 @@ export default function CropRecommendationPage() {
               </div>
             )}
 
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="realTimeWeatherConditions">
-                Real-time Weather Conditions
-              </Label>
-              <Textarea
-                name="realTimeWeatherConditions"
-                placeholder="e.g., Temp: 25°C, Humidity: 70%, Wind: 10km/h, Last rainfall: 2 days ago"
-                id="realTimeWeatherConditions"
-                required
-              />
-            </div>
-            <div className="grid w-full gap-1.5">
-              <Label htmlFor="seasonalData">Seasonal Data</Label>
-              <Textarea
-                name="seasonalData"
-                placeholder="e.g., Current season: Late Spring, Average rainfall for this period: 50mm, Frost risk: Low"
-                id="seasonalData"
-                required
-              />
-            </div>
             {recommendationState.error && !recommendationState.data && (
               <Alert variant="destructive">
                 <AlertTitle>Error</AlertTitle>
