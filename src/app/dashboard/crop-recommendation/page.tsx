@@ -228,7 +228,7 @@ export default function CropRecommendationPage() {
                   <TabsTrigger value="manual">Manual Entry</TabsTrigger>
                   <TabsTrigger value="upload">Upload Report</TabsTrigger>
                 </TabsList>
-                <TabsContent value="manual" className="pt-4">
+                <TabsContent value="manual" className="pt-4 space-y-6">
                   <Textarea
                     name="soilAnalysis"
                     placeholder="e.g., pH: 6.8, Nitrogen: High, Phosphorus: Medium, Potassium: Low, Organic Matter: 3.5%"
@@ -236,6 +236,24 @@ export default function CropRecommendationPage() {
                     value={soilAnalysis}
                     onChange={(e) => setSoilAnalysis(e.target.value)}
                   />
+                  <div className="space-y-2">
+                      <Label htmlFor="realTimeWeatherConditions">Real-time Weather Conditions</Label>
+                      <Textarea
+                          name="realTimeWeatherConditions"
+                          placeholder="e.g., Temp: 25°C, Humidity: 70%, Wind: 10km/h, Last rainfall: 2 days ago"
+                          id="realTimeWeatherConditions"
+                          required
+                      />
+                  </div>
+                   <div className="space-y-2">
+                      <Label htmlFor="seasonalData">Seasonal Data</Label>
+                      <Textarea
+                          name="seasonalData"
+                          placeholder="e.g., Current season: Late Spring, Average rainfall for this period: 50mm"
+                          id="seasonalData"
+                          required
+                      />
+                  </div>
                 </TabsContent>
                 <TabsContent value="upload" className="pt-4">
                   {!imagePreview ? (
