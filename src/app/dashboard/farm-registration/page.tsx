@@ -19,6 +19,9 @@ import { Check, MapPin, Image as ImageIcon, ChevronsRight, ChevronsLeft, Send } 
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useUser, useFirestore, addDocumentNonBlocking } from "@/firebase";
+import { collection } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 
 const totalSteps = 3;
@@ -33,6 +36,10 @@ export default function FarmRegistrationPage() {
     address: "",
   });
   const farmImage = PlaceHolderImages.find(p => p.id === 'farm-photo-1');
+
+  const { user } = useUser();
+  const db = useFirestore();
+  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -50,10 +57,37 @@ export default function FarmRegistrationPage() {
   
   const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
   
-  const handleSubmit = () => {
-    // Handle form submission logic
-    console.log("Form submitted", formData);
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+    if (!user || !db) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'You must be logged in to register a farm.',
+        });
+        return;
+    }
+
+    const farmData = {
+        farmerId: user.uid,
+        name: formData.farmName,
+        size: Number(formData.farmSize),
+        mainCrops: formData.mainCrops.split(',').map(s => s.trim()),
+        location: formData.address,
+        photos: [], // Placeholder for photo URLs
+    };
+
+    try {
+        const farmsCollectionRef = collection(db, 'farms');
+        await addDocumentNonBlocking(farmsCollectionRef, farmData);
+        setIsSubmitted(true);
+    } catch (error) {
+        console.error("Error adding document: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Registration Failed',
+            description: 'Could not save your farm details. Please try again.',
+        });
+    }
   };
 
   const progress = (step / totalSteps) * 100;
