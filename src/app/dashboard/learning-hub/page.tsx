@@ -106,30 +106,32 @@ function AskAgriVaani() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
-    // Check for browser support and initialize the recognition object
+    // Check for browser support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.lang = 'en-US';
         recognition.interimResults = false;
-        
+
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
             setQuery(transcript);
-            setIsRecording(false);
         };
         
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            setError('Speech recognition failed. Please try again or type your question.');
-            setIsRecording(false);
+            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                setError('Microphone permission was denied. Please allow it in your browser settings.');
+            } else {
+                setError('Speech recognition failed. Please try again or type your question.');
+            }
         };
 
         recognition.onend = () => {
             setIsRecording(false);
         };
-        
+
         recognitionRef.current = recognition;
     } else {
         console.warn("Browser doesn't support SpeechRecognition.");
@@ -144,6 +146,7 @@ function AskAgriVaani() {
 
     if (isRecording) {
       recognitionRef.current.stop();
+      // onend will set isRecording to false
     } else {
       recognitionRef.current.start();
       setIsRecording(true);
@@ -465,3 +468,5 @@ declare global {
         webkitSpeechRecognition: any;
     }
 }
+
+    
