@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -19,16 +20,21 @@ import { Check, MapPin, Image as ImageIcon, ChevronsRight, ChevronsLeft, Send } 
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useUser, useFirestore } from "@/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, addDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 const totalSteps = 3;
 
 export default function FarmRegistrationPage() {
+  const searchParams = useSearchParams();
+  const farmId = searchParams.get('id');
+
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!farmId); // Start loading if in edit mode
   const [formData, setFormData] = useState({
     farmName: "",
     farmSize: "",
@@ -40,6 +46,36 @@ export default function FarmRegistrationPage() {
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
+
+  const farmDocRef = useMemoFirebase(() => {
+    if (!db || !farmId) return null;
+    return doc(db, 'farms', farmId);
+  }, [db, farmId]);
+
+  useEffect(() => {
+    if (farmDocRef) {
+      setIsLoading(true);
+      getDoc(farmDocRef).then(docSnap => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setFormData({
+            farmName: data.name || '',
+            farmSize: data.size?.toString() || '',
+            mainCrops: Array.isArray(data.mainCrops) ? data.mainCrops.join(', ') : '',
+            address: data.location || '',
+          });
+        } else {
+          toast({ variant: 'destructive', title: 'Error', description: 'Farm not found.' });
+        }
+      }).catch(error => {
+        console.error("Error fetching farm document:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch farm details.' });
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    }
+  }, [farmDocRef, toast]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -77,15 +113,27 @@ export default function FarmRegistrationPage() {
     };
 
     try {
-        const farmsCollectionRef = collection(db, 'farms');
-        await addDoc(farmsCollectionRef, farmData);
+        if (farmDocRef) {
+             await updateDoc(farmDocRef, farmData);
+             toast({
+                title: 'Farm Updated',
+                description: 'Your farm details have been successfully updated.',
+             });
+        } else {
+            const farmsCollectionRef = collection(db, 'farms');
+            await addDoc(farmsCollectionRef, farmData);
+            toast({
+                title: 'Registration Complete!',
+                description: 'Your farm has been successfully registered.',
+            });
+        }
         setIsSubmitted(true);
     } catch (error) {
-        console.error("Error adding document: ", error);
+        console.error("Error writing document: ", error);
         toast({
             variant: 'destructive',
-            title: 'Registration Failed',
-            description: 'Could not save your farm details. Please try again.',
+            title: farmId ? 'Update Failed' : 'Registration Failed',
+            description: `Could not save your farm details. Please try again.`,
         });
     }
   };
@@ -100,20 +148,20 @@ export default function FarmRegistrationPage() {
                     <div className="bg-primary/10 p-3 rounded-full mb-4">
                         <Check className="h-10 w-10 text-primary" />
                     </div>
-                    <CardTitle>Registration Complete!</CardTitle>
-                    <CardDescription>Your farm has been successfully registered. You can now access all features.</CardDescription>
+                    <CardTitle>{farmId ? 'Update Successful!' : 'Registration Complete!'}</CardTitle>
+                    <CardDescription>{farmId ? 'Your farm details have been updated.' : 'Your farm has been successfully registered.'}</CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
                     <Alert>
                         <Send className="h-4 w-4" />
                         <AlertTitle>What's Next?</AlertTitle>
                         <AlertDescription>
-                            Explore your dashboard to view weather forecasts or try our AI Crop Recommendation tool.
+                            You can view your updated farm details on your profile or explore the dashboard.
                         </AlertDescription>
                     </Alert>
                 </CardContent>
                 <CardFooter className="p-6">
-                    <Button className="w-full" onClick={() => window.location.href = '/dashboard'}>Go to Dashboard</Button>
+                    <Button className="w-full" onClick={() => window.location.href = '/dashboard/profile'}>Go to My Profile</Button>
                 </CardFooter>
             </Card>
         </div>
@@ -123,8 +171,8 @@ export default function FarmRegistrationPage() {
   return (
     <div className="space-y-8 w-full">
         <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight font-headline">Register Your Farm</h1>
-            <p className="text-muted-foreground">Follow the steps to add your farm details to AgriAssist.</p>
+            <h1 className="text-3xl font-bold tracking-tight font-headline">{farmId ? 'Edit Your Farm' : 'Register Your Farm'}</h1>
+            <p className="text-muted-foreground">Follow the steps to {farmId ? 'update' : 'add'} your farm details.</p>
         </div>
         <Card className="w-full">
         <CardHeader className="p-6">
@@ -135,9 +183,22 @@ export default function FarmRegistrationPage() {
             <Progress value={progress} className="w-full mt-2" />
         </CardHeader>
         <CardContent className="p-6">
-            {step === 1 && <Step1 formData={formData} handleChange={handleChange} />}
-            {step === 2 && <Step2 formData={formData} handleChange={handleChange} />}
-            {step === 3 && <Step3 image={farmImage} />}
+            {isLoading ? (
+                <div className="space-y-4 max-w-2xl mx-auto">
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-8 w-1/4 mt-4" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-8 w-1/4 mt-4" />
+                    <Skeleton className="h-20 w-full" />
+                </div>
+            ) : (
+                <>
+                    {step === 1 && <Step1 formData={formData} handleChange={handleChange} />}
+                    {step === 2 && <Step2 formData={formData} handleChange={handleChange} />}
+                    {step === 3 && <Step3 image={farmImage} />}
+                </>
+            )}
         </CardContent>
         <CardFooter className="flex justify-between p-6">
             <Button variant="outline" onClick={handleBack} disabled={step === 1}>
@@ -151,7 +212,7 @@ export default function FarmRegistrationPage() {
             </Button>
             ) : (
             <Button onClick={handleSubmit}>
-                Submit
+                {farmId ? 'Update Farm' : 'Submit'}
                 <Send className="ml-2 h-4 w-4" />
             </Button>
             )}

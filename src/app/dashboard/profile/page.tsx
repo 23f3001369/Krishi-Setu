@@ -28,7 +28,7 @@ import { Camera, Edit, Phone, Shield, Tractor, PlusCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 
@@ -39,9 +39,7 @@ const profileFormSchema = z.object({
   email: z.string().email({
     message: 'Please enter a valid email address.',
   }),
-  mobile: z.string().min(10, {
-    message: 'Please enter a valid 10-digit mobile number.',
-  }),
+  mobile: z.string().optional(),
 });
 
 const passwordFormSchema = z.object({
@@ -67,9 +65,6 @@ export default function ProfilePage() {
     if (!db || !user?.uid) return null;
     return doc(db, 'farmers', user.uid);
   }, [db, user?.uid]);
-  
-  // Note: useDoc is not used here because we are not subscribing to live updates for this form.
-  // We fetch once in useEffect.
   
   const farmsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
@@ -97,14 +92,27 @@ export default function ProfilePage() {
   });
   
   useEffect(() => {
-    if (user) {
-      profileForm.reset({
-        name: user.displayName || '',
-        email: user.email || '',
-        mobile: user.phoneNumber || '', // Directly from auth if available
-      });
+    if (user && db && farmerDocRef) {
+      const fetchFarmerData = async () => {
+        const docSnap = await getDoc(farmerDocRef);
+        if (docSnap.exists()) {
+          const farmerData = docSnap.data();
+          profileForm.reset({
+            name: user.displayName || farmerData.name || '',
+            email: user.email || farmerData.email || '',
+            mobile: farmerData.phone || '',
+          });
+        } else {
+            profileForm.reset({
+                name: user.displayName || '',
+                email: user.email || '',
+                mobile: user.phoneNumber || '', 
+            });
+        }
+      };
+      fetchFarmerData();
     }
-  }, [user, profileForm]);
+  }, [user, db, farmerDocRef, profileForm]);
 
 
   async function onProfileSubmit(data: ProfileFormValues) {
@@ -213,7 +221,7 @@ export default function ProfilePage() {
                                     <FormControl>
                                        <div className="relative">
                                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input placeholder="Your mobile number" {...field} className="pl-10" />
+                                            <Input placeholder="Your mobile number" {...field} disabled />
                                        </div>
                                     </FormControl>
                                     <FormMessage />
@@ -298,10 +306,10 @@ export default function ProfilePage() {
                             <CardTitle>Registered Farms</CardTitle>
                             <CardDescription>Your registered farm details.</CardDescription>
                         </div>
-                        <Button asChild variant="outline">
+                        <Button asChild variant="outline" size="sm">
                             <Link href="/dashboard/farm-registration">
                                 <PlusCircle className="w-4 h-4 mr-2" />
-                                Add New Farm
+                                Add New
                             </Link>
                         </Button>
                     </CardHeader>
@@ -320,10 +328,10 @@ export default function ProfilePage() {
                                     <div key={farm.id}>
                                         {index > 0 && <Separator className="my-4" />}
                                         <div className="space-y-3 text-sm">
-                                             <div className="flex justify-between font-semibold">
+                                             <div className="flex justify-between font-semibold items-center">
                                                 <span className="text-base">{farm.name}</span>
                                                 <Button variant="ghost" size="sm" asChild>
-                                                    <Link href="/dashboard/farm-registration">
+                                                    <Link href={`/dashboard/farm-registration?id=${farm.id}`}>
                                                         <Edit className="w-3 h-3 mr-1" />
                                                         Edit
                                                     </Link>
@@ -339,7 +347,7 @@ export default function ProfilePage() {
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-muted-foreground">Main Crops:</span>
-                                                <span className="font-medium text-right">{(farm.mainCrops as string[]).join(', ')}</span>
+                                                <span className="font-medium text-right">{(Array.isArray(farm.mainCrops) ? farm.mainCrops : []).join(', ')}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -358,5 +366,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
