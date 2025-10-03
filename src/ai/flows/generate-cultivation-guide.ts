@@ -20,13 +20,18 @@ const GenerateCultivationGuideInputSchema = z.object({
 });
 export type GenerateCultivationGuideInput = z.infer<typeof GenerateCultivationGuideInputSchema>;
 
+const TaskSchema = z.object({
+  text: z.string().describe('A description of the task.'),
+  completed: z.boolean().describe('Whether the task has been completed.'),
+});
+
 const CultivationStageSchema = z.object({
   name: z.string().describe('The name of the cultivation stage (e.g., "Planting", "Vegetative Growth").'),
   status: z.enum(['completed', 'active', 'upcoming']).describe('The current status of this stage.'),
   duration: z.string().describe('The estimated duration of this stage (e.g., "Day 1-5").'),
   aiInstruction: z.string().describe('A detailed, user-friendly instruction from the AI for this specific stage.'),
   pestAndDiseaseAlert: z.string().optional().describe('A specific alert for pests or diseases relevant to this stage and region.'),
-  tasks: z.array(z.string()).describe('A list of key tasks to be completed during this stage.'),
+  tasks: z.array(TaskSchema).describe('A list of key tasks to be completed during this stage. Each task should have a `text` and `completed` field.'),
 });
 export type CultivationStage = z.infer<typeof CultivationStageSchema>;
 
@@ -65,7 +70,7 @@ Based on this information, create a complete cultivation plan. The plan must inc
     - For each stage, define its 'name', 'duration' (e.g., "Day 1-5"), and 'status'. The first stage should be 'active', and all subsequent stages should be 'upcoming'. The 'completed' status is for future use.
     - Provide a detailed 'aiInstruction' for each stage, explaining what the farmer needs to do and look out for.
     - If relevant for the stage, provide a 'pestAndDiseaseAlert' based on common issues for that crop.
-    - List a few simple, actionable 'tasks' for the farmer to perform during that stage.
+    - List a few simple, actionable 'tasks' for the farmer to perform during that stage. Each task should be an object with a 'text' property and a 'completed' property, which should be initialized to 'false'.
 
 Generate the response in the required JSON format.
 `,

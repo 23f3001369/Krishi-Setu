@@ -41,13 +41,22 @@ import { useToast } from '@/hooks/use-toast';
 import { type CultivationStage } from '@/ai/flows/generate-cultivation-guide';
 import Link from 'next/link';
 
+type Task = {
+    text: string;
+    completed: boolean;
+};
+
+type EnhancedCultivationStage = Omit<CultivationStage, 'tasks'> & {
+    tasks: Task[];
+};
+
 type CultivationGuideData = {
     id: string;
     crop: string;
     variety: string;
     estimatedDurationDays: number;
     estimatedExpenses: number;
-    stages: CultivationStage[];
+    stages: EnhancedCultivationStage[];
 };
 
 
@@ -67,25 +76,41 @@ export default function ViewGuidePage() {
 
     const { data: guide, isLoading: isGuideLoading } = useDoc<CultivationGuideData>(guideDocRef);
     
-    const [stages, setStages] = useState<CultivationStage[]>([]);
+    const [stages, setStages] = useState<EnhancedCultivationStage[]>([]);
     const [isUpdating, setIsUpdating] = useState(false);
 
     useEffect(() => {
         if (guide) {
-            setStages(guide.stages);
+            // Ensure tasks are in the correct format
+            const formattedStages = guide.stages.map(stage => ({
+                ...stage,
+                tasks: stage.tasks.map(task => 
+                    typeof task === 'string' ? { text: task, completed: false } : task
+                )
+            }));
+            setStages(formattedStages);
         }
     }, [guide]);
 
-    const handleStageStatusUpdate = async (updatedStages: CultivationStage[]) => {
+    const handleTaskChange = (stageIndex: number, taskIndex: number, completed: boolean) => {
+        const newStages = [...stages];
+        newStages[stageIndex].tasks[taskIndex].completed = completed;
+        setStages(newStages);
+        handleStageStatusUpdate(newStages, false); // Don't show toast for task changes
+    };
+
+    const handleStageStatusUpdate = async (updatedStages: EnhancedCultivationStage[], showToast = true) => {
         if (!guideDocRef) return;
 
         setIsUpdating(true);
         try {
             await updateDoc(guideDocRef, { stages: updatedStages });
-            toast({
-                title: 'Stage Updated',
-                description: 'The status of your cultivation stages has been saved.',
-            });
+            if (showToast) {
+                toast({
+                    title: 'Stage Updated',
+                    description: 'The status of your cultivation stages has been saved.',
+                });
+            }
         } catch (error) {
             console.error("Error updating stages:", error);
             toast({
@@ -100,18 +125,21 @@ export default function ViewGuidePage() {
     
     const handleNextStage = () => {
         const activeIndex = stages.findIndex(s => s.status === 'active');
-        if (activeIndex > -1 && activeIndex < stages.length - 1) {
+        
+        if (activeIndex > -1) {
             const newStages = stages.map((stage, index) => {
-                if (index === activeIndex) return { ...stage, status: 'completed' as const };
-                if (index === activeIndex + 1) return { ...stage, status: 'active' as const };
-                return stage;
-            });
-            setStages(newStages);
-            handleStageStatusUpdate(newStages);
-        } else if (activeIndex > -1) {
-            // Last stage is completed
-             const newStages = stages.map((stage, index) => {
-                if (index === activeIndex) return { ...stage, status: 'completed' as const };
+                // Mark current active stage as completed and check all its tasks
+                if (index === activeIndex) {
+                    return { 
+                        ...stage, 
+                        status: 'completed' as const,
+                        tasks: stage.tasks.map(task => ({ ...task, completed: true }))
+                    };
+                }
+                // If there's a next stage, mark it as active
+                if (index === activeIndex + 1) {
+                    return { ...stage, status: 'active' as const };
+                }
                 return stage;
             });
             setStages(newStages);
@@ -218,9 +246,14 @@ export default function ViewGuidePage() {
                                         <div className="space-y-2">
                                             {stage.tasks.map((task, taskIndex) => (
                                                 <div key={taskIndex} className="flex items-center gap-3 p-2 bg-muted/50 rounded-md">
-                                                    <Checkbox id={`task-${index}-${taskIndex}`} disabled={stage.status !== 'active'} />
+                                                    <Checkbox 
+                                                        id={`task-${index}-${taskIndex}`} 
+                                                        checked={task.completed}
+                                                        onCheckedChange={(checked) => handleTaskChange(index, taskIndex, !!checked)}
+                                                        disabled={stage.status !== 'active' || isUpdating} 
+                                                    />
                                                     <label htmlFor={`task-${index}-${taskIndex}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                        {task}
+                                                        {task.text}
                                                     </label>
                                                 </div>
                                             ))}

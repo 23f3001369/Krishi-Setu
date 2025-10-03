@@ -36,7 +36,6 @@ import { Separator } from '@/components/ui/separator';
 import {
   generateCultivationGuide,
   type GenerateCultivationGuideOutput,
-  type CultivationStage
 } from '@/ai/flows/generate-cultivation-guide';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -50,14 +49,20 @@ import { useToast } from '@/hooks/use-toast';
 
 const heroImage = PlaceHolderImages.find(p => p.id === "cultivation-guide-hero");
 
+export const TaskSchema = z.object({
+    text: z.string().describe('A description of the task.'),
+    completed: z.boolean().describe('Whether the task has been completed.'),
+});
+
 export const CultivationStageSchema = z.object({
   name: z.string().describe('The name of the cultivation stage (e.g., "Planting", "Vegetative Growth").'),
   status: z.enum(['completed', 'active', 'upcoming']).describe('The current status of this stage.'),
   duration: z.string().describe('The estimated duration of this stage (e.g., "Day 1-5").'),
   aiInstruction: z.string().describe('A detailed, user-friendly instruction from the AI for this specific stage.'),
   pestAndDiseaseAlert: z.string().optional().describe('A specific alert for pests or diseases relevant to this stage and region.'),
-  tasks: z.array(z.string()).describe('A list of key tasks to be completed during this stage.'),
+  tasks: z.array(TaskSchema).describe('A list of key tasks to be completed during this stage.'),
 });
+
 
 export default function CultivationGuidePage() {
   const [formData, setFormData] = useState({
