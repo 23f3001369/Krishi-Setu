@@ -24,12 +24,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Edit, Phone, Shield, Tractor } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { Camera, Edit, Phone, Shield, Tractor, PlusCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -38,7 +39,9 @@ const profileFormSchema = z.object({
   email: z.string().email({
     message: 'Please enter a valid email address.',
   }),
-  mobile: z.string().optional(),
+  mobile: z.string().min(10, {
+    message: 'Please enter a valid 10-digit mobile number.',
+  }),
 });
 
 const passwordFormSchema = z.object({
@@ -65,8 +68,9 @@ export default function ProfilePage() {
     return doc(db, 'farmers', user.uid);
   }, [db, user?.uid]);
   
-  const { data: farmerData, isLoading: isFarmerDataLoading } = useDoc(farmerDocRef);
-
+  // Note: useDoc is not used here because we are not subscribing to live updates for this form.
+  // We fetch once in useEffect.
+  
   const farmsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
     return query(collection(db, 'farms'), where('farmerId', '==', user.uid));
@@ -74,9 +78,7 @@ export default function ProfilePage() {
 
   const { data: farmsData, isLoading: isFarmsLoading } = useCollection(farmsQuery);
 
-  const farmDetails = useMemo(() => farmsData?.[0], [farmsData]);
-
-  const isUserLoading = isAuthUserLoading || isFarmerDataLoading;
+  const isUserLoading = isAuthUserLoading;
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -95,14 +97,14 @@ export default function ProfilePage() {
   });
   
   useEffect(() => {
-    if (user || farmerData) {
+    if (user) {
       profileForm.reset({
-        name: user?.displayName || '',
-        email: user?.email || '',
-        mobile: (farmerData as any)?.phone || '',
+        name: user.displayName || '',
+        email: user.email || '',
+        mobile: user.phoneNumber || '', // Directly from auth if available
       });
     }
-  }, [user, farmerData, profileForm]);
+  }, [user, profileForm]);
 
 
   async function onProfileSubmit(data: ProfileFormValues) {
@@ -211,7 +213,7 @@ export default function ProfilePage() {
                                     <FormControl>
                                        <div className="relative">
                                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input placeholder="Your mobile number" {...field} disabled className="pl-10" />
+                                            <Input placeholder="Your mobile number" {...field} className="pl-10" />
                                        </div>
                                     </FormControl>
                                     <FormMessage />
@@ -291,58 +293,70 @@ export default function ProfilePage() {
 
            <div className="space-y-8">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Registered Farm</CardTitle>
-                        <CardDescription>Details of your registered farm.</CardDescription>
+                    <CardHeader className='flex-row items-center justify-between'>
+                        <div>
+                            <CardTitle>Registered Farms</CardTitle>
+                            <CardDescription>Your registered farm details.</CardDescription>
+                        </div>
+                        <Button asChild variant="outline">
+                            <Link href="/dashboard/farm-registration">
+                                <PlusCircle className="w-4 h-4 mr-2" />
+                                Add New Farm
+                            </Link>
+                        </Button>
                     </CardHeader>
-                    {isFarmsLoading ? (
-                        <CardContent className="space-y-4 text-sm p-6">
-                            <Skeleton className="h-5 w-3/4" />
-                            <Skeleton className="h-5 w-1/2" />
-                            <Skeleton className="h-5 w-2/3" />
-                             <Skeleton className="h-5 w-1/2" />
-                        </CardContent>
-                    ) : farmDetails ? (
-                        <>
-                            <CardContent className="space-y-4 text-sm p-6">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Farm Name:</span>
-                                    <span className="font-medium">{farmDetails.name}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Location:</span>
-                                    <span className="font-medium">{farmDetails.location}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Area:</span>
-                                    <span className="font-medium">{farmDetails.size} acres</span>
-                                </div>
-                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Main Crops:</span>
-                                    <span className="font-medium text-right">{(farmDetails.mainCrops as string[]).join(', ')}</span>
-                                </div>
-                            </CardContent>
-                            <CardFooter className="p-6">
-                                <Button variant="outline" asChild className="w-full">
-                                    <Link href="/dashboard/farm-registration">
-                                    <Edit className="w-4 h-4 mr-2" />
-                                        Edit Farm Details
-                                    </Link>
-                                </Button>
-                            </CardFooter>
-                        </>
-                    ) : (
-                         <CardContent className="p-6 text-center text-muted-foreground">
-                            <Tractor className="mx-auto h-12 w-12" />
-                            <p className="mt-4">You have not registered a farm yet.</p>
-                             <Button asChild className="mt-4">
-                                <Link href="/dashboard/farm-registration">Register Your Farm</Link>
-                            </Button>
-                        </CardContent>
-                    )}
+                    
+                    <CardContent className="p-6 pt-2">
+                        {isFarmsLoading ? (
+                             <div className="space-y-4 text-sm">
+                                <Skeleton className="h-5 w-3/4" />
+                                <Skeleton className="h-5 w-1/2" />
+                                <Skeleton className="h-5 w-2/3" />
+                                <Skeleton className="h-5 w-1/2" />
+                            </div>
+                        ) : farmsData && farmsData.length > 0 ? (
+                            <div className="space-y-6">
+                                {farmsData.map((farm, index) => (
+                                    <div key={farm.id}>
+                                        {index > 0 && <Separator className="my-4" />}
+                                        <div className="space-y-3 text-sm">
+                                             <div className="flex justify-between font-semibold">
+                                                <span className="text-base">{farm.name}</span>
+                                                <Button variant="ghost" size="sm" asChild>
+                                                    <Link href="/dashboard/farm-registration">
+                                                        <Edit className="w-3 h-3 mr-1" />
+                                                        Edit
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Location:</span>
+                                                <span className="font-medium text-right">{farm.location}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Area:</span>
+                                                <span className="font-medium">{farm.size} acres</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Main Crops:</span>
+                                                <span className="font-medium text-right">{(farm.mainCrops as string[]).join(', ')}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                             <div className="text-center text-muted-foreground py-8">
+                                <Tractor className="mx-auto h-12 w-12" />
+                                <p className="mt-4">You have not registered any farms yet.</p>
+                            </div>
+                        )}
+                    </CardContent>
                 </Card>
            </div>
        </div>
     </div>
   );
 }
+
+    
