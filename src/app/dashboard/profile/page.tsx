@@ -24,11 +24,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Edit, Phone, Shield } from 'lucide-react';
+import { Camera, Edit, Phone, Shield, Tractor } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const profileFormSchema = z.object({
@@ -53,14 +53,6 @@ const passwordFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
-
-const mockFarmDetails = {
-    name: 'Sunny Meadows Farm',
-    size: '50 acres',
-    mainCrops: 'Corn, Soybeans, Wheat',
-    location: 'Countryside, Farmville',
-}
-
 export default function ProfilePage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -72,8 +64,17 @@ export default function ProfilePage() {
     if (!db || !user?.uid) return null;
     return doc(db, 'farmers', user.uid);
   }, [db, user?.uid]);
-
+  
   const { data: farmerData, isLoading: isFarmerDataLoading } = useDoc(farmerDocRef);
+
+  const farmsQuery = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null;
+    return query(collection(db, 'farms'), where('farmerId', '==', user.uid));
+  }, [db, user?.uid]);
+
+  const { data: farmsData, isLoading: isFarmsLoading } = useCollection(farmsQuery);
+
+  const farmDetails = useMemo(() => farmsData?.[0], [farmsData]);
 
   const isUserLoading = isAuthUserLoading || isFarmerDataLoading;
 
@@ -294,36 +295,45 @@ export default function ProfilePage() {
                         <CardTitle>Registered Farm</CardTitle>
                         <CardDescription>Details of your registered farm.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4 text-sm p-6">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Farm Name:</span>
-                            <span className="font-medium">{mockFarmDetails.name}</span>
-                        </div>
-                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Farm Size:</span>
-                            <span className="font-medium">{mockFarmDetails.size}</span>
-                        </div>
-                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Main Crops:</span>
-                            <span className="font-medium">{mockFarmDetails.mainCrops}</span>
-                        </div>
-                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Location:</span>
-                            <span className="font-medium">{mockFarmDetails.location}</span>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="p-6">
-                        <Button variant="outline" asChild className="w-full">
-                            <Link href="/dashboard/farm-registration">
-                               <Edit className="w-4 h-4 mr-2" />
-                                Edit Farm Details
-                            </Link>
-                        </Button>
-                    </CardFooter>
+                    {isFarmsLoading ? (
+                        <CardContent className="space-y-4 text-sm p-6">
+                            <Skeleton className="h-5 w-3/4" />
+                            <Skeleton className="h-5 w-1/2" />
+                            <Skeleton className="h-5 w-2/3" />
+                        </CardContent>
+                    ) : farmDetails ? (
+                        <>
+                            <CardContent className="space-y-4 text-sm p-6">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Farm Name:</span>
+                                    <span className="font-medium">{farmDetails.name}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Location:</span>
+                                    <span className="font-medium">{farmDetails.location}</span>
+                                </div>
+                            </CardContent>
+                            <CardFooter className="p-6">
+                                <Button variant="outline" asChild className="w-full">
+                                    <Link href="/dashboard/farm-registration">
+                                    <Edit className="w-4 h-4 mr-2" />
+                                        Edit Farm Details
+                                    </Link>
+                                </Button>
+                            </CardFooter>
+                        </>
+                    ) : (
+                         <CardContent className="p-6 text-center text-muted-foreground">
+                            <Tractor className="mx-auto h-12 w-12" />
+                            <p className="mt-4">You have not registered a farm yet.</p>
+                             <Button asChild className="mt-4">
+                                <Link href="/dashboard/farm-registration">Register Your Farm</Link>
+                            </Button>
+                        </CardContent>
+                    )}
                 </Card>
            </div>
        </div>
     </div>
   );
-
-    
+}
