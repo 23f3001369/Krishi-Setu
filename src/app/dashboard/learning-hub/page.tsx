@@ -86,12 +86,28 @@ const articles = [
     link: 'https://www.nrcs.usda.gov/wps/portal/nrcs/main/soils/health/',
   },
   {
-    id: '3',
-    title: 'Drip Irrigation for Home Gardens',
+    id: '4',
+    title: 'Cover Crops for Sustainable Farming',
     description:
-      'A detailed guide from the University of California on how to implement efficient drip irrigation systems for gardens and small farms.',
-    imageId: 'learning-hub-article-2',
-    link: 'https://ucanr.edu/sites/scmg/files/27702.pdf',
+      'From the Sustainable Agriculture Research and Education (SARE) program, learn how cover crops can improve soil health and farm productivity.',
+    imageId: 'learning-hub-article-1',
+    link: 'https://www.sare.org/resources/cover-crops/',
+  },
+  {
+    id: '5',
+    title: 'Introduction to No-Till Farming',
+    description:
+      'A detailed introduction to the benefits and practices of no-till farming from the University of Nebraska-Lincoln Extension.',
+    imageId: 'hero-image',
+    link: 'https://extension.unl.edu/practice/introduction-to-no-till/',
+  },
+  {
+    id: '6',
+    title: 'Crop Rotation on Organic Farms',
+    description:
+      'A practical guide from the Rodale Institute on how to design and implement effective crop rotation plans for organic farming systems.',
+    imageId: 'learning-hub-video-2',
+    link: 'https://rodaleinstitute.org/science/articles/crop-rotation-on-organic-farms/',
   },
 ];
 
@@ -143,6 +159,30 @@ const videos = [
         'An introductory guide to the principles and practices of organic farming, covering everything from soil health to certification.',
     imageId: 'hero-image',
     link: 'https://www.youtube.com/watch?v=JPA01hM72i8'
+  },
+  {
+    id: '7',
+    title: 'Understanding No-Till Farming',
+    description:
+      'A visual explanation of no-till farming techniques and their benefits for soil health and sustainability, by the USDA.',
+    imageId: 'hero-image',
+    link: 'https://www.youtube.com/watch?v=a-s1y8g2w4c',
+  },
+  {
+    id: '8',
+    title: 'The Role of Cover Crops in Regenerative Agriculture',
+    description:
+      'A deep dive into how cover crops work to improve soil structure, water retention, and biodiversity from "Understanding Ag".',
+    imageId: 'learning-hub-article-1',
+    link: 'https://www.youtube.com/watch?v=jw3Zp0-7p5c',
+  },
+  {
+    id: '9',
+    title: 'A Guide to Crop Rotation',
+    description:
+      'From "Nature\'s Always Right", this video explains the basics of crop rotation in a simple and easy-to-understand way for any scale.',
+    imageId: 'learning-hub-video-2',
+    link: 'https://www.youtube.com/watch?v=ma932h2gAkc',
   },
 ];
 
@@ -206,29 +246,23 @@ function AskAgriVaani() {
         recorder.start();
         setIsRecording(true);
       } catch (err) {
-        console.error("Speech recognition error:", err);
         let errorMessage: React.ReactNode = 'Could not access the microphone. Please check permissions and try again.';
         if (err instanceof DOMException) {
-            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                errorMessage = "Microphone permission was denied. Please allow it in your browser settings.";
-            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                errorMessage = "No microphone was found. Please ensure one is connected and enabled.";
-            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                 errorMessage = (
-                    <div>
-                        <p>The microphone is currently in use or could not be accessed.</p>
-                        <ul className="list-disc pl-5 mt-2 text-xs">
-                            <li>Ensure no other browser tab or application is using your microphone.</li>
-                            <li>Check your browser's site permissions to make sure microphone access is allowed.</li>
-                            <li>Check your operating system's privacy settings to ensure your browser has permission to use the microphone.</li>
-                            <li>Try restarting your browser or computer.</li>
-                        </ul>
-                    </div>
-                );
-            }
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            errorMessage = 'Microphone permission was denied. Please allow it in your browser settings.';
+          } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            errorMessage = 'No microphone was found. Please ensure one is connected and enabled.';
+          } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError' || err.name === 'audio-capture') {
+            errorMessage = (
+              <div>
+                <p className="font-bold">Microphone is unavailable.</p>
+                <p className="mt-2">The browser could not access your microphone. This can happen if another tab or application is using it. Please close other applications, check browser and OS permissions, then refresh the page to try again. For now, the microphone button has been disabled.</p>
+              </div>
+            );
+          }
         }
-         setError(errorMessage);
-         setMicDisabled(true);
+        setError(errorMessage);
+        setMicDisabled(true);
       }
     }
   };
@@ -465,7 +499,7 @@ export default function LearningHubPage() {
             );
             return (
               <Card key={article.id} className="flex flex-col">
-                <CardHeader>
+                <CardHeader className="p-0">
                   {image && (
                     <div className="relative aspect-video w-full overflow-hidden rounded-t-lg">
                       <Image
@@ -478,7 +512,7 @@ export default function LearningHubPage() {
                     </div>
                   )}
                 </CardHeader>
-                <CardContent className="flex-grow p-6">
+                <CardContent className="flex-grow pt-4 p-6">
                   <CardTitle>{article.title}</CardTitle>
                   <CardDescription className="mt-2">
                     {article.description}
