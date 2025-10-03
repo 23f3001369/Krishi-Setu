@@ -307,6 +307,28 @@ export default function CropRecommendationPage() {
                 </TabsContent>
               </Tabs>
             </div>
+            
+            {recommendationState.data && (
+              <div className="space-y-6 pt-4">
+                <Alert className="bg-primary/5 border-primary/20">
+                  <Leaf className="h-4 w-4 !text-primary" />
+                  <AlertTitle className="text-primary">Optimal Crops</AlertTitle>
+                  <AlertDescription>
+                    <p className="text-lg font-semibold">
+                      {recommendationState.data.optimalCrops}
+                    </p>
+                  </AlertDescription>
+                </Alert>
+                <Alert>
+                  <Lightbulb className="h-4 w-4" />
+                  <AlertTitle>Reasoning</AlertTitle>
+                  <AlertDescription>
+                    <p>{recommendationState.data.reasoning}</p>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
             <div className="grid w-full gap-1.5">
               <Label htmlFor="realTimeWeatherConditions">
                 Real-time Weather Conditions
@@ -340,34 +362,6 @@ export default function CropRecommendationPage() {
         </form>
       </Card>
 
-      {recommendationState.data && (
-        <Card className="max-w-3xl mx-auto">
-          <CardHeader>
-            <CardTitle>Recommendation Results</CardTitle>
-            <CardDescription>
-              Based on the data provided, here are the suggested crops.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 p-6">
-            <Alert className="bg-primary/5 border-primary/20">
-              <Leaf className="h-4 w-4 !text-primary" />
-              <AlertTitle className="text-primary">Optimal Crops</AlertTitle>
-              <AlertDescription>
-                <p className="text-lg font-semibold">
-                  {recommendationState.data.optimalCrops}
-                </p>
-              </AlertDescription>
-            </Alert>
-            <Alert>
-              <Lightbulb className="h-4 w-4" />
-              <AlertTitle>Reasoning</AlertTitle>
-              <AlertDescription>
-                <p>{recommendationState.data.reasoning}</p>
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
