@@ -120,6 +120,30 @@ const videos = [
     imageId: 'learning-hub-video-2',
     link: 'https://www.youtube.com/watch?v=fQe1-yYxG5g'
   },
+  {
+    id: '4',
+    title: 'Drip Irrigation System: Complete Guide',
+    description:
+      'A comprehensive walkthrough on setting up a drip irrigation system, perfect for conserving water on any scale, from "Epic Gardening".',
+    imageId: 'learning-hub-article-2',
+    link: 'https://www.youtube.com/watch?v=L-Qz1qG5g-k'
+  },
+  {
+    id: '5',
+    title: 'The #1 Easiest Way To Test Your Soil',
+    description:
+        'A simple and effective soil testing method you can do at home to understand your soil\'s composition, from "The Millennial Gardener".',
+    imageId: 'learning-hub-article-1',
+    link: 'https://www.youtube.com/watch?v=p-I8n2-H-Lw'
+  },
+  {
+    id: '6',
+    title: 'Organic Farming for Beginners',
+    description:
+        'An introductory guide to the principles and practices of organic farming, covering everything from soil health to certification.',
+    imageId: 'hero-image',
+    link: 'https://www.youtube.com/watch?v=JPA01hM72i8'
+  },
 ];
 
 function AskAgriVaani() {
