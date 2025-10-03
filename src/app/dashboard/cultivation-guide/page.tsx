@@ -68,13 +68,18 @@ const cropVarieties: Record<string, string[]> = {
     'corn': ['Pioneer P1197', 'Dekalb DKC62-08', 'Sweet Corn 101'],
     'tomato': ['Roma', 'Cherry', 'Beefsteak', 'San Marzano'],
     'wheat': ['HD-3226', 'Durum', 'Einkorn'],
-    'soybean': ['Asgrow AG24X9', 'Pioneer P28A40X'],
     'sugarcane': ['Co 86032', 'Co 0238', 'Co 0118', 'CoJ 64'],
     'jute': ['JRO-524 (Naveen)', 'JRC-212', 'JRC-321'],
     'cotton': ['MCU-5', 'LRA-5166', 'Surabhi', 'Bt Cotton'],
     'millets': ['Pearl Millet (Bajra)', 'Sorghum (Jowar)', 'Finger Millet (Ragi)'],
     'pulses': ['Chickpea (Chana)', 'Pigeon Pea (Arhar)', 'Lentil (Masoor)'],
     'rice': ['Basmati-370', 'Pusa Basmati-1', 'IR-64', 'Sona Masoori'],
+    'tea': ['TV1 (Tocklai Vegetable 1)', 'P-126', 'S.3A/3'],
+    'coffee': ['Arabica', 'Robusta', 'Kent', 'S.795'],
+    'groundnut': ['Kadiri-6', 'TMV-7', 'G2'],
+    'mustard': ['Pusa Bold', 'RH-30', 'Varuna'],
+    'soybean': ['JS-335', 'NRC-37', 'MACS-1188'],
+    'sunflower': ['KBSH-1', 'MSFH-17', 'PAC-36'],
 };
 
 
@@ -261,5 +266,3 @@ export default function CultivationGuidePage() {
     </div>
   );
 }
-
-    
