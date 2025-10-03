@@ -222,13 +222,7 @@ export default function CultivationGuidePage() {
                         )}
                     </div>
                 ) : (
-                    <div className="flex gap-2">
-                        <Input id="variety" name="variety" placeholder="e.g., Pioneer P1197 (or leave blank)" value={formData.variety} onChange={handleInputChange} />
-                        <Button variant="outline" type="button">
-                            <Bot className="mr-2 h-4 w-4"/>
-                            Recommend
-                        </Button>
-                    </div>
+                    <Input id="variety" name="variety" placeholder="e.g., Pioneer P1197 (or leave blank for AI)" value={formData.variety} onChange={handleInputChange} />
                 )}
             </div>
              <div className="space-y-2">
