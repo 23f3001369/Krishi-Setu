@@ -36,6 +36,7 @@ import {
   learningHubRecommendation,
   type LearningHubRecommendationOutput,
 } from '@/ai/flows/learning-hub-recommendation';
+import { transcribeAudio } from '@/ai/flows/speech-to-text';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
@@ -107,94 +108,75 @@ function AskAgriVaani() {
   const [error, setError] = useState<React.ReactNode | null>(null);
   const [micDisabled, setMicDisabled] = useState(false);
   
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    // Initialize SpeechRecognition only on the client side
-    if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!recognitionRef.current) {
-        recognitionRef.current = new SpeechRecognition();
-      }
-      const recognition = recognitionRef.current;
-
-      recognition.continuous = false;
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.trim();
-        setQuery(transcript);
-      };
-      
-      recognition.onend = () => {
-        setIsRecording(false);
-      };
-
-      recognition.onerror = (event) => {
-        if (event.error === 'network') {
-            setError('Network error for speech service. Please check your internet connection.');
-        } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-            setError('Microphone permission was denied. Please allow it in your browser settings.');
-            setMicDisabled(true);
-        } else if (event.error === 'audio-capture') {
-            setError(
-              <div>
-                <p className='font-bold mb-2'>Microphone is unavailable.</p>
-                <p className="text-xs">The browser could not access your microphone. This can happen if another tab or application is using it. Please close other applications, check browser and OS permissions, then refresh the page to try again. For now, the microphone button has been disabled.</p>
-              </div>
-            );
-            setMicDisabled(true); // Gracefully disable the feature
-        } else {
-            setError(`Speech recognition error: ${event.error}. Please try again or type your question.`);
-        }
-        setIsRecording(false);
-      };
-    } else if (typeof window !== 'undefined') {
-        setError("Sorry, your browser doesn't support voice recognition.");
+    if (typeof window !== 'undefined' && !navigator.mediaDevices?.getUserMedia) {
+        setError("Sorry, your browser doesn't support microphone access.");
         setMicDisabled(true);
-    }
-
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {}
-      }
     }
   }, []);
 
-  const handleVoiceSearch = () => {
-    const recognition = recognitionRef.current;
-    if (!recognition || micDisabled) return;
-
+  const handleMicClick = async () => {
+    setError(null);
     if (isRecording) {
-      try {
-        recognition.stop();
-      } catch (e) {
-        console.error("Error stopping recognition:", e);
-      }
+      mediaRecorderRef.current?.stop();
       setIsRecording(false);
     } else {
-      setError(null);
       try {
-        recognition.start();
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = recorder;
+        audioChunksRef.current = [];
+
+        recorder.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
+
+        recorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64Audio = reader.result as string;
+            setIsLoading(true);
+            setQuery('Transcribing audio...');
+            try {
+              const result = await transcribeAudio({ audio: base64Audio });
+              setQuery(result.text);
+            } catch (e) {
+              console.error(e);
+              setError('Could not transcribe audio. Please try again.');
+              setQuery('');
+            } finally {
+              setIsLoading(false);
+            }
+          };
+          // Stop all tracks on the stream to release the microphone
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        recorder.start();
         setIsRecording(true);
-      } catch (e) {
-        console.error("Error starting recognition:", e);
-         if (e instanceof DOMException && e.name === 'NotAllowedError') {
-             setError('Microphone permission was denied. Please allow it in your browser settings.');
-        } else {
-            setError("Could not start voice recognition. Please check permissions.");
+      } catch (err) {
+        console.error("Error accessing microphone:", err);
+        let errorMessage = 'Could not access the microphone. Please check permissions and try again.';
+        if (err instanceof DOMException) {
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                errorMessage = "Microphone permission was denied. Please allow it in your browser settings.";
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                errorMessage = "No microphone was found. Please ensure one is connected and enabled.";
+            }
         }
-        setIsRecording(false);
+        setError(errorMessage);
+        setMicDisabled(true);
       }
     }
   };
 
-
   const handleSearch = async () => {
-    if (!query) return;
+    if (!query || query === 'Transcribing audio...') return;
 
     setIsLoading(true);
     setRecommendations(null);
@@ -244,9 +226,9 @@ function AskAgriVaani() {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={handleVoiceSearch} 
-              disabled={isLoading || !recognitionRef.current || micDisabled}
-              title={micDisabled ? "Microphone is unavailable" : "Use microphone"}
+              onClick={handleMicClick} 
+              disabled={micDisabled || isLoading}
+              title={micDisabled ? "Microphone is unavailable" : (isRecording ? "Stop recording" : "Use microphone")}
             >
               <Mic className={isRecording ? 'text-primary animate-pulse' : ''} />
             </Button>
@@ -256,11 +238,11 @@ function AskAgriVaani() {
             </Button>
           </div>
         </CardContent>
-        {isLoading && (
+        {isLoading && !recommendations && (
             <CardFooter className="p-6">
                  <p className="text-sm text-muted-foreground flex items-center">
                     <Bot className="mr-2 h-4 w-4 animate-pulse" />
-                    AgriVaani is thinking...
+                    {query === 'Transcribing audio...' ? 'Transcribing...' : 'AgriVaani is thinking...'}
                 </p>
             </CardFooter>
         )}
@@ -514,5 +496,3 @@ declare global {
         webkitSpeechRecognition: any;
     }
 }
-
-    
