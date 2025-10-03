@@ -128,7 +128,7 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
            <div className="flex flex-col h-screen">
             <DashboardHeader />
             <main className="flex-1 overflow-y-auto">
-              <div className={cn("w-full", !isFarmRegistrationPage && "p-4 sm:p-6 lg:p-8")}>
+              <div className={cn(!isFarmRegistrationPage && "p-4 sm:p-6 lg:p-8")}>
                 <div className={cn(!isFarmRegistrationPage && "w-full max-w-7xl mx-auto")}>
                   {children}
                 </div>
