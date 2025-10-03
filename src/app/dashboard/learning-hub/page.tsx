@@ -246,6 +246,7 @@ function AskAgriVaani() {
         recorder.start();
         setIsRecording(true);
       } catch (err) {
+        console.error(err);
         let errorMessage: React.ReactNode = 'Could not access the microphone. Please check permissions and try again.';
         if (err instanceof DOMException) {
           if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -259,10 +260,10 @@ function AskAgriVaani() {
                 <p className="mt-2">The browser could not access your microphone. This can happen if another tab or application is using it. Please close other applications, check browser and OS permissions, then refresh the page to try again. For now, the microphone button has been disabled.</p>
               </div>
             );
+             setMicDisabled(true);
           }
         }
         setError(errorMessage);
-        setMicDisabled(true);
       }
     }
   };
