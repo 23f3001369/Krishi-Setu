@@ -106,35 +106,35 @@ function AskAgriVaani() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
-    // Check for browser support
+    // This effect runs only once on mount to initialize speech recognition.
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.lang = 'en-US';
-        recognition.interimResults = false;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
 
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            setQuery(transcript);
-        };
-        
-        recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                setError('Microphone permission was denied. Please allow it in your browser settings.');
-            } else {
-                setError('Speech recognition failed. Please try again or type your question.');
-            }
-        };
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setQuery(transcript);
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          setError('Microphone permission was denied. Please allow it in your browser settings.');
+        } else {
+          setError('Speech recognition failed. Please try again or type your question.');
+        }
+      };
 
-        recognition.onend = () => {
-            setIsRecording(false);
-        };
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
 
-        recognitionRef.current = recognition;
+      recognitionRef.current = recognition;
     } else {
-        console.warn("Browser doesn't support SpeechRecognition.");
+      console.warn("Browser doesn't support SpeechRecognition.");
     }
   }, []);
 
