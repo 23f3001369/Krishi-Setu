@@ -89,7 +89,7 @@ const articles = [
     id: '4',
     title: 'Cover Crops for Sustainable Farming',
     description:
-      'From the Sustainable Agriculture Research and Education (SARE) program, learn how cover crops can improve soil health and farm productivity.',
+      'From the USDA\'s Agricultural Research Service, learn how cover crops can improve soil health and farm productivity.',
     imageId: 'learning-hub-article-1',
     link: 'https://www.ars.usda.gov/plains-area/mandan-nd/ngprl/docs/cover-crops-for-sustainable-farms/',
   },
@@ -105,9 +105,9 @@ const articles = [
     id: '6',
     title: 'Crop Rotation on Organic Farms',
     description:
-      'A practical guide from the Rodale Institute on how to design and implement effective crop rotation plans for organic farming systems.',
+      'A practical guide from the USDA-funded SARE program on how to design and implement effective crop rotation plans for organic farming systems.',
     imageId: 'learning-hub-video-2',
-    link: 'https://rodaleinstitute.org/science/articles/crop-rotation-on-organic-farms/',
+    link: 'https://www.sare.org/resources/crop-rotation-on-organic-farms/',
   },
    {
     id: '7',
