@@ -300,6 +300,7 @@ export default function ProfilePage() {
                             <Skeleton className="h-5 w-3/4" />
                             <Skeleton className="h-5 w-1/2" />
                             <Skeleton className="h-5 w-2/3" />
+                             <Skeleton className="h-5 w-1/2" />
                         </CardContent>
                     ) : farmDetails ? (
                         <>
@@ -311,6 +312,14 @@ export default function ProfilePage() {
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Location:</span>
                                     <span className="font-medium">{farmDetails.location}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Area:</span>
+                                    <span className="font-medium">{farmDetails.size} acres</span>
+                                </div>
+                                 <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Main Crops:</span>
+                                    <span className="font-medium text-right">{(farmDetails.mainCrops as string[]).join(', ')}</span>
                                 </div>
                             </CardContent>
                             <CardFooter className="p-6">
