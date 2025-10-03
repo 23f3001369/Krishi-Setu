@@ -106,54 +106,53 @@ function AskAgriVaani() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
-    // Check if window is defined (runs only on client)
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.lang = 'en-US';
-        recognition.interimResults = false;
+    // Ensure this runs only on the client
+    if (typeof window === 'undefined') return;
 
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          setQuery(transcript);
-        };
-
-        recognition.onerror = (event) => {
-          if (event.error === 'network') {
-            setError('Network error for speech service. Please check your internet connection or browser settings.');
-          } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-            setError('Microphone permission was denied. Please allow it in your browser settings.');
-          } else {
-            setError('Speech recognition failed. Please try again or type your question.');
-          }
-          setIsRecording(false);
-        };
-
-        recognition.onend = () => {
-          setIsRecording(false);
-        };
-
-        recognitionRef.current = recognition;
-      } else {
-        console.warn("Browser doesn't support SpeechRecognition.");
-      }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      // Set error if API is not supported
+      setError("Sorry, your browser doesn't support voice recognition.");
+      return;
     }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setQuery(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error === 'network') {
+        setError('Network error for speech service. Please check your internet connection or browser settings.');
+      } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setError('Microphone permission was denied. Please allow it in your browser settings.');
+      } else {
+        setError('Speech recognition failed. Please try again or type your question.');
+      }
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognitionRef.current = recognition;
   }, []);
 
   const handleVoiceSearch = () => {
     const recognition = recognitionRef.current;
-    if (!recognition) {
-      setError("Sorry, your browser doesn't support voice recognition.");
-      return;
-    }
+    if (!recognition) return;
 
     if (isRecording) {
       try {
         recognition.stop();
       } catch (e) {
-        console.error("Error stopping recognition:", e)
+        console.error("Error stopping recognition:", e);
       }
     } else {
       setError(null);
@@ -162,7 +161,11 @@ function AskAgriVaani() {
         setIsRecording(true);
       } catch (e) {
         console.error("Error starting recognition:", e);
-        setError("Could not start voice recognition. Please check browser permissions and network.");
+        if (e instanceof DOMException && e.name === 'NotAllowedError') {
+             setError('Microphone permission was denied. Please allow it in your browser settings.');
+        } else {
+            setError("Could not start voice recognition. Please check browser permissions and network.");
+        }
       }
     }
   };
@@ -216,7 +219,7 @@ function AskAgriVaani() {
               onChange={(e) => setQuery(e.target.value)}
               disabled={isLoading}
             />
-            <Button variant="ghost" size="icon" onClick={handleVoiceSearch} disabled={isLoading}>
+            <Button variant="ghost" size="icon" onClick={handleVoiceSearch} disabled={isLoading || !recognitionRef.current}>
               <Mic className={isRecording ? 'text-primary animate-pulse' : ''} />
             </Button>
             <Button onClick={handleSearch} disabled={isLoading || !query}>
