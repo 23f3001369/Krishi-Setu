@@ -70,6 +70,11 @@ const cropVarieties: Record<string, string[]> = {
     'wheat': ['HD-3226', 'Durum', 'Einkorn'],
     'soybean': ['Asgrow AG24X9', 'Pioneer P28A40X'],
     'sugarcane': ['Co 86032', 'Co 0238', 'Co 0118', 'CoJ 64'],
+    'jute': ['JRO-524 (Naveen)', 'JRC-212', 'JRC-321'],
+    'cotton': ['MCU-5', 'LRA-5166', 'Surabhi', 'Bt Cotton'],
+    'millets': ['Pearl Millet (Bajra)', 'Sorghum (Jowar)', 'Finger Millet (Ragi)'],
+    'pulses': ['Chickpea (Chana)', 'Pigeon Pea (Arhar)', 'Lentil (Masoor)'],
+    'rice': ['Basmati-370', 'Pusa Basmati-1', 'IR-64', 'Sona Masoori'],
 };
 
 
@@ -93,7 +98,12 @@ export default function CultivationGuidePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'crop' && value.toLowerCase() !== formData.crop.toLowerCase()) {
+        setFormData(prev => ({ ...prev, crop: value, variety: '' }));
+        setShowOtherVariety(false);
+    } else {
+        setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
   
   const handleVarietyChange = (value: string) => {
