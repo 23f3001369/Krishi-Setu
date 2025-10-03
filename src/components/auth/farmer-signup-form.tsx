@@ -6,13 +6,12 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -60,32 +59,17 @@ export function FarmerSignUpForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    try {
-      // Check for mobile number uniqueness before creating the user
-      const farmersCollectionRef = collection(db, "farmers");
-      const q = query(farmersCollectionRef, where("mobile", "==", values.mobile));
-      
-      const querySnapshot = await getDocs(q).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: 'farmers',
-          operation: 'list'
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        // Re-throw the error to stop execution
-        throw serverError;
-      });
-
-      
-      if (!querySnapshot.empty) {
+    if (!auth || !db) {
         toast({
-          variant: "destructive",
-          title: "Sign-up Failed",
-          description: "This mobile number is already registered. Please try a different number or log in.",
+            variant: "destructive",
+            title: "Sign-up Failed",
+            description: "Firebase is not initialized. Please try again later.",
         });
         setIsLoading(false);
         return;
-      }
+    }
 
+    try {
       // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
@@ -98,7 +82,7 @@ export function FarmerSignUpForm() {
         uid: user.uid,
         name: values.name,
         email: values.email,
-        mobile: values.mobile,
+        phone: values.mobile, // Changed from 'mobile' to 'phone' to match backend.json
         createdAt: new Date(),
       };
       
