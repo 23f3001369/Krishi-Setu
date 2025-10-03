@@ -108,35 +108,35 @@ function AskAgriVaani() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.continuous = false;
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      
-      recognition.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.trim();
-        setQuery(transcript);
-        setIsRecording(false);
-      };
-      
-      recognition.onerror = (event) => {
-        if (event.error === 'network') {
-          setError('Network error for speech service. Please check your internet connection.');
-        } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          setError('Microphone permission was denied. Please allow it in your browser settings.');
-        } else {
-          setError(`Speech recognition error: ${event.error}. Please try again or type your question.`);
-        }
-        setIsRecording(false);
-      };
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        const recognition = recognitionRef.current;
 
-      recognition.onend = () => {
-        setIsRecording(false);
-      };
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
 
-      recognitionRef.current = recognition;
+        recognition.onresult = (event) => {
+            const transcript = event.results[event.results.length - 1][0].transcript.trim();
+            setQuery(transcript);
+        };
+        
+        recognition.onend = () => {
+            setIsRecording(false);
+        };
+
+        recognition.onerror = (event) => {
+            if (event.error === 'network') {
+                setError('Network error for speech service. Please check your internet connection.');
+            } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                setError('Microphone permission was denied. Please allow it in your browser settings.');
+            } else if (event.error === 'audio-capture') {
+                setError('Could not access the microphone. Please ensure no other application is using it and try again.');
+            } else {
+                setError(`Speech recognition error: ${event.error}. Please try again or type your question.`);
+            }
+            setIsRecording(false);
+        };
     } else {
         setError("Sorry, your browser doesn't support voice recognition.");
     }
