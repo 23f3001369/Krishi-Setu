@@ -151,8 +151,8 @@ export default function CropRecommendationPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hiddenImageInputRef = useRef<HTMLInputElement>(null);
-  const soilAnalysisRef = useRef<HTMLTextAreaElement>(null);
-
+  
+  const [soilAnalysis, setSoilAnalysis] = useState('');
   const [activeTab, setActiveTab] = useState('manual');
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
@@ -192,9 +192,7 @@ export default function CropRecommendationPage() {
         const result = await extractSoilHealthInfo({
             soilHealthCardImage: hiddenImageInputRef.current.value
         });
-        if (soilAnalysisRef.current) {
-            soilAnalysisRef.current.value = result.soilAnalysisText;
-        }
+        setSoilAnalysis(result.soilAnalysisText);
         setActiveTab('manual'); // Switch to manual tab to show the result
     } catch(e) {
         console.error(e);
@@ -239,7 +237,8 @@ export default function CropRecommendationPage() {
                     name="soilAnalysis"
                     placeholder="e.g., pH: 6.8, Nitrogen: High, Phosphorus: Medium, Potassium: Low, Organic Matter: 3.5%"
                     id="soilAnalysis"
-                    ref={soilAnalysisRef}
+                    value={soilAnalysis}
+                    onChange={(e) => setSoilAnalysis(e.target.value)}
                   />
                 </TabsContent>
                 <TabsContent value="upload" className="pt-4">
@@ -307,6 +306,27 @@ export default function CropRecommendationPage() {
                 </TabsContent>
               </Tabs>
             </div>
+            
+            {recommendationState.data && (
+              <div className="space-y-6 pt-4 border-t">
+                <Alert className="bg-primary/5 border-primary/20">
+                  <Leaf className="h-4 w-4 !text-primary" />
+                  <AlertTitle className="text-primary">Optimal Crops</AlertTitle>
+                  <AlertDescription>
+                    <p className="text-lg font-semibold">
+                      {recommendationState.data.optimalCrops}
+                    </p>
+                  </AlertDescription>
+                </Alert>
+                <Alert>
+                  <Lightbulb className="h-4 w-4" />
+                  <AlertTitle>Reasoning</AlertTitle>
+                  <AlertDescription>
+                    <p>{recommendationState.data.reasoning}</p>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
 
             <div className="grid w-full gap-1.5">
               <Label htmlFor="realTimeWeatherConditions">
@@ -340,28 +360,6 @@ export default function CropRecommendationPage() {
           </CardFooter>
         </form>
 
-        {recommendationState.data && (
-          <CardContent className="space-y-6 p-6 pt-0">
-            <div className="space-y-6 pt-4 border-t">
-              <Alert className="bg-primary/5 border-primary/20">
-                <Leaf className="h-4 w-4 !text-primary" />
-                <AlertTitle className="text-primary">Optimal Crops</AlertTitle>
-                <AlertDescription>
-                  <p className="text-lg font-semibold">
-                    {recommendationState.data.optimalCrops}
-                  </p>
-                </AlertDescription>
-              </Alert>
-              <Alert>
-                <Lightbulb className="h-4 w-4" />
-                <AlertTitle>Reasoning</AlertTitle>
-                <AlertDescription>
-                  <p>{recommendationState.data.reasoning}</p>
-                </AlertDescription>
-              </Alert>
-            </div>
-          </CardContent>
-        )}
       </Card>
 
     </div>
