@@ -5,6 +5,7 @@ import { useActionState, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
 import { aiCropRecommendation } from '@/ai/flows/ai-crop-recommendation';
+import { agriQa } from '@/ai/flows/agri-qa';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -17,11 +18,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Leaf, Lightbulb, Upload, Bot } from 'lucide-react';
+import { Leaf, Lightbulb, Upload, Bot, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 
-type State = {
+type RecommendationState = {
   data?: {
     optimalCrops: string;
     reasoning: string;
@@ -29,7 +30,7 @@ type State = {
   error?: string;
 };
 
-const initialState: State = {};
+const initialRecommendationState: RecommendationState = {};
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -42,9 +43,9 @@ function SubmitButton() {
 }
 
 async function recommendCrops(
-  prevState: State,
+  prevState: RecommendationState,
   formData: FormData
-): Promise<State> {
+): Promise<RecommendationState> {
   const soilAnalysis = formData.get('soilAnalysis') as string;
   const soilHealthCardImage = formData.get('soilHealthCardImage') as string;
   const realTimeWeatherConditions = formData.get(
@@ -76,8 +77,76 @@ async function recommendCrops(
   }
 }
 
+function GeneralAgriBot() {
+    const [question, setQuestion] = useState('');
+    const [answer, setAnswer] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleAskQuestion = async () => {
+        if (!question) return;
+        setIsLoading(true);
+        setError(null);
+        setAnswer('');
+        try {
+            const result = await agriQa({ question });
+            setAnswer(result.answer);
+        } catch(e) {
+            console.error(e);
+            setError('Failed to get an answer. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Card className="max-w-3xl mx-auto">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /> General Agri-Bot</CardTitle>
+                <CardDescription>
+                Ask any general agricultural question, from soil types to crop varieties.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 p-6">
+                <div className="space-y-2">
+                    <Label htmlFor="general-question">Your Question</Label>
+                    <Textarea 
+                        id="general-question"
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                        placeholder='e.g., "Which soil is suitable for soybean?" or "What are the crop varieties of Corn ?"'
+                    />
+                </div>
+                 {error && (
+                    <Alert variant="destructive">
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
+            </CardContent>
+            <CardFooter className="p-6">
+                <Button onClick={handleAskQuestion} disabled={isLoading || !question}>
+                    <Bot className="mr-2 h-4 w-4" />
+                    {isLoading ? 'Thinking...' : 'Ask Agri-Bot'}
+                </Button>
+            </CardFooter>
+            {answer && (
+                 <CardFooter className="p-6 pt-0">
+                    <Alert>
+                        <Bot className="h-4 w-4" />
+                        <AlertTitle>Answer</AlertTitle>
+                        <AlertDescription>
+                            <p>{answer}</p>
+                        </AlertDescription>
+                    </Alert>
+                </CardFooter>
+            )}
+        </Card>
+    )
+}
+
 export default function CropRecommendationPage() {
-  const [state, formAction] = useActionState(recommendCrops, initialState);
+  const [recommendationState, formAction] = useActionState(recommendCrops, initialRecommendationState);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hiddenImageInputRef = useRef<HTMLInputElement>(null);
@@ -111,17 +180,19 @@ export default function CropRecommendationPage() {
     <div className="space-y-8">
       <div className='mb-8'>
         <h1 className="text-3xl font-bold tracking-tight font-headline">
-          AI Crop Recommendation
+          AI Crop Tools
         </h1>
         <p className="text-muted-foreground">
-          Get expert advice on what to plant next based on your farm's data.
+          Get expert advice on what to plant next or ask general farming questions.
         </p>
       </div>
+
+      <GeneralAgriBot />
 
       <Card className="max-w-3xl mx-auto">
         <form action={formAction}>
           <CardHeader>
-            <CardTitle>Farm Data</CardTitle>
+            <CardTitle>Specific Crop Recommendation</CardTitle>
             <CardDescription>
               Enter the latest data from your farm to receive tailored crop
               recommendations.
@@ -208,10 +279,10 @@ export default function CropRecommendationPage() {
                 required
               />
             </div>
-            {state.error && (
+            {recommendationState.error && (
               <Alert variant="destructive">
                 <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{state.error}</AlertDescription>
+                <AlertDescription>{recommendationState.error}</AlertDescription>
               </Alert>
             )}
           </CardContent>
@@ -221,7 +292,7 @@ export default function CropRecommendationPage() {
         </form>
       </Card>
 
-      {state.data && (
+      {recommendationState.data && (
         <Card className="max-w-3xl mx-auto">
           <CardHeader>
             <CardTitle>Recommendation Results</CardTitle>
@@ -235,7 +306,7 @@ export default function CropRecommendationPage() {
               <AlertTitle className="text-primary">Optimal Crops</AlertTitle>
               <AlertDescription>
                 <p className="text-lg font-semibold">
-                  {state.data.optimalCrops}
+                  {recommendationState.data.optimalCrops}
                 </p>
               </AlertDescription>
             </Alert>
@@ -243,7 +314,7 @@ export default function CropRecommendationPage() {
               <Lightbulb className="h-4 w-4" />
               <AlertTitle>Reasoning</AlertTitle>
               <AlertDescription>
-                <p>{state.data.reasoning}</p>
+                <p>{recommendationState.data.reasoning}</p>
               </AlertDescription>
             </Alert>
           </CardContent>
