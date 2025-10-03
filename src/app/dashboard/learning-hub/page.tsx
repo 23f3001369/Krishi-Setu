@@ -105,31 +105,34 @@ function AskAgriVaani() {
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-   useEffect(() => {
+  useEffect(() => {
+    // Check for browser support and initialize the recognition object
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setQuery(transcript);
+            setIsRecording(false);
+        };
+        
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            setError('Speech recognition failed. Please try again or type your question.');
+            setIsRecording(false);
+        };
 
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setQuery(transcript);
-        setIsRecording(false);
-      };
-
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        setError('Speech recognition failed. Please try again or type your question.');
-        setIsRecording(false);
-      };
-      
-      recognition.onend = () => {
-          setIsRecording(false);
-      };
-
-      recognitionRef.current = recognition;
+        recognition.onend = () => {
+            setIsRecording(false);
+        };
+        
+        recognitionRef.current = recognition;
+    } else {
+        console.warn("Browser doesn't support SpeechRecognition.");
     }
   }, []);
 
@@ -141,7 +144,6 @@ function AskAgriVaani() {
 
     if (isRecording) {
       recognitionRef.current.stop();
-      setIsRecording(false);
     } else {
       recognitionRef.current.start();
       setIsRecording(true);
