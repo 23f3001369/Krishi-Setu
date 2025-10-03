@@ -1,0 +1,280 @@
+
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from '@/components/ui/card';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Sprout,
+  CalendarDays,
+  DollarSign,
+  CheckCircle,
+  Clock,
+  Loader,
+  Bug,
+  ListTodo,
+  Bot,
+  ArrowLeft
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { type CultivationStage } from '@/ai/flows/generate-cultivation-guide';
+import Link from 'next/link';
+
+type CultivationGuideData = {
+    id: string;
+    crop: string;
+    variety: string;
+    estimatedDurationDays: number;
+    estimatedExpenses: number;
+    stages: CultivationStage[];
+};
+
+
+export default function ViewGuidePage() {
+    const params = useParams();
+    const id = params.id as string;
+    const router = useRouter();
+
+    const { user } = useUser();
+    const db = useFirestore();
+    const { toast } = useToast();
+
+    const guideDocRef = useMemoFirebase(() => {
+        if (!db || !user?.uid || !id) return null;
+        return doc(db, 'farmers', user.uid, 'cultivationGuides', id);
+    }, [db, user?.uid, id]);
+
+    const { data: guide, isLoading: isGuideLoading } = useDoc<CultivationGuideData>(guideDocRef);
+    
+    const [stages, setStages] = useState<CultivationStage[]>([]);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    useEffect(() => {
+        if (guide) {
+            setStages(guide.stages);
+        }
+    }, [guide]);
+
+    const handleStageStatusUpdate = async (updatedStages: CultivationStage[]) => {
+        if (!guideDocRef) return;
+
+        setIsUpdating(true);
+        try {
+            await updateDoc(guideDocRef, { stages: updatedStages });
+            toast({
+                title: 'Stage Updated',
+                description: 'The status of your cultivation stages has been saved.',
+            });
+        } catch (error) {
+            console.error("Error updating stages:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not update the guide. Please try again.',
+            });
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+    
+    const handleNextStage = () => {
+        const activeIndex = stages.findIndex(s => s.status === 'active');
+        if (activeIndex > -1 && activeIndex < stages.length - 1) {
+            const newStages = stages.map((stage, index) => {
+                if (index === activeIndex) return { ...stage, status: 'completed' as const };
+                if (index === activeIndex + 1) return { ...stage, status: 'active' as const };
+                return stage;
+            });
+            setStages(newStages);
+            handleStageStatusUpdate(newStages);
+        } else if (activeIndex > -1) {
+            // Last stage is completed
+             const newStages = stages.map((stage, index) => {
+                if (index === activeIndex) return { ...stage, status: 'completed' as const };
+                return stage;
+            });
+            setStages(newStages);
+            handleStageStatusUpdate(newStages);
+        }
+    }
+
+
+    if (isGuideLoading) {
+        return <GuideSkeleton />;
+    }
+
+    if (!guide) {
+        return (
+             <div className="text-center py-16">
+                <h2 className="text-xl font-semibold">Guide not found</h2>
+                <p className="text-muted-foreground mt-2">The cultivation guide you are looking for does not exist or has been deleted.</p>
+                <Button asChild className="mt-4">
+                    <Link href="/dashboard/my-guides">Go to My Guides</Link>
+                </Button>
+            </div>
+        )
+    }
+
+    const activeStageIndex = stages.findIndex(s => s.status === 'active');
+    const allStagesCompleted = stages.every(s => s.status === 'completed');
+
+    return (
+        <div className="space-y-8">
+            <div className="flex items-center gap-4">
+                 <Button variant="outline" size="icon" onClick={() => router.back()}>
+                    <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight font-headline">Cultivation Guide: {guide.crop}</h1>
+                    <p className="text-muted-foreground">Your detailed plan for cultivating {guide.variety}.</p>
+                </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Crop & Variety</CardTitle>
+                        <Sprout className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <div className="text-2xl font-bold">{guide.crop} / {guide.variety}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Estimated Duration</CardTitle>
+                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <div className="text-2xl font-bold">{guide.estimatedDurationDays} days</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Estimated Expenses</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <div className="text-2xl font-bold">₹{guide.estimatedExpenses.toLocaleString()}</div>
+                    </CardContent>
+                </Card>
+            </div>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle>Cultivation Stages</CardTitle>
+                    <CardDescription>Track your progress through each stage of cultivation.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                    <Accordion type="single" collapsible defaultValue={`item-${activeStageIndex}`} className="w-full">
+                        {stages.map((stage, index) => (
+                            <AccordionItem value={`item-${index}`} key={index} disabled={stage.status === 'upcoming'}>
+                                <AccordionTrigger className="text-lg">
+                                    <div className="flex items-center gap-4">
+                                        {stage.status === 'completed' && <CheckCircle className="h-6 w-6 text-green-500" />}
+                                        {stage.status === 'active' && <Loader className="h-6 w-6 text-blue-500 animate-spin" />}
+                                        {stage.status === 'upcoming' && <Clock className="h-6 w-6 text-muted-foreground" />}
+                                        <span>{stage.name}</span>
+                                        <Badge variant="outline">{stage.duration}</Badge>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-4 space-y-6">
+                                    <div>
+                                        <h4 className="font-semibold flex items-center gap-2 mb-2"><Bot className="h-5 w-5 text-primary" /> AI Instruction</h4>
+                                        <p className="text-muted-foreground">{stage.aiInstruction}</p>
+                                    </div>
+
+                                    {stage.pestAndDiseaseAlert && (
+                                        <Alert variant="destructive">
+                                            <Bug className="h-4 w-4" />
+                                            <AlertTitle>Pest & Disease Alert</AlertTitle>
+                                            <AlertDescription>{stage.pestAndDiseaseAlert}</AlertDescription>
+                                        </Alert>
+                                    )}
+
+                                    <div>
+                                        <h4 className="font-semibold flex items-center gap-2 mb-2"><ListTodo className="h-5 w-5 text-primary"/> Tasks for this stage</h4>
+                                        <div className="space-y-2">
+                                            {stage.tasks.map((task, taskIndex) => (
+                                                <div key={taskIndex} className="flex items-center gap-3 p-2 bg-muted/50 rounded-md">
+                                                    <Checkbox id={`task-${index}-${taskIndex}`} disabled={stage.status !== 'active'} />
+                                                    <label htmlFor={`task-${index}-${taskIndex}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                        {task}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                </CardContent>
+                <CardFooter className="p-6">
+                    {allStagesCompleted ? (
+                        <Alert variant="default" className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 w-full">
+                            <CheckCircle className="h-4 w-4" />
+                            <AlertTitle>Cultivation Complete!</AlertTitle>
+                            <AlertDescription>
+                                Congratulations! You have completed all stages for this crop.
+                            </AlertDescription>
+                        </Alert>
+                    ) : (
+                         <Button onClick={handleNextStage} disabled={activeStageIndex === -1 || isUpdating}>
+                            {isUpdating ? "Saving..." : "Mark Current Stage as Complete & Move to Next"}
+                         </Button>
+                    )}
+                </CardFooter>
+            </Card>
+
+        </div>
+    )
+}
+
+function GuideSkeleton() {
+    return (
+        <div className="space-y-8">
+            <div>
+                <Skeleton className="h-9 w-1/2" />
+                <Skeleton className="h-4 w-1/3 mt-2" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card><CardContent className="p-6"><Skeleton className="h-16 w-full" /></CardContent></Card>
+                <Card><CardContent className="p-6"><Skeleton className="h-16 w-full" /></CardContent></Card>
+                <Card><CardContent className="p-6"><Skeleton className="h-16 w-full" /></CardContent></Card>
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
