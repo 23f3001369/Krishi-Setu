@@ -106,7 +106,6 @@ function AskAgriVaani() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
-    // This effect runs only once on mount to initialize speech recognition.
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -117,15 +116,19 @@ function AskAgriVaani() {
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setQuery(transcript);
+        setIsRecording(false);
       };
-      
+
       recognition.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        if (event.error === 'network') {
+          setError('Network error. Please check your internet connection and browser configuration. Some environments may restrict speech services.');
+        } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
           setError('Microphone permission was denied. Please allow it in your browser settings.');
         } else {
           setError('Speech recognition failed. Please try again or type your question.');
         }
+        setIsRecording(false);
       };
 
       recognition.onend = () => {
@@ -140,18 +143,19 @@ function AskAgriVaani() {
 
   const handleVoiceSearch = () => {
     if (!recognitionRef.current) {
-        setError("Sorry, your browser doesn't support voice recognition.");
-        return;
+      setError("Sorry, your browser doesn't support voice recognition.");
+      return;
     }
 
     if (isRecording) {
       recognitionRef.current.stop();
     } else {
+      setError(null);
       recognitionRef.current.start();
       setIsRecording(true);
-      setError(null);
     }
   };
+
 
   const handleSearch = async () => {
     if (!query) return;
@@ -467,5 +471,3 @@ declare global {
         webkitSpeechRecognition: any;
     }
 }
-
-    
