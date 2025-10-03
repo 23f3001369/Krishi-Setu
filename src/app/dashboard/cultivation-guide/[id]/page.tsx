@@ -221,7 +221,7 @@ export default function ViewGuidePage() {
                                 <AccordionTrigger className="text-lg" disabled={stage.status === 'upcoming'}>
                                     <div className="flex items-center gap-4">
                                         {stage.status === 'completed' && <CheckCircle className="h-6 w-6 text-green-500" />}
-                                        {stage.status === 'active' && <Loader className="h-6 w-6 text-blue-500 animate-spin" />}
+                                        {stage.status === 'active' && <Loader className="h-6 w-6 text-blue-500" />}
                                         {stage.status === 'upcoming' && <Clock className="h-6 w-6 text-muted-foreground" />}
                                         <span>{stage.name}</span>
                                         <Badge variant="outline">{stage.duration}</Badge>
@@ -311,5 +311,3 @@ function GuideSkeleton() {
         </div>
     )
 }
-
-    
