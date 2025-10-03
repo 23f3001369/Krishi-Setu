@@ -35,6 +35,10 @@ import {
 } from "@/components/ui/dialog";
 import { PlusCircle, ArrowUpCircle, ArrowDownCircle, Trash2, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, deleteDoc, doc, query, where, Timestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Transaction = {
     id: string;
@@ -42,27 +46,30 @@ type Transaction = {
     category: string;
     description: string;
     amount: number;
-    date: string;
+    date: string | Timestamp;
+    createdAt?: Timestamp;
 };
-
-const initialTransactions: Transaction[] = [
-    { id: '1', type: 'expense', category: 'Seeds', description: 'Corn seeds for 10 acres', amount: 5000, date: '2024-07-01' },
-    { id: '2', type: 'expense', category: 'Fertilizer', description: 'Urea and DAP', amount: 8000, date: '2024-07-05' },
-    { id: '3', type: 'expense', category: 'Labor', description: 'Wages for planting', amount: 12000, date: '2024-07-06' },
-    { id: '4', type: 'income', category: 'Sale', description: 'Sold last season\'s wheat', amount: 75000, date: '2024-07-10' },
-    { id: '5', type: 'expense', category: 'Pesticides', description: 'Pest control spray', amount: 3500, date: '2024-07-15' },
-];
 
 const expenseCategories = ['Seeds', 'Fertilizer', 'Pesticides', 'Labor', 'Machinery', 'Utilities', 'Other'];
 const incomeCategories = ['Sale', 'Subsidy', 'Other'];
 
 export default function KrishiKhataPage() {
-  const [transactions, setTransactions] = useState(initialTransactions);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const heroImage = PlaceHolderImages.find(p => p.id === "krishi-khata-hero");
+  const { user } = useUser();
+  const db = useFirestore();
+  const { toast } = useToast();
+
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null;
+    return collection(db, 'farmers', user.uid, 'transactions');
+  }, [db, user?.uid]);
+
+  const { data: transactions, isLoading } = useCollection<Transaction>(transactionsQuery);
 
   const { totalIncome, totalExpenses, profitLoss } = useMemo(() => {
+    if (!transactions) return { totalIncome: 0, totalExpenses: 0, profitLoss: 0 };
     const income = transactions
       .filter(t => t.type === 'income')
       .reduce((acc, t) => acc + t.amount, 0);
@@ -76,14 +83,39 @@ export default function KrishiKhataPage() {
     };
   }, [transactions]);
 
-  const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
-    setTransactions(prev => [...prev, { ...transaction, id: crypto.randomUUID() }]);
-    setIsDialogOpen(false);
+  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'date'> & { date: string }) => {
+    if (!transactionsQuery) return;
+    try {
+        await addDoc(transactionsQuery, {
+            ...transaction,
+            createdAt: Timestamp.now(),
+            date: Timestamp.fromDate(new Date(transaction.date)),
+        });
+        toast({ title: 'Success', description: 'Transaction added.' });
+        setIsDialogOpen(false);
+    } catch(e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not add transaction.' });
+    }
   };
 
-  const deleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
+  const deleteTransaction = async (id: string) => {
+    if (!transactionsQuery) return;
+    try {
+        await deleteDoc(doc(transactionsQuery.firestore, transactionsQuery.path, id));
+        toast({ title: 'Success', description: 'Transaction deleted.' });
+    } catch (e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not delete transaction.' });
+    }
   };
+  
+  const formatDate = (date: string | Timestamp) => {
+      if (date instanceof Timestamp) {
+          return date.toDate().toISOString().split('T')[0];
+      }
+      return date;
+  }
 
   return (
     <div className="space-y-8">
@@ -108,7 +140,7 @@ export default function KrishiKhataPage() {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold">₹{totalIncome.toLocaleString()}</div>
+            {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-2xl font-bold">₹{totalIncome.toLocaleString()}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -117,7 +149,7 @@ export default function KrishiKhataPage() {
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent className="p-6">
-            <div className="text-2xl font-bold">₹{totalExpenses.toLocaleString()}</div>
+            {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-2xl font-bold">₹{totalExpenses.toLocaleString()}</div>}
           </CardContent>
         </Card>
         <Card className={profitLoss >= 0 ? 'border-green-500/50' : 'border-red-500/50'}>
@@ -126,10 +158,14 @@ export default function KrishiKhataPage() {
             <MinusCircle className={`h-4 w-4 ${profitLoss >= 0 ? 'text-green-500' : 'text-red-500'}`} />
           </CardHeader>
           <CardContent className="p-6">
-            <div className={`text-2xl font-bold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ₹{Math.abs(profitLoss).toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">{profitLoss >= 0 ? 'Profit' : 'Loss'}</p>
+            {isLoading ? <Skeleton className="h-8 w-32" /> : (
+                <>
+                 <div className={`text-2xl font-bold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ₹{Math.abs(profitLoss).toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">{profitLoss >= 0 ? 'Profit' : 'Loss'}</p>
+                </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -163,9 +199,20 @@ export default function KrishiKhataPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {transactions.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(t => (
+                    {isLoading ? (
+                        [...Array(3)].map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
+                                <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                            </TableRow>
+                        ))
+                    ) : transactions && transactions.sort((a,b) => (b.date as Timestamp).toMillis() - (a.date as Timestamp).toMillis()).map(t => (
                         <TableRow key={t.id}>
-                            <TableCell>{t.date}</TableCell>
+                            <TableCell>{formatDate(t.date)}</TableCell>
                             <TableCell>
                                 {t.type === 'income' ? 
                                     <span className="flex items-center gap-2 text-green-600"><ArrowUpCircle size={16}/> Income</span> : 
@@ -184,13 +231,16 @@ export default function KrishiKhataPage() {
                     ))}
                 </TableBody>
             </Table>
+            {!isLoading && transactions?.length === 0 && (
+                <div className="text-center text-muted-foreground p-8">No transactions yet.</div>
+            )}
         </CardContent>
       </Card>
     </div>
   );
 }
 
-function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'id'>) => void}) {
+function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'id' | 'date'> & { date: string }) => void}) {
     const [type, setType] = useState<'income' | 'expense'>('expense');
     const [category, setCategory] = useState('');
     const [amount, setAmount] = useState('');
@@ -198,6 +248,10 @@ function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'i
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
     const categories = type === 'income' ? incomeCategories : expenseCategories;
+    
+    React.useEffect(() => {
+        setCategory('');
+    }, [type]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

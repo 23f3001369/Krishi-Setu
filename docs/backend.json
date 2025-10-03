@@ -1,5 +1,41 @@
 {
   "entities": {
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "description": "Represents a single financial transaction (income or expense) for a farmer.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["income", "expense"],
+          "description": "The type of the transaction."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the transaction (e.g., 'Seeds', 'Sale', 'Labor')."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The monetary value of the transaction."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the transaction."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the transaction occurred."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the transaction was recorded."
+        }
+      },
+      "required": ["type", "category", "amount", "date", "createdAt"]
+    },
     "Farm": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Farm",
@@ -185,6 +221,26 @@
               "description": "The Firebase Auth UID of the farmer."
             }
           ]
+        }
+      },
+      {
+        "path": "/farmers/{farmerId}/transactions/{transactionId}",
+        "definition": {
+            "entityName": "Transaction",
+            "schema": {
+                "$ref": "#/backend/entities/Transaction"
+            },
+            "description": "Stores financial transactions for a specific farmer. Only the owner can read/write.",
+            "params": [
+                {
+                    "name": "farmerId",
+                    "description": "The Firebase Auth UID of the farmer."
+                },
+                {
+                    "name": "transactionId",
+                    "description": "The unique ID for the transaction."
+                }
+            ]
         }
       },
       {
