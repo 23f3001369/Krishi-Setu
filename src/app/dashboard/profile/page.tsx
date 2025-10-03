@@ -24,10 +24,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Edit, Shield } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Camera, Edit, Phone, Shield } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const profileFormSchema = z.object({
@@ -37,6 +38,7 @@ const profileFormSchema = z.object({
   email: z.string().email({
     message: 'Please enter a valid email address.',
   }),
+  mobile: z.string().optional(),
 });
 
 const passwordFormSchema = z.object({
@@ -63,11 +65,21 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading: isAuthUserLoading } = useUser();
+  const db = useFirestore();
+
+  const farmerDocRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null;
+    return doc(db, 'farmers', user.uid);
+  }, [db, user?.uid]);
+
+  const { data: farmerData, isLoading: isFarmerDataLoading } = useDoc(farmerDocRef);
+
+  const isUserLoading = isAuthUserLoading || isFarmerDataLoading;
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues: { name: '', email: '' },
+    defaultValues: { name: '', email: '', mobile: '' },
     mode: 'onChange',
   });
 
@@ -82,13 +94,14 @@ export default function ProfilePage() {
   });
   
   useEffect(() => {
-    if (user) {
+    if (user || farmerData) {
       profileForm.reset({
-        name: user.displayName || '',
-        email: user.email || '',
+        name: user?.displayName || '',
+        email: user?.email || '',
+        mobile: (farmerData as any)?.phone || '',
       });
     }
-  }, [user, profileForm]);
+  }, [user, farmerData, profileForm]);
 
 
   async function onProfileSubmit(data: ProfileFormValues) {
@@ -183,6 +196,22 @@ export default function ProfilePage() {
                                     <FormLabel>Email Address</FormLabel>
                                     <FormControl>
                                         <Input type="email" placeholder="your.email@example.com" {...field} disabled />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                             <FormField
+                                control={profileForm.control}
+                                name="mobile"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Mobile Number</FormLabel>
+                                    <FormControl>
+                                       <div className="relative">
+                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input placeholder="Your mobile number" {...field} disabled className="pl-10" />
+                                       </div>
                                     </FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -296,4 +325,5 @@ export default function ProfilePage() {
        </div>
     </div>
   );
-}
+
+    
