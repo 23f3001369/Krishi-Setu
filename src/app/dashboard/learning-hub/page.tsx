@@ -131,7 +131,6 @@ function AskAgriVaani() {
       };
 
       recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
         if (event.error === 'network') {
             setError('Network error for speech service. Please check your internet connection.');
         } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
