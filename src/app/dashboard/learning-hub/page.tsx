@@ -91,15 +91,15 @@ const articles = [
     description:
       'From the Sustainable Agriculture Research and Education (SARE) program, learn how cover crops can improve soil health and farm productivity.',
     imageId: 'learning-hub-article-1',
-    link: 'https://www.sare.org/resources/cover-crops/',
+    link: 'https://www.ars.usda.gov/plains-area/mandan-nd/ngprl/docs/cover-crops-for-sustainable-farms/',
   },
   {
     id: '5',
-    title: 'Introduction to No-Till Farming',
+    title: 'Conservation Tillage: No-Till',
     description:
-      'A detailed introduction to the benefits and practices of no-till farming from the University of Nebraska-Lincoln Extension.',
+      'A detailed introduction to the benefits and practices of no-till farming from the University of Wisconsin Extension.',
     imageId: 'hero-image',
-    link: 'https://extension.unl.edu/practice/introduction-to-no-till/',
+    link: 'https://fyi.extension.wisc.edu/covercrop/conservation-tillage-no-till/',
   },
   {
     id: '6',
