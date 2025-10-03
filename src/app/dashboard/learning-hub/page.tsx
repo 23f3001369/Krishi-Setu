@@ -103,45 +103,43 @@ function AskAgriVaani() {
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<LearningHubRecommendationOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
-    // Ensure this runs only on the client
-    if (typeof window === 'undefined') return;
+    if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = false;
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      
+      recognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript.trim();
+        setQuery(transcript);
+        setIsRecording(false);
+      };
+      
+      recognition.onerror = (event) => {
+        if (event.error === 'network') {
+          setError('Network error for speech service. Please check your internet connection.');
+        } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          setError('Microphone permission was denied. Please allow it in your browser settings.');
+        } else {
+          setError(`Speech recognition error: ${event.error}. Please try again or type your question.`);
+        }
+        setIsRecording(false);
+      };
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      // Set error if API is not supported
-      setError("Sorry, your browser doesn't support voice recognition.");
-      return;
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+    } else {
+        setError("Sorry, your browser doesn't support voice recognition.");
     }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setQuery(transcript);
-    };
-
-    recognition.onerror = (event) => {
-      if (event.error === 'network') {
-        setError('Network error for speech service. Please check your internet connection or browser settings.');
-      } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        setError('Microphone permission was denied. Please allow it in your browser settings.');
-      } else {
-        setError('Speech recognition failed. Please try again or type your question.');
-      }
-      setIsRecording(false);
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-    };
-
-    recognitionRef.current = recognition;
   }, []);
 
   const handleVoiceSearch = () => {
@@ -154,6 +152,7 @@ function AskAgriVaani() {
       } catch (e) {
         console.error("Error stopping recognition:", e);
       }
+      setIsRecording(false);
     } else {
       setError(null);
       try {
@@ -161,11 +160,12 @@ function AskAgriVaani() {
         setIsRecording(true);
       } catch (e) {
         console.error("Error starting recognition:", e);
-        if (e instanceof DOMException && e.name === 'NotAllowedError') {
+         if (e instanceof DOMException && e.name === 'NotAllowedError') {
              setError('Microphone permission was denied. Please allow it in your browser settings.');
         } else {
-            setError("Could not start voice recognition. Please check browser permissions and network.");
+            setError("Could not start voice recognition. Please check permissions.");
         }
+        setIsRecording(false);
       }
     }
   };
