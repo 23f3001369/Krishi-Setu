@@ -69,6 +69,7 @@ const cropVarieties: Record<string, string[]> = {
     'tomato': ['Roma', 'Cherry', 'Beefsteak', 'San Marzano'],
     'wheat': ['HD-3226', 'Durum', 'Einkorn'],
     'soybean': ['Asgrow AG24X9', 'Pioneer P28A40X'],
+    'sugarcane': ['Co 86032', 'Co 0238', 'Co 0118', 'CoJ 64'],
 };
 
 
@@ -250,3 +251,5 @@ export default function CultivationGuidePage() {
     </div>
   );
 }
+
+    
