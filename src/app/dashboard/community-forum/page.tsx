@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -36,13 +35,15 @@ import {
 } from "@/components/ui/alert-dialog";
 
 
-// Main Data Types
+// Main Data Types (Adjusted to use denormalized counts)
 type Post = {
     id: string;
     authorId: string;
     authorName: string;
     authorAvatar: string;
     question: string;
+    likes: number; // Denormalized count
+    comments: number; // Denormalized count
     createdAt: Timestamp;
 };
 
@@ -52,6 +53,8 @@ type Comment = {
     authorName: string;
     authorAvatar: string;
     commentText: string;
+    likes: number; // Denormalized count
+    replies: number; // Denormalized count
     createdAt: Timestamp;
 };
 
@@ -61,17 +64,20 @@ type Reply = {
     authorName: string;
     authorAvatar: string;
     replyText: string;
+    likes: number; // Denormalized count
     createdAt: Timestamp;
 }
 
 type Like = {
-    id: string; // The UID of the user who liked
+    id: string; // The UID of the user who liked - Only used for subcollection query
+    userId: string;
 };
 
-// Enriched Types for UI
-type EnrichedReply = Reply & { userHasLiked: boolean; likeCount: number; };
-type EnrichedComment = Comment & { userHasLiked: boolean; likeCount: number; replies: EnrichedReply[]; replyCount: number; };
-type EnrichedPost = Post & { userHasLiked: boolean; likeCount: number; comments: EnrichedComment[]; commentCount: number; };
+
+// Enriched Types for UI (now derive from the denormalized counts)
+type EnrichedReply = Reply & { userHasLiked: boolean; };
+type EnrichedComment = Comment & { userHasLiked: boolean; replies: EnrichedReply[]; };
+type EnrichedPost = Post & { userHasLiked: boolean; comments: EnrichedComment[]; };
 
 
 // #region Sub-components (ReplyCard, CommentCard)
@@ -83,51 +89,91 @@ function ReplyCard({ reply, postId, commentId }: { reply: EnrichedReply, postId:
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
 
-    const handleLikeReply = () => {
-        if (!user || !db) return;
+    // Fetch likes for this specific reply
+    const replyLikesQuery = useMemoFirebase(() => {
+        if (!db) return null;
+        return collection(db, 'forumPosts', postId, 'comments', commentId, 'replies', reply.id, 'likes');
+    }, [db, postId, commentId, reply.id]);
+    const { data: currentReplyLikes } = useCollection<Like>(replyLikesQuery); // Use useCollection for real-time like status
+    const userHasLikedReply = useMemo(() => currentReplyLikes?.some(like => like.id === user?.uid) ?? false, [currentReplyLikes, user]);
+
+
+    const handleLikeReply = async () => { // Made async for awaits in transaction
+        if (!user || !db) {
+            toast({ title: 'Sign in required', description: 'You must be signed in to like replies.', variant: 'destructive' });
+            return;
+        }
 
         const replyRef = doc(db, 'forumPosts', postId, 'comments', commentId, 'replies', reply.id);
-        const likeRef = doc(replyRef, 'likes', user.uid);
+        const likeRef = doc(replyRef, 'likes', user.uid); // Document ID for the like is the user's UID
 
-        runTransaction(db, async (transaction) => {
-            const replyDoc = await transaction.get(replyRef);
-            if (!replyDoc.exists()) throw "Reply does not exist!";
-            
-            const likeDoc = await transaction.get(likeRef);
-            if (likeDoc.exists()) {
-                transaction.delete(likeRef);
-                transaction.update(replyRef, { likes: Math.max(0, (replyDoc.data().likes || 0) - 1) });
-            } else {
-                transaction.set(likeRef, { userId: user.uid });
-                transaction.update(replyRef, { likes: (replyDoc.data().likes || 0) + 1 });
-            }
-        }).catch((err) => {
+        try {
+            await runTransaction(db, async (transaction) => {
+                const replyDoc = await transaction.get(replyRef);
+                if (!replyDoc.exists()) throw new Error("Reply does not exist!");
+
+                const currentLikesCount = replyDoc.data().likes || 0;
+                const likeDocSnapshot = await transaction.get(likeRef); // Get specific like doc
+
+                if (likeDocSnapshot.exists()) {
+                    // Unlike: Delete the like document and decrement the count
+                    transaction.delete(likeRef);
+                    transaction.update(replyRef, { likes: Math.max(0, currentLikesCount - 1) });
+                } else {
+                    // Like: Create the like document and increment the count
+                    transaction.set(likeRef, { userId: user.uid });
+                    transaction.update(replyRef, { likes: currentLikesCount + 1 });
+                }
+            });
+        } catch (serverError) {
+            const error = serverError as Error;
             const permissionError = new FirestorePermissionError({
                 path: likeRef.path,
-                operation: reply.userHasLiked ? 'delete' : 'create',
+                operation: userHasLikedReply ? 'delete' : 'create',
             });
             errorEmitter.emit('permission-error', permissionError);
-        });
+            toast({
+                title: 'Error Liking Reply',
+                description: error.message || 'An unknown error occurred.',
+                variant: 'destructive',
+            });
+        }
     };
-    
+
     const handleDeleteReply = async () => {
-        if (!user || !db || user.uid !== reply.authorId) return;
+        if (!user || !db || user.uid !== reply.authorId) {
+            toast({ title: 'Permission Denied', description: 'You can only delete your own replies.', variant: 'destructive' });
+            setDeleteAlertOpen(false);
+            return;
+        }
         setIsDeleting(true);
         const replyRef = doc(db, 'forumPosts', postId, 'comments', commentId, 'replies', reply.id);
-        deleteDoc(replyRef).then(() => {
-            toast({ title: "Reply Deleted" });
-        }).catch((err) => {
+        const commentRef = doc(db, 'forumPosts', postId, 'comments', commentId);
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const commentDoc = await transaction.get(commentRef);
+                if (!commentDoc.exists()) throw new Error("Parent comment does not exist!");
+
+                transaction.delete(replyRef);
+                transaction.update(commentRef, { replies: Math.max(0, (commentDoc.data().replies || 0) - 1) });
+            });
+            toast({ title: "Reply Deleted", description: "Your reply has been removed." });
+            // TODO: Implement Cloud Function to recursively delete subcollections (likes) of this reply
+        } catch (serverError) {
+            const error = serverError as Error;
             const permissionError = new FirestorePermissionError({ path: replyRef.path, operation: 'delete' });
             errorEmitter.emit('permission-error', permissionError);
-        }).finally(() => {
+            toast({ title: "Error Deleting Reply", description: error.message || "An unknown error occurred.", variant: 'destructive' });
+        } finally {
             setIsDeleting(false);
             setDeleteAlertOpen(false);
-        });
+        }
     };
 
     return (
-        <div className="flex items-start gap-3 text-sm">
-            <Avatar className="h-7 w-7">
+        <div className="flex items-start gap-3 text-sm p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <Avatar className="h-6 w-6">
                 <AvatarImage src={reply.authorAvatar} />
                 <AvatarFallback>{reply.authorName.charAt(0)}</AvatarFallback>
             </Avatar>
@@ -138,10 +184,10 @@ function ReplyCard({ reply, postId, commentId }: { reply: EnrichedReply, postId:
                         {reply.createdAt ? formatDistanceToNow(reply.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
                     </span>
                 </p>
-                <p>{reply.replyText}</p>
+                <p className="mt-1">{reply.replyText}</p>
                 <div className="flex items-center gap-2 mt-1">
                     <Button variant="ghost" size="sm" className="h-6 px-1 flex items-center gap-1 text-xs" onClick={handleLikeReply} disabled={!user}>
-                        <ThumbsUp size={14} className={cn(reply.userHasLiked && "text-primary fill-primary")} /> {reply.likeCount}
+                        <ThumbsUp size={14} className={cn(userHasLikedReply && "text-primary fill-primary")} /> {reply.likes}
                     </Button>
                     {user?.uid === reply.authorId && (
                          <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
@@ -166,82 +212,162 @@ function CommentCard({ comment, postId }: { comment: EnrichedComment, postId: st
     const { user } = useUser();
     const db = useFirestore();
     const { toast } = useToast();
-    
+
     const [showReplies, setShowReplies] = useState(false);
     const [newReplyText, setNewReplyText] = useState('');
     const [isPostingReply, setIsPostingReply] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
 
-    const handleLikeComment = () => {
-        if (!user || !db) return;
-        
+    // Fetch likes for this specific comment
+    const commentLikesQuery = useMemoFirebase(() => {
+        if (!db) return null;
+        return collection(db, 'forumPosts', postId, 'comments', comment.id, 'likes');
+    }, [db, postId, comment.id]);
+    const { data: currentCommentLikes } = useCollection<Like>(commentLikesQuery); // Use useCollection for real-time like status
+    const userHasLikedComment = useMemo(() => currentCommentLikes?.some(like => like.id === user?.uid) ?? false, [currentCommentLikes, user]);
+
+    // Fetch replies for this specific comment
+    const repliesQuery = useMemoFirebase(() => {
+        if (!db) return null;
+        return query(collection(db, 'forumPosts', postId, 'comments', comment.id, 'replies'), orderBy('createdAt', 'asc'));
+    }, [db, postId, comment.id]);
+    const { data: replies, isLoading: isLoadingReplies } = useCollection<Reply>(repliesQuery);
+
+    // Enriched replies for UI
+    const enrichedReplies = useMemo((): EnrichedReply[] => {
+        if (!replies) return [];
+        return replies.map(reply => ({ ...reply, userHasLiked: false })); // userHasLiked is handled in ReplyCard now
+    }, [replies]);
+
+
+    const handleLikeComment = async () => { // Made async for awaits in transaction
+        if (!user || !db) {
+            toast({ title: 'Sign in required', description: 'You must be signed in to like comments.', variant: 'destructive' });
+            return;
+        }
+
         const commentRef = doc(db, 'forumPosts', postId, 'comments', comment.id);
         const likeRef = doc(commentRef, 'likes', user.uid);
-        
-        runTransaction(db, async (transaction) => {
-            const commentDoc = await transaction.get(commentRef);
-            if (!commentDoc.exists()) throw "Comment does not exist!";
-            
-            const likeDoc = await transaction.get(likeRef);
-            if (likeDoc.exists()) {
-                transaction.delete(likeRef);
-                transaction.update(commentRef, { likes: Math.max(0, (commentDoc.data().likes || 0) - 1) });
-            } else {
-                transaction.set(likeRef, { userId: user.uid });
-                transaction.update(commentRef, { likes: (commentDoc.data().likes || 0) + 1 });
-            }
-        }).catch((err) => {
-             const permissionError = new FirestorePermissionError({
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const commentDoc = await transaction.get(commentRef);
+                if (!commentDoc.exists()) throw new Error("Comment does not exist!");
+
+                const currentLikesCount = commentDoc.data().likes || 0;
+                const likeDocSnapshot = await transaction.get(likeRef); // Get specific like doc
+
+                if (likeDocSnapshot.exists()) {
+                    // Unlike: Delete the like document and decrement the count
+                    transaction.delete(likeRef);
+                    transaction.update(commentRef, { likes: Math.max(0, currentLikesCount - 1) });
+                } else {
+                    // Like: Create the like document and increment the count
+                    transaction.set(likeRef, { userId: user.uid });
+                    transaction.update(commentRef, { likes: currentLikesCount + 1 });
+                }
+            });
+        } catch (serverError) {
+            const error = serverError as Error;
+            const permissionError = new FirestorePermissionError({
                 path: likeRef.path,
-                operation: comment.userHasLiked ? 'delete' : 'create',
+                operation: userHasLikedComment ? 'delete' : 'create',
             });
             errorEmitter.emit('permission-error', permissionError);
-        });
+            toast({
+                title: 'Error Liking Comment',
+                description: error.message || 'An unknown error occurred.',
+                variant: 'destructive',
+            });
+        }
     };
 
     const handlePostReply = async () => {
-        if (!user || !db || !newReplyText.trim()) return;
+        if (!user || !db || !newReplyText.trim()) {
+            toast({ title: 'Error', description: 'Reply cannot be empty.', variant: 'destructive' });
+            return;
+        }
 
         setIsPostingReply(true);
-        const repliesCollectionRef = collection(db, 'forumPosts', postId, 'comments', comment.id, 'replies');
-        const newReplyData = {
-            authorId: user.uid,
-            authorName: user.displayName || 'Anonymous',
-            authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
-            replyText: newReplyText,
-            createdAt: serverTimestamp(),
-            likes: 0
-        };
+        const commentRef = doc(db, 'forumPosts', postId, 'comments', comment.id);
+        const repliesCollectionRef = collection(commentRef, 'replies');
 
         try {
-            await addDoc(repliesCollectionRef, newReplyData);
+            await runTransaction(db, async (transaction) => {
+                const commentDoc = await transaction.get(commentRef);
+                if (!commentDoc.exists()) throw new Error("Parent comment does not exist!");
+
+                const currentRepliesCount = commentDoc.data().replies || 0;
+
+                const newReplyData = {
+                    authorId: user.uid,
+                    authorName: user.displayName || 'Anonymous',
+                    authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+                    replyText: newReplyText,
+                    likes: 0, // Initialize likes for replies
+                    createdAt: serverTimestamp(),
+                };
+                const newReplyDocRef = doc(repliesCollectionRef); // Let Firestore generate ID
+                transaction.set(newReplyDocRef, newReplyData);
+
+                // Increment the replies count on the parent comment
+                transaction.update(commentRef, { replies: currentRepliesCount + 1 });
+            });
+
             setNewReplyText('');
-        } catch (err) {
-            const permissionError = new FirestorePermissionError({ path: repliesCollectionRef.path, operation: 'create', requestResourceData: newReplyData });
+            toast({ title: "Reply Posted", description: "Your reply has been added." });
+        } catch (serverError) {
+            const error = serverError as Error;
+            const permissionError = new FirestorePermissionError({
+                path: repliesCollectionRef.path,
+                operation: 'create',
+                requestResourceData: { authorId: user.uid, replyText: newReplyText },
+            });
             errorEmitter.emit('permission-error', permissionError);
+            toast({
+                title: 'Error Posting Reply',
+                description: error.message || 'An unknown error occurred.',
+                variant: 'destructive',
+            });
         } finally {
             setIsPostingReply(false);
         }
     };
-    
+
     const handleDeleteComment = async () => {
-        if (!user || !db || user.uid !== comment.authorId) return;
+        if (!user || !db || user.uid !== comment.authorId) {
+            toast({ title: 'Permission Denied', description: 'You can only delete your own comments.', variant: 'destructive' });
+            setDeleteAlertOpen(false);
+            return;
+        }
         setIsDeleting(true);
         const commentRef = doc(db, 'forumPosts', postId, 'comments', comment.id);
-        deleteDoc(commentRef).then(() => {
-            toast({ title: "Comment Deleted" });
-        }).catch((err) => {
+        const postRef = doc(db, 'forumPosts', postId);
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) throw new Error("Parent post does not exist!");
+
+                transaction.delete(commentRef);
+                transaction.update(postRef, { comments: Math.max(0, (postDoc.data().comments || 0) - 1) });
+            });
+            toast({ title: "Comment Deleted", description: "Your comment has been removed." });
+            // TODO: Implement Cloud Function to recursively delete subcollections (likes, replies) of this comment
+        } catch (serverError) {
+            const error = serverError as Error;
             const permissionError = new FirestorePermissionError({ path: commentRef.path, operation: 'delete' });
             errorEmitter.emit('permission-error', permissionError);
-        }).finally(() => {
+            toast({ title: "Error Deleting Comment", description: error.message || "An unknown error occurred.", variant: 'destructive' });
+        } finally {
             setIsDeleting(false);
             setDeleteAlertOpen(false);
-        });
+        }
     };
 
     return (
-        <div className="flex items-start gap-3 text-sm">
+        <div className="flex items-start gap-3 text-sm p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
             <Avatar className="h-8 w-8">
                 <AvatarImage src={comment.authorAvatar} />
                 <AvatarFallback>{comment.authorName.charAt(0)}</AvatarFallback>
@@ -253,18 +379,18 @@ function CommentCard({ comment, postId }: { comment: EnrichedComment, postId: st
                         {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
                     </span>
                 </p>
-                <p>{comment.commentText}</p>
-                <div className="flex items-center gap-2 mt-1">
-                    <Button variant="ghost" size="sm" className="h-6 px-1 flex items-center gap-1 text-xs" onClick={handleLikeComment} disabled={!user}>
-                        <ThumbsUp size={14} className={cn(comment.userHasLiked && "text-primary fill-primary")} /> {comment.likeCount}
+                <p className="mt-1">{comment.commentText}</p>
+                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                    <Button variant="ghost" size="sm" className="h-6 px-2 flex items-center gap-1" onClick={handleLikeComment} disabled={!user}>
+                        <ThumbsUp size={14} className={cn(userHasLikedComment && "text-primary fill-primary")} /> {comment.likes}
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-6 px-1 flex items-center gap-1 text-xs" onClick={() => setShowReplies(!showReplies)}>
-                        <CornerDownRight size={14} /> {comment.replyCount} Replies
+                    <Button variant="ghost" size="sm" className="h-6 px-2 flex items-center gap-1" onClick={() => setShowReplies(!showReplies)}>
+                        <CornerDownRight size={14} /> {comment.replies} Repl{comment.replies === 1 ? 'y' : 'ies'}
                     </Button>
                      {user?.uid === comment.authorId && (
                          <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
                             <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 px-1 flex items-center gap-1 text-xs text-destructive" disabled={isDeleting}>
+                                <Button variant="ghost" size="sm" className="h-6 px-2 flex items-center gap-1 text-xs text-destructive" disabled={isDeleting}>
                                     <Trash2 size={14} />
                                 </Button>
                             </AlertDialogTrigger>
@@ -275,24 +401,36 @@ function CommentCard({ comment, postId }: { comment: EnrichedComment, postId: st
                         </AlertDialog>
                     )}
                 </div>
+
                 {showReplies && (
-                    <div className="mt-3 pl-6 border-l-2 space-y-4">
-                        {comment.replies.map(reply => (
-                            <ReplyCard key={reply.id} reply={reply} postId={postId} commentId={comment.id} />
-                        ))}
-                         {user && (
-                            <div className="flex gap-2">
+                    <div className="mt-4 pl-4 border-l">
+                        <div className="space-y-2 mb-3">
+                            {isLoadingReplies ? (
+                                <Skeleton className="h-8 w-full" />
+                            ) : enrichedReplies.length > 0 ? (
+                                enrichedReplies.map(reply => (
+                                    <ReplyCard key={reply.id} reply={reply} postId={postId} commentId={comment.id} />
+                                ))
+                            ) : (
+                                <p className="text-xs text-muted-foreground">No replies yet.</p>
+                            )}
+                        </div>
+                        {user && (
+                            <div className="flex gap-2 mt-3">
                                 <Input
                                     placeholder="Write a reply..."
                                     value={newReplyText}
                                     onChange={(e) => setNewReplyText(e.target.value)}
-                                    className="h-8 text-xs"
                                     disabled={isPostingReply}
+                                    className="h-8 text-sm"
                                 />
-                                <Button size="sm" className="h-8" onClick={handlePostReply} disabled={isPostingReply || !newReplyText.trim()}>
+                                <Button onClick={handlePostReply} disabled={isPostingReply || !newReplyText.trim()} className="h-8 text-sm">
                                     {isPostingReply ? 'Replying...' : 'Reply'}
                                 </Button>
                             </div>
+                        )}
+                        {!user && (
+                            <p className="text-xs text-muted-foreground mt-3">Sign in to reply.</p>
                         )}
                     </div>
                 )}
@@ -306,90 +444,152 @@ function PostCard({ post }: { post: EnrichedPost }) {
     const { user } = useUser();
     const db = useFirestore();
     const { toast } = useToast();
-    
+
     const [showComments, setShowComments] = useState(false);
     const [newCommentText, setNewCommentText] = useState('');
     const [isPostingComment, setIsPostingComment] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
 
-    const handleLikePost = () => {
-        if (!user || !db) return;
+    // Fetch likes for this specific post
+    const postLikesQuery = useMemoFirebase(() => {
+        if (!db) return null;
+        return collection(db, 'forumPosts', post.id, 'likes');
+    }, [db, post.id]);
+    const { data: currentPostLikes } = useCollection<Like>(postLikesQuery); // Use useCollection for real-time like status
+    const userHasLikedPost = useMemo(() => currentPostLikes?.some(like => like.id === user?.uid) ?? false, [currentPostLikes, user]);
+
+    // Fetch comments for this specific post
+    const commentsQuery = useMemoFirebase(() => {
+        if (!db) return null;
+        return query(collection(db, 'forumPosts', post.id, 'comments'), orderBy('createdAt', 'asc'));
+    }, [db, post.id]);
+    const { data: comments, isLoading: isLoadingComments } = useCollection<Comment>(commentsQuery);
+
+    // Enriched comments for UI
+    const enrichedComments = useMemo((): EnrichedComment[] => {
+        if (!comments) return [];
+        return comments.map(comment => ({ ...comment, userHasLiked: false, replies: [] })); // userHasLiked and replies are handled in CommentCard now
+    }, [comments]);
+
+
+    const handleLikePost = async () => { // Made async for awaits in transaction
+        if (!user || !db) {
+            toast({ title: 'Sign in required', description: 'You must be signed in to like posts.', variant: 'destructive' });
+            return;
+        }
 
         const postRef = doc(db, 'forumPosts', post.id);
-        const likeRef = doc(postRef, 'likes', user.uid);
+        const likeRef = doc(postRef, 'likes', user.uid); // Document ID for the like is the user's UID
 
-        runTransaction(db, async (transaction) => {
-            const postDoc = await transaction.get(postRef);
-            if (!postDoc.exists()) throw "Post does not exist!";
-            
-            const likeDoc = await transaction.get(likeRef);
-            if (likeDoc.exists()) {
-                transaction.delete(likeRef);
-                transaction.update(postRef, { likes: Math.max(0, (postDoc.data().likes || 0) - 1) });
-            } else {
-                transaction.set(likeRef, { userId: user.uid });
-                transaction.update(postRef, { likes: (postDoc.data().likes || 0) + 1 });
-            }
-        }).catch((err) => {
-             const permissionError = new FirestorePermissionError({
+        try {
+            await runTransaction(db, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) throw new Error("Post does not exist!");
+
+                const currentLikesCount = postDoc.data().likes || 0;
+                const likeDocSnapshot = await transaction.get(likeRef); // Get specific like doc
+
+                if (likeDocSnapshot.exists()) {
+                    // Unlike: Delete the like document and decrement the count
+                    transaction.delete(likeRef);
+                    transaction.update(postRef, { likes: Math.max(0, currentLikesCount - 1) });
+                } else {
+                    // Like: Create the like document and increment the count
+                    transaction.set(likeRef, { userId: user.uid });
+                    transaction.update(postRef, { likes: currentLikesCount + 1 });
+                }
+            });
+        } catch (serverError) {
+            const error = serverError as Error;
+            const permissionError = new FirestorePermissionError({
                 path: likeRef.path,
-                operation: post.userHasLiked ? 'delete' : 'create',
+                operation: userHasLikedPost ? 'delete' : 'create',
             });
             errorEmitter.emit('permission-error', permissionError);
-        });
+            toast({
+                title: 'Error Liking Post',
+                description: error.message || 'An unknown error occurred.',
+                variant: 'destructive',
+            });
+        }
     };
 
     const handlePostComment = async () => {
-        if (!user || !db || !newCommentText.trim()) return;
+        if (!user || !db || !newCommentText.trim()) {
+            toast({ title: 'Error', description: 'Comment cannot be empty.', variant: 'destructive' });
+            return;
+        }
 
         setIsPostingComment(true);
-        const commentsCollectionRef = collection(db, 'forumPosts', post.id, 'comments');
-        const newCommentData = {
-            authorId: user.uid,
-            authorName: user.displayName || 'Anonymous',
-            authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
-            commentText: newCommentText,
-            createdAt: serverTimestamp(),
-            likes: 0,
-            replies: 0,
-        };
+        const postRef = doc(db, 'forumPosts', post.id);
+        const commentsCollectionRef = collection(postRef, 'comments');
 
         try {
-            await addDoc(commentsCollectionRef, newCommentData);
-            
-            // Also increment comment count on post
-            const postRef = doc(db, 'forumPosts', post.id);
-            const commentsSnapshot = await getDocs(query(commentsCollectionRef));
-            await updateDoc(postRef, { comments: commentsSnapshot.size });
+            await runTransaction(db, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) throw new Error("Post does not exist!");
+
+                const currentCommentsCount = postDoc.data().comments || 0;
+
+                const newCommentData = {
+                    authorId: user.uid,
+                    authorName: user.displayName || 'Anonymous',
+                    authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+                    commentText: newCommentText,
+                    likes: 0, // Initialize likes for comments
+                    replies: 0, // Initialize replies for comments
+                    createdAt: serverTimestamp(),
+                };
+                const newCommentDocRef = doc(commentsCollectionRef); // Let Firestore generate ID
+                transaction.set(newCommentDocRef, newCommentData);
+
+                // Increment the comment count on the parent post
+                transaction.update(postRef, { comments: currentCommentsCount + 1 });
+            });
 
             setNewCommentText('');
-            toast({ title: "Comment Posted" });
-        } catch (err) {
-             const permissionError = new FirestorePermissionError({
+            toast({ title: "Comment Posted", description: "Your comment has been added." });
+        } catch (serverError) {
+            const error = serverError as Error;
+            const permissionError = new FirestorePermissionError({
                 path: commentsCollectionRef.path,
                 operation: 'create',
-                requestResourceData: newCommentData
+                requestResourceData: { authorId: user.uid, commentText: newCommentText },
             });
             errorEmitter.emit('permission-error', permissionError);
+            toast({
+                title: 'Error Posting Comment',
+                description: error.message || 'An unknown error occurred.',
+                variant: 'destructive',
+            });
         } finally {
             setIsPostingComment(false);
         }
     };
-    
+
     const handleDeletePost = async () => {
-        if (!user || !db || user.uid !== post.authorId) return;
+        if (!user || !db || user.uid !== post.authorId) {
+            toast({ title: 'Permission Denied', description: 'You can only delete your own posts.', variant: 'destructive' });
+            setDeleteAlertOpen(false);
+            return;
+        }
         setIsDeleting(true);
         const postRef = doc(db, 'forumPosts', post.id);
-        deleteDoc(postRef).then(() => {
-            toast({ title: "Post Deleted" });
-        }).catch((err) => {
+
+        try {
+            await deleteDoc(postRef);
+            toast({ title: "Post Deleted", description: "The post has been removed." });
+            // TODO: Implement Cloud Function to recursively delete subcollections (likes, comments, replies, comment-likes, reply-likes) of this post
+        } catch (serverError) {
+            const error = serverError as Error;
             const permissionError = new FirestorePermissionError({ path: postRef.path, operation: 'delete' });
             errorEmitter.emit('permission-error', permissionError);
-        }).finally(() => {
+            toast({ title: "Error Deleting Post", description: error.message || "An unknown error occurred.", variant: 'destructive' });
+        } finally {
             setIsDeleting(false);
             setDeleteAlertOpen(false);
-        });
+        }
     };
 
     return (
@@ -416,7 +616,7 @@ function PostCard({ post }: { post: EnrichedPost }) {
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                                <AlertDialogHeader><AlertDialogTitle>Delete Post?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. All comments and replies will also be deleted.</AlertDialogDescription></AlertDialogHeader>
+                                <AlertDialogHeader><AlertDialogTitle>Delete Post?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. All comments and replies will also be deleted. (Requires Cloud Function)</AlertDialogDescription></AlertDialogHeader>
                                 <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeletePost}>Delete</AlertDialogAction></AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
@@ -430,10 +630,10 @@ function PostCard({ post }: { post: EnrichedPost }) {
                  <div className="flex justify-between items-center w-full mb-4">
                     <div className="flex gap-2 text-sm text-muted-foreground">
                         <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleLikePost} disabled={!user}>
-                            <ThumbsUp size={16} className={cn(post.userHasLiked && "text-primary fill-primary")} /> {post.likeCount}
+                            <ThumbsUp size={16} className={cn(userHasLikedPost && "text-primary fill-primary")} /> {post.likes}
                         </Button>
                         <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => setShowComments(!showComments)}>
-                            <MessageSquare size={16} /> {post.commentCount}
+                            <MessageSquare size={16} /> {post.comments} Comment{post.comments === 1 ? '' : 's'}
                         </Button>
                     </div>
                     {user && user?.uid !== post.authorId && (
@@ -444,15 +644,23 @@ function PostCard({ post }: { post: EnrichedPost }) {
                         </Button>
                     )}
                 </div>
-                
+
                  {showComments && (
                     <div className="w-full mt-4 border-t pt-4 space-y-4">
                         <h3 className="text-md font-semibold">Comments</h3>
                         <div className="space-y-4">
-                           {post.comments.map(comment => (
-                               <CommentCard key={comment.id} comment={comment} postId={post.id} />
-                           ))}
-                           {post.comments.length === 0 && <p className="text-sm text-muted-foreground">No comments yet.</p>}
+                           {isLoadingComments ? (
+                               <>
+                                   <Skeleton className="h-16 w-full" />
+                                   <Skeleton className="h-16 w-full" />
+                               </>
+                           ) : enrichedComments.length > 0 ? (
+                               enrichedComments.map(comment => (
+                                   <CommentCard key={comment.id} comment={comment} postId={post.id} />
+                               ))
+                           ) : (
+                               <p className="text-sm text-muted-foreground">No comments yet. Be the first to comment!</p>
+                           )}
                         </div>
                         {user && (
                             <div className="flex gap-2 pt-2">
@@ -467,6 +675,9 @@ function PostCard({ post }: { post: EnrichedPost }) {
                                 </Button>
                             </div>
                         )}
+                        {!user && (
+                            <p className="text-sm text-muted-foreground pt-2">Sign in to leave a comment.</p>
+                        )}
                     </div>
                 )}
             </CardFooter>
@@ -480,100 +691,31 @@ export default function CommunityForumPage() {
     const { user } = useUser();
     const db = useFirestore();
     const { toast } = useToast();
-    
+
     const [newPost, setNewPost] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // --- Data Fetching ---
     const postsQuery = useMemoFirebase(() => db ? query(collection(db, 'forumPosts'), orderBy('createdAt', 'desc')) : null, [db]);
-    const { data: posts, isLoading: isLoadingPosts } = useCollection<Post>(postsQuery);
+    const { data: posts, isLoading: isLoadingPosts } = useCollection<Post>(postsQuery); // This now fetches Post with denormalized counts
 
-    const [subcollectionData, setSubcollectionData] = useState<Record<string, any>>({});
-    const [isLoadingSubcollections, setIsLoadingSubcollections] = useState(true);
+    // Removed the complex useEffect for nested subcollection fetching.
+    // Each PostCard, CommentCard, ReplyCard will now handle its own subcollection data (likes, replies)
+    // using `useCollection` for real-time updates for its direct children.
 
-    useEffect(() => {
-        if (posts && db) {
-            setIsLoadingSubcollections(true);
-            const promises = posts.map(async (post) => {
-                // Post-level
-                const postLikesRef = collection(db, 'forumPosts', post.id, 'likes');
-                const commentsRef = collection(db, 'forumPosts', post.id, 'comments');
-                const commentsQuery = query(commentsRef, orderBy('createdAt', 'asc'));
-
-                const [postLikesSnap, commentsSnap] = await Promise.all([getDocs(postLikesRef), getDocs(commentsQuery)]);
-
-                const postLikes = postLikesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Like));
-                const comments = commentsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Comment));
-                
-                // Comment-level
-                const commentDetails = await Promise.all(comments.map(async (comment) => {
-                    const commentLikesRef = collection(commentsRef, comment.id, 'likes');
-                    const repliesRef = collection(commentsRef, comment.id, 'replies');
-                    const repliesQuery = query(repliesRef, orderBy('createdAt', 'asc'));
-
-                    const [commentLikesSnap, repliesSnap] = await Promise.all([getDocs(commentLikesRef), getDocs(repliesQuery)]);
-
-                    const commentLikes = commentLikesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Like));
-                    const replies = repliesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Reply));
-
-                    // Reply-level
-                    const replyDetails = await Promise.all(replies.map(async (reply) => {
-                        const replyLikesRef = collection(repliesRef, reply.id, 'likes');
-                        const replyLikesSnap = await getDocs(replyLikesRef);
-                        const replyLikes = replyLikesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Like));
-                        return { ...reply, likes: replyLikes };
-                    }));
-
-                    return { ...comment, likes: commentLikes, replies: replyDetails };
-                }));
-
-                return { postId: post.id, likes: postLikes, comments: commentDetails };
-            });
-
-            Promise.all(promises).then(results => {
-                const dataMap = results.reduce((acc, current) => {
-                    acc[current.postId] = { likes: current.likes, comments: current.comments };
-                    return acc;
-                }, {} as Record<string, any>);
-                setSubcollectionData(dataMap);
-                setIsLoadingSubcollections(false);
-            });
-        } else if (!posts && !isLoadingPosts) {
-            setIsLoadingSubcollections(false);
-        }
-    }, [posts, db, isLoadingPosts]);
-
+    // Enriched posts now rely directly on the `Post` type which has `likes` and `comments` counts
+    // The `userHasLiked` is fetched by the `useCollection` in PostCard.
     const enrichedPosts = useMemo((): EnrichedPost[] => {
         if (!posts) return [];
-        return posts.map(post => {
-            const postData = subcollectionData[post.id] || { likes: [], comments: [] };
-            
-            const enrichedComments = (postData.comments || []).map((comment: any) => {
-                 const enrichedReplies = (comment.replies || []).map((reply: any) => ({
-                    ...reply,
-                    likeCount: reply.likes?.length || 0,
-                    userHasLiked: user ? reply.likes?.some((l: Like) => l.id === user.uid) : false,
-                }));
-                return {
-                    ...comment,
-                    likeCount: comment.likes?.length || 0,
-                    userHasLiked: user ? comment.likes?.some((l: Like) => l.id === user.uid) : false,
-                    replies: enrichedReplies,
-                    replyCount: enrichedReplies.length,
-                }
-            });
+        return posts.map(post => ({
+            ...post,
+            userHasLiked: false, // This will be determined by useCollection inside PostCard
+            comments: [] // This will be determined by useCollection inside PostCard
+        }));
+    }, [posts]);
 
-            return {
-                ...post,
-                likeCount: postData.likes.length,
-                userHasLiked: user ? postData.likes.some((l: Like) => l.id === user.uid) : false,
-                comments: enrichedComments,
-                commentCount: enrichedComments.length,
-            };
-        });
-    }, [posts, subcollectionData, user]);
+    const isLoading = isLoadingPosts; // Only depend on main posts loading
 
-    const isLoading = isLoadingPosts || isLoadingSubcollections;
     // --- End Data Fetching ---
 
     const handleCreatePost = async () => {
@@ -585,8 +727,8 @@ export default function CommunityForumPage() {
             authorName: user.displayName || 'Anonymous',
             authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
             question: newPost,
-            likes: 0,
-            comments: 0,
+            likes: 0, // Initialize denormalized counts
+            comments: 0, // Initialize denormalized counts
             createdAt: serverTimestamp()
         };
         const postsCollection = collection(db, 'forumPosts');
@@ -597,8 +739,10 @@ export default function CommunityForumPage() {
                 toast({ title: 'Post Created', description: 'Your question has been added to the forum.' });
             })
             .catch((serverError) => {
+                const error = serverError as Error;
                 const permissionError = new FirestorePermissionError({ path: postsCollection.path, operation: 'create', requestResourceData: postData });
                 errorEmitter.emit('permission-error', permissionError);
+                toast({ title: 'Error Creating Post', description: error.message || 'An unknown error occurred.', variant: 'destructive' });
             })
             .finally(() => {
                 setIsSubmitting(false);
@@ -623,9 +767,9 @@ export default function CommunityForumPage() {
                                     <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/avatar/100/100"} alt={user?.displayName || "Farmer"} />
                                     <AvatarFallback>{user?.displayName?.charAt(0) || 'F'}</AvatarFallback>
                                 </Avatar>
-                                <Input 
-                                    placeholder="Ask a question or share an update..." 
-                                    className="flex-1" 
+                                <Input
+                                    placeholder="Ask a question or share an update..."
+                                    className="flex-1"
                                     value={newPost}
                                     onChange={(e) => setNewPost(e.target.value)}
                                     disabled={isSubmitting || !user}
@@ -639,7 +783,7 @@ export default function CommunityForumPage() {
 
                     <div className="space-y-6">
                         {isLoading && ( <> <Skeleton className="h-48 w-full" /> <Skeleton className="h-48 w-full" /> </> )}
-                        {!isLoading && enrichedPosts.map(post => <PostCard key={post.id} post={post} /> )}
+                        {!isLoading && enrichedPosts.length > 0 && enrichedPosts.map(post => <PostCard key={post.id} post={post} /> )}
                          {!isLoading && enrichedPosts.length === 0 && (
                              <Card><CardContent className="p-6"><p className="text-muted-foreground text-center">No posts yet. Be the first to ask a question!</p></CardContent></Card>
                          )}
@@ -676,5 +820,4 @@ export default function CommunityForumPage() {
         </div>
     )
 }
-
     
