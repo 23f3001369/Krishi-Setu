@@ -694,7 +694,8 @@ export default function CommunityForumPage() {
         if (!posts) return [];
         if (!searchTerm.trim()) return posts;
         return posts.filter(post => 
-            post.question.toLowerCase().includes(searchTerm.toLowerCase())
+            post.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            post.authorName.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [posts, searchTerm]);
 
