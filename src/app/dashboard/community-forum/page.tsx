@@ -36,70 +36,17 @@ type Post = {
 };
 
 type Like = {
+    id: string;
     userId: string;
 };
 
-function PostCard({ post }: { post: Post }) {
+type EnrichedPost = Post & {
+    userHasLiked: boolean;
+    likeCount: number;
+};
+
+function PostCard({ post, onLike }: { post: EnrichedPost; onLike: (postId: string) => void; }) {
     const { user } = useUser();
-    const db = useFirestore();
-    const { toast } = useToast();
-
-    const likesQuery = useMemoFirebase(() => {
-        if (!db) return null;
-        return collection(db, 'forumPosts', post.id, 'likes');
-    }, [db, post.id]);
-
-    const { data: likes } = useCollection<Like>(likesQuery);
-    
-    const likeCount = likes?.length ?? 0;
-
-    const hasLiked = useMemo(() => {
-        return likes?.some(like => like.id === user?.uid);
-    }, [likes, user]);
-
-    const handleLike = async () => {
-        if (!user || !db) {
-            toast({
-                variant: 'destructive',
-                title: 'Not logged in',
-                description: 'You must be logged in to like a post.',
-            });
-            return;
-        }
-        
-        const postRef = doc(db, 'forumPosts', post.id);
-        const likeRef = doc(db, 'forumPosts', post.id, 'likes', user.uid);
-
-        runTransaction(db, async (transaction) => {
-            const postDoc = await transaction.get(postRef);
-            if (!postDoc.exists()) {
-                throw "Post does not exist!";
-            }
-
-            const currentLikes = postDoc.data().likes || 0;
-            const likeDoc = await transaction.get(likeRef);
-
-            if (likeDoc.exists()) {
-                // Unlike
-                transaction.delete(likeRef);
-                transaction.update(postRef, { likes: Math.max(0, currentLikes - 1) });
-            } else {
-                // Like
-                transaction.set(likeRef, { userId: user.uid });
-                transaction.update(postRef, { likes: currentLikes + 1 });
-            }
-        }).catch((serverError) => {
-            // This error handling is now more accurate, pointing to the specific
-            // subcollection operation that might fail.
-            const isUnlike = hasLiked;
-            const permissionError = new FirestorePermissionError({
-                path: likeRef.path, // Always operate on the like subcollection path
-                operation: isUnlike ? 'delete' : 'create',
-                requestResourceData: isUnlike ? undefined : { userId: user.uid },
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
-    };
 
     return (
         <Card>
@@ -122,8 +69,8 @@ function PostCard({ post }: { post: Post }) {
             </CardContent>
             <CardFooter className="flex justify-between items-center p-6">
                 <div className="flex gap-2 text-sm text-muted-foreground">
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleLike} disabled={!user}>
-                        <ThumbsUp size={16} className={cn(hasLiked && "text-primary fill-primary")} /> {likeCount}
+                    <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => onLike(post.id)} disabled={!user}>
+                        <ThumbsUp size={16} className={cn(post.userHasLiked && "text-primary fill-primary")} /> {post.likeCount}
                     </Button>
                     <Button variant="ghost" size="sm" className="flex items-center gap-1">
                         <MessageSquare size={16} /> {post.comments}
@@ -155,7 +102,74 @@ export default function CommunityForumPage() {
         return query(collection(db, 'forumPosts'), orderBy('createdAt', 'desc'));
     }, [db]);
     
-    const { data: posts, isLoading } = useCollection<Post>(postsQuery);
+    const { data: posts, isLoading: isLoadingPosts } = useCollection<Post>(postsQuery);
+
+    const likesQuery = useMemoFirebase(() => {
+        if (!db) return null;
+        return collection(db, 'forumPosts'); // Base collection for likes
+    }, [db]);
+
+    const { data: allLikes, isLoading: isLoadingLikes } = useCollection<Like>(likesQuery ? query(collection(likesQuery, 'likes')) : null);
+
+    const enrichedPosts = useMemo(() => {
+        if (!posts) return [];
+        return posts.map(post => {
+            const likesForPost = allLikes?.filter(like => like.id.startsWith(post.id)) ?? [];
+            return {
+                ...post,
+                likeCount: likesForPost.length,
+                userHasLiked: user ? likesForPost.some(like => like.id.endsWith(user.uid)) : false,
+            };
+        });
+    }, [posts, allLikes, user]);
+
+    const isLoading = isLoadingPosts || isLoadingLikes;
+
+    const handleLike = async (postId: string) => {
+        if (!user || !db) {
+            toast({
+                variant: 'destructive',
+                title: 'Not logged in',
+                description: 'You must be logged in to like a post.',
+            });
+            return;
+        }
+
+        const postRef = doc(db, 'forumPosts', postId);
+        const likeRef = doc(db, 'forumPosts', postId, 'likes', user.uid);
+        const post = posts?.find(p => p.id === postId);
+        const hasLiked = enrichedPosts.find(p => p.id === postId)?.userHasLiked;
+
+        if (!post) return;
+
+        runTransaction(db, async (transaction) => {
+            const postDoc = await transaction.get(postRef);
+            if (!postDoc.exists()) {
+                throw "Post does not exist!";
+            }
+
+            const currentLikes = postDoc.data().likes || 0;
+            const likeDoc = await transaction.get(likeRef);
+
+            if (likeDoc.exists()) {
+                // Unlike
+                transaction.delete(likeRef);
+                transaction.update(postRef, { likes: Math.max(0, currentLikes - 1) });
+            } else {
+                // Like
+                transaction.set(likeRef, { userId: user.uid });
+                transaction.update(postRef, { likes: currentLikes + 1 });
+            }
+        }).catch((serverError) => {
+            const isUnlike = hasLiked;
+            const permissionError = new FirestorePermissionError({
+                path: likeRef.path,
+                operation: isUnlike ? 'delete' : 'create',
+                requestResourceData: isUnlike ? undefined : { userId: user.uid },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    };
 
     const handleCreatePost = async () => {
         if (!user || !db || !newPost.trim()) return;
@@ -237,8 +251,8 @@ export default function CommunityForumPage() {
                                 <Skeleton className="h-48 w-full" />
                             </>
                         )}
-                        {posts && posts.map(post => (
-                            <PostCard key={post.id} post={post} />
+                        {enrichedPosts.map(post => (
+                            <PostCard key={post.id} post={post} onLike={handleLike} />
                         ))}
                     </div>
                 </div>
