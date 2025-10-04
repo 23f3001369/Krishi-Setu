@@ -7,6 +7,7 @@ import {
   DocumentData,
   FirestoreError,
   DocumentSnapshot,
+  setDoc, // Import setDoc
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -73,8 +74,8 @@ export function useDoc<T = any>(
       },
       (error: FirestoreError) => {
         const contextualError = new FirestorePermissionError({
-          operation: 'get',
           path: memoizedDocRef.path,
+          operation: 'get',
         })
 
         setError(contextualError)
@@ -91,3 +92,6 @@ export function useDoc<T = any>(
 
   return { data, isLoading, error };
 }
+
+// Add the setDoc function export
+export { setDoc };
