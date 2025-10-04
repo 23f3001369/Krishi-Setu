@@ -151,7 +151,7 @@ export default function CommunityForumPage() {
 
     const isLoading = isLoadingPosts || isLoadingLikes;
 
-    const handleLike = async (postId: string, hasLiked: boolean) => {
+    const handleLike = (postId: string, hasLiked: boolean) => {
         if (!user || !db) {
             toast({
                 variant: 'destructive',
