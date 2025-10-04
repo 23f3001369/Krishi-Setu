@@ -120,6 +120,8 @@ export default function CommunityForumPage() {
                         const likesSnapshot = await getDocs(likesCollectionRef);
                         newLikesData[post.id] = likesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Like));
                     } catch (e) {
+                         // This catch block is for network errors etc., not permission errors from the initial load.
+                         // Permission errors for 'list' are handled inside useCollection.
                          console.error(`Failed to fetch likes for post ${post.id}`, e);
                          newLikesData[post.id] = []; // Set empty array on error
                     }
@@ -353,3 +355,5 @@ export default function CommunityForumPage() {
         </div>
     )
 }
+
+    
