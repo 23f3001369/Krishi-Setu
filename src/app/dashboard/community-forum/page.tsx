@@ -249,14 +249,19 @@ export default function CommunityForumPage() {
         runTransaction(db, async (transaction) => {
             const postDoc = await transaction.get(postRef);
             if (!postDoc.exists()) throw "Post does not exist!";
-            const currentLikesCount = postDoc.data().likes || 0;
+            
             if (hasLiked) {
                 transaction.delete(likeRef);
-                transaction.update(postRef, { likes: Math.max(0, currentLikesCount - 1) });
             } else {
                 transaction.set(likeRef, { userId: user.uid });
-                transaction.update(postRef, { likes: currentLikesCount + 1 });
             }
+            
+            // Recalculate likes on the server to avoid race conditions
+            const likesCollectionRef = collection(db, 'forumPosts', postId, 'likes');
+            const likesSnapshot = await getDocs(query(likesCollectionRef));
+            const newLikesCount = hasLiked ? likesSnapshot.size - 1 : likesSnapshot.size + 1;
+            transaction.update(postRef, { likes: newLikesCount });
+
         }).catch((serverError) => {
              setLikesData(prev => {
                 const currentLikes = prev[postId] || [];
@@ -288,21 +293,27 @@ export default function CommunityForumPage() {
             createdAt: Timestamp.now(),
         };
 
-        // --- Start of change: No longer using transaction ---
         try {
-            // Step 1: Add the new comment document
-            const newDoc = await addDoc(commentsCollectionRef, newCommentData);
-            
             // Optimistically update UI
-            const newCommentForUI = { ...newCommentData, id: newDoc.id };
+            const tempId = `temp_${Date.now()}`;
+            const newCommentForUI = { ...newCommentData, id: tempId };
             setCommentsData(prev => ({
                 ...prev,
                 [postId]: [...(prev[postId] || []), newCommentForUI]
             }));
 
+            // Step 1: Add the new comment document
+            const newDocRef = await addDoc(commentsCollectionRef, newCommentData);
+            
+            // Update UI with real ID
+            setCommentsData(prev => ({
+                ...prev,
+                [postId]: (prev[postId] || []).map(c => c.id === tempId ? { ...c, id: newDocRef.id } : c)
+            }));
+
             // Step 2: Update the comment count on the parent post
-            const postDoc = await getDocs(query(collection(db, 'forumPosts', postId, 'comments')));
-            await updateDoc(postRef, { comments: postDoc.size });
+            const commentsSnapshot = await getDocs(query(commentsCollectionRef));
+            await updateDoc(postRef, { comments: commentsSnapshot.size });
 
             toast({ title: "Comment posted!" });
 
@@ -310,7 +321,7 @@ export default function CommunityForumPage() {
              // Revert optimistic update if something fails
             setCommentsData(prev => ({
                 ...prev,
-                [postId]: (prev[postId] || []).filter(c => c.commentText !== commentText)
+                [postId]: (prev[postId] || []).filter(c => c.commentText !== commentText || c.authorId !== user.uid)
             }));
             const permissionError = new FirestorePermissionError({
                 path: commentsCollectionRef.path,
@@ -318,13 +329,7 @@ export default function CommunityForumPage() {
                 requestResourceData: newCommentData,
             });
             errorEmitter.emit('permission-error', permissionError);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not post your comment due to a permission issue.',
-            });
         }
-        // --- End of change ---
     };
 
 
@@ -476,5 +481,3 @@ export default function CommunityForumPage() {
         </div>
     )
 }
-
-    
