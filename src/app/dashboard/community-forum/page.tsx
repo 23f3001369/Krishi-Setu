@@ -162,27 +162,26 @@ export default function CommunityForumPage() {
         const postRef = doc(db, 'forumPosts', postId);
         const likeRef = doc(db, 'forumPosts', postId, 'likes', user.uid);
 
-        try {
-            await runTransaction(db, async (transaction) => {
-                const postDoc = await transaction.get(postRef);
-                if (!postDoc.exists()) {
-                    throw "Post does not exist!";
-                }
+        runTransaction(db, async (transaction) => {
+            const postDoc = await transaction.get(postRef);
+            if (!postDoc.exists()) {
+                throw "Post does not exist!";
+            }
 
-                const currentLikesCount = postDoc.data().likes || 0;
+            const currentLikesCount = postDoc.data().likes || 0;
 
-                if (hasLiked) {
-                    // Unlike
-                    transaction.delete(likeRef);
-                    transaction.update(postRef, { likes: Math.max(0, currentLikesCount - 1) });
-                } else {
-                    // Like
-                    transaction.set(likeRef, { userId: user.uid });
-                    transaction.update(postRef, { likes: currentLikesCount + 1 });
-                }
-            });
-
-            // Optimistically update UI
+            if (hasLiked) {
+                // Unlike
+                transaction.delete(likeRef);
+                transaction.update(postRef, { likes: Math.max(0, currentLikesCount - 1) });
+            } else {
+                // Like
+                transaction.set(likeRef, { userId: user.uid });
+                transaction.update(postRef, { likes: currentLikesCount + 1 });
+            }
+        })
+        .then(() => {
+             // Optimistically update UI
             setLikesData(prev => {
                 const newLikes = { ...prev };
                 const postLikes = newLikes[postId] || [];
@@ -193,15 +192,17 @@ export default function CommunityForumPage() {
                 }
                 return newLikes;
             });
-
-        } catch (serverError) {
+        })
+        .catch((serverError) => {
+            // This will now catch security rule failures during the transaction
+            const isUnlike = hasLiked;
             const permissionError = new FirestorePermissionError({
-                path: likeRef.path,
-                operation: hasLiked ? 'delete' : 'create',
-                requestResourceData: hasLiked ? undefined : { userId: user.uid },
+                path: likeRef.path, // We assume the error is on the subcollection first
+                operation: isUnlike ? 'delete' : 'create',
+                requestResourceData: isUnlike ? undefined : { userId: user.uid },
             });
             errorEmitter.emit('permission-error', permissionError);
-        }
+        });
     };
 
     const handleCreatePost = async () => {
