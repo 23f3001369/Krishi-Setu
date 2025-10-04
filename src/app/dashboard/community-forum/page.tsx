@@ -19,7 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp, doc, deleteDoc, runTransaction, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp, doc, deleteDoc, runTransaction, getDocs, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
@@ -276,13 +276,11 @@ export default function CommunityForumPage() {
     
     const handleComment = async (postId: string, commentText: string) => {
         if (!user || !db) return;
-        
+    
         const postRef = doc(db, 'forumPosts', postId);
         const commentsCollectionRef = collection(db, 'forumPosts', postId, 'comments');
-        const newCommentRef = doc(commentsCollectionRef); // Create a reference with a new ID
-
+        
         const newCommentData = {
-            id: newCommentRef.id,
             authorId: user.uid,
             authorName: user.displayName || 'Anonymous',
             authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
@@ -290,35 +288,43 @@ export default function CommunityForumPage() {
             createdAt: Timestamp.now(),
         };
 
-        // Optimistic update
-        setCommentsData(prev => ({
-            ...prev,
-            [postId]: [...(prev[postId] || []), newCommentData]
-        }));
-
+        // --- Start of change: No longer using transaction ---
         try {
-            await runTransaction(db, async (transaction) => {
-                const postDoc = await transaction.get(postRef);
-                if (!postDoc.exists()) throw "Post does not exist!";
-                const currentComments = postDoc.data().comments || 0;
-
-                transaction.set(newCommentRef, newCommentData);
-                transaction.update(postRef, { comments: currentComments + 1 });
-            });
-            toast({ title: "Comment posted!" });
-        } catch (serverError) {
-            // Revert optimistic update
+            // Step 1: Add the new comment document
+            const newDoc = await addDoc(commentsCollectionRef, newCommentData);
+            
+            // Optimistically update UI
+            const newCommentForUI = { ...newCommentData, id: newDoc.id };
             setCommentsData(prev => ({
                 ...prev,
-                [postId]: (prev[postId] || []).filter(c => c.id !== newCommentRef.id)
+                [postId]: [...(prev[postId] || []), newCommentForUI]
             }));
-             const permissionError = new FirestorePermissionError({
+
+            // Step 2: Update the comment count on the parent post
+            const postDoc = await getDocs(query(collection(db, 'forumPosts', postId, 'comments')));
+            await updateDoc(postRef, { comments: postDoc.size });
+
+            toast({ title: "Comment posted!" });
+
+        } catch (serverError) {
+             // Revert optimistic update if something fails
+            setCommentsData(prev => ({
+                ...prev,
+                [postId]: (prev[postId] || []).filter(c => c.commentText !== commentText)
+            }));
+            const permissionError = new FirestorePermissionError({
                 path: commentsCollectionRef.path,
                 operation: 'create',
                 requestResourceData: newCommentData,
             });
             errorEmitter.emit('permission-error', permissionError);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not post your comment due to a permission issue.',
+            });
         }
+        // --- End of change ---
     };
 
 
@@ -470,3 +476,5 @@ export default function CommunityForumPage() {
         </div>
     )
 }
+
+    
