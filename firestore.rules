@@ -3,172 +3,164 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the user is signed in.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the authenticated user ID matches the provided user ID.
-     */
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-     /**
-      * @description Checks if the authenticated user is the existing owner of the document.
-      */
-    function isExistingOwner(farmerId) {
-      return resource.data.keys().hasAll(['id']) && isOwner(farmerId);
-    }
-
-    /**
-     * @description Allows only signed-in users to read admin roles.
-     */
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
-
-
-    /**
-     * @description Defines the farmer entity.
+     * @description Allows a farmer to manage their profile data.
      * @path /farmers/{farmerId}
-     * @allow (create) User with UID 'user123' can create a farmer document if farmerId == 'user123'.
-     * @allow (get, update, delete) User with UID 'user123' can get, update, or delete their own farmer document at /farmers/user123.
-     * @deny (create) User with UID 'user456' cannot create a farmer document at /farmers/user123.
-     * @deny (get, update, delete) User with UID 'user456' cannot get, update, or delete the farmer document at /farmers/user123.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with UID 'user1' can create their profile if farmerId matches.
+     * @deny (create) User with UID 'user2' cannot create a profile with farmerId 'user1'.
+     * @allow (get, update, delete) User with UID 'user1' can read/write their profile if farmerId matches.
+     * @deny (get, update, delete) User with UID 'user2' cannot read/write user1's profile.
+     * @principle Enforces document ownership for all operations.
      */
     match /farmers/{farmerId} {
-      allow get: if isOwner(farmerId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      allow get: if request.auth != null && request.auth.uid == farmerId;
       allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(farmerId);
-      allow update: if isSignedIn() && isOwner(farmerId);
-      allow delete: if isSignedIn() && isOwner(farmerId);
+      allow create: if request.auth != null && request.auth.uid == farmerId;
+      allow update: if request.auth != null && request.auth.uid == farmerId;
+      allow delete: if request.auth != null && request.auth.uid == farmerId;
     }
 
     /**
-     * @description Defines the transaction subcollection for a farmer.
+     * @description Allows a farmer to manage their financial transactions.
      * @path /farmers/{farmerId}/transactions/{transactionId}
-     * @allow (create) User with UID 'user123' can create a transaction under /farmers/user123/transactions.
-     * @allow (get, update, delete) User with UID 'user123' can get, update, or delete their own transaction at /farmers/user123/transactions/trans123.
-     * @deny (create) User with UID 'user456' cannot create a transaction under /farmers/user123/transactions.
-     * @deny (get, update, delete) User with UID 'user456' cannot get, update, or delete a transaction at /farmers/user123/transactions/trans123.
-     * @principle Restricts access to a user's own data tree.
+     * @allow (create) User with UID 'user1' can create a transaction under their profile (farmerId = user1).
+     * @deny (create) User with UID 'user2' cannot create a transaction under user1's profile.
+     * @allow (get, update, delete) User with UID 'user1' can read/write their transactions (farmerId = user1).
+     * @deny (get, update, delete) User with UID 'user2' cannot read/write user1's transactions.
+     * @principle Enforces document ownership for all operations.
      */
     match /farmers/{farmerId}/transactions/{transactionId} {
-      allow get: if isOwner(farmerId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      allow get: if request.auth != null && request.auth.uid == farmerId;
       allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(farmerId);
-      allow update: if isSignedIn() && isOwner(farmerId);
-      allow delete: if isSignedIn() && isOwner(farmerId);
+      allow create: if request.auth != null && request.auth.uid == farmerId;
+      allow update: if request.auth != null && request.auth.uid == farmerId;
+      allow delete: if request.auth != null && request.auth.uid == farmerId;
     }
 
     /**
-     * @description Defines the cultivation guides subcollection for a farmer.
+     * @description Allows a farmer to manage their AI-generated cultivation guides.
      * @path /farmers/{farmerId}/cultivationGuides/{guideId}
-     * @allow (create) User with UID 'user123' can create a cultivation guide under /farmers/user123/cultivationGuides.
-     * @allow (get, update, delete) User with UID 'user123' can get, update, or delete their own guide at /farmers/user123/cultivationGuides/guide123.
-     * @deny (create) User with UID 'user456' cannot create a cultivation guide under /farmers/user123/cultivationGuides.
-     * @deny (get, update, delete) User with UID 'user456' cannot get, update, or delete a guide at /farmers/user123/cultivationGuides/guide123.
-     * @principle Restricts access to a user's own data tree.
+     * @allow (create) User with UID 'user1' can create a guide under their profile (farmerId = user1).
+     * @deny (create) User with UID 'user2' cannot create a guide under user1's profile.
+     * @allow (get, update, delete) User with UID 'user1' can read/write their guides (farmerId = user1).
+     * @deny (get, update, delete) User with UID 'user2' cannot read/write user1's guides.
+     * @principle Enforces document ownership for all operations.
      */
     match /farmers/{farmerId}/cultivationGuides/{guideId} {
-      allow get: if isOwner(farmerId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      allow get: if request.auth != null && request.auth.uid == farmerId;
       allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(farmerId);
-      allow update: if isSignedIn() && isOwner(farmerId);
-      allow delete: if isSignedIn() && isOwner(farmerId);
+      allow create: if request.auth != null && request.auth.uid == farmerId;
+      allow update: if request.auth != null && request.auth.uid == farmerId;
+      allow delete: if request.auth != null && request.auth.uid == farmerId;
     }
 
     /**
-     * @description Defines the farm entity.
+     * @description Allows authorized users to manage farm data, enforcing ownership via the 'farmerId' field.
      * @path /farms/{farmId}
-     * @allow (create) User with UID 'user123' can create a farm if request.resource.data.farmerId == 'user123'.
-     * @allow (get, list) Any user can read farm data.
-     * @allow (update, delete) Only the owner (farmerId) can update or delete the farm.
-     * @deny (create) User with UID 'user456' cannot create a farm with farmerId == 'user123'.
-     * @deny (update, delete) User with UID 'user456' cannot update or delete the farm owned by user123.
-     * @principle Enforces document ownership for writes, allows public reads.
+     * @allow (create) User with UID 'user1' can create a farm with farmerId 'user1'.
+     * @deny (create) User with UID 'user2' cannot create a farm with farmerId 'user1'.
+     * @allow (get, list, update, delete) User with UID 'user1' can read/write farms where farmerId is 'user1'.
+     * @deny (get, list, update, delete) User with UID 'user2' cannot read/write farms where farmerId is 'user1'.
+     * @principle Enforces document ownership via the 'farmerId' field.
      */
     match /farms/{farmId} {
-      allow get: if true;
-      allow list: if true;
-
-      allow create: if isSignedIn() && request.resource.data.farmerId == request.auth.uid;
-      allow update: if isSignedIn() && request.resource.data.farmerId == request.auth.uid;
-      allow delete: if isSignedIn() && request.resource.data.farmerId == request.auth.uid;
+      allow get: if request.auth != null && request.auth.uid == resource.data.farmerId;
+      allow list: if false;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.farmerId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.farmerId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.farmerId;
     }
 
     /**
-     * @description Defines the weather forecast entity.
+     * @description Allows public read access to weather forecast data.
      * @path /weather_forecasts/{weatherForecastId}
      * @allow (get, list) Any user can read weather forecast data.
-     * @deny (create, update, delete) No client-side writes allowed.
-     * @principle Public read access, no client-side writes.
+     * @deny (create, update, delete) No user can create, update, or delete weather forecast data through client-side rules.
+     * @principle Provides public read access while restricting write access.
      */
     match /weather_forecasts/{weatherForecastId} {
       allow get: if true;
       allow list: if true;
-
       allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
 
     /**
-     * @description Defines the learning articles entity.
+     * @description Allows public read access to learning articles.
      * @path /learning_articles/{learningArticleId}
      * @allow (get, list) Any user can read learning articles.
-     * @deny (create, update, delete) No client-side writes allowed.
-     * @principle Public read access, no client-side writes.
+     * @deny (create, update, delete) No user can create, update, or delete learning articles through client-side rules.
+     * @principle Provides public read access while restricting write access.
      */
     match /learning_articles/{learningArticleId} {
       allow get: if true;
       allow list: if true;
-
       allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
 
     /**
-     * @description Defines the admin roles entity.
+     * @description Grants admin privileges to users with a document in this collection.
      * @path /roles_admin/{uid}
-     * @allow (get) Any signed-in user can get the admin role, likely for checking their own status.
-     * @deny (list)  Listing roles is not allowed
-     * @deny (create, update, delete) No client-side writes allowed.
-     * @principle Restricts write access to admin roles.
+     * @allow (get) Any signed-in user can check if they have admin privileges.
+     * @deny (create, update, delete) Only backend functions should create/modify admin roles.
+     * @principle Checks for document existence to grant admin privileges.
      */
     match /roles_admin/{uid} {
-      allow get: if isSignedIn();
+       function isAdmin() {
+         return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+       }
+      allow get: if request.auth != null && request.auth.uid == uid;
       allow list: if false;
-
       allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
-    
+
     /**
-     * @description Defines the forum posts entity.
+     * @description Allows access to community forum posts, with create restricted to authenticated users.
      * @path /forumPosts/{postId}
      * @allow (get, list) Any user can read forum posts.
-     * @allow (create) Only signed-in users can create forum posts. The authorId must match the user's UID.
-     * @allow (update, delete) Only the owner (authorId) can update or delete the post.
-     * @deny (create) Anonymous users cannot create forum posts.
-     * @deny (update, delete) Non-owners cannot update or delete forum posts.
-     * @principle Public read access, owner-only writes for authenticated users.
+     * @allow (create) Any authenticated user can create a forum post.
+     * @deny (update, delete) Only the author can update or delete forum posts.
+     * @principle Authenticated users can create posts; ownership required for edits.
      */
     match /forumPosts/{postId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(authorId) {
+        return request.auth != null && request.auth.uid == resource.data.authorId;
+      }
       allow get: if true;
       allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isSignedIn() && request.resource.data.authorId == resource.data.authorId;
-      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == resource.data.authorId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.authorId;
+
+      /**
+       * @description Allows users to read likes within a forum post.
+       * @path /forumPosts/{postId}/likes/{likeId}
+       * @allow (list) Any user can list likes for a post.
+       * @deny (get, create, update, delete) Access to individual likes is denied.
+       */
+      match /likes/{likeId} {
+        allow get: if false;
+        allow list: if true;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+      }
     }
   }
 }
