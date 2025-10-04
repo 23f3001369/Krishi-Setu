@@ -16,30 +16,70 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, ThumbsUp, PlusCircle, Search } from "lucide-react";
 import { Separator } from '@/components/ui/separator';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import { formatDistanceToNow } from 'date-fns';
 
-const initialPosts = [
-  {
-    id: 1,
-    author: 'Rajesh Kumar',
-    avatar: 'https://i.pravatar.cc/150?u=rajesh',
-    time: '2 hours ago',
-    question: 'What is the best way to deal with whiteflies on my tomato plants? They are causing a lot of damage.',
-    likes: 12,
-    comments: 3,
-  },
-  {
-    id: 2,
-    author: 'Sunita Sharma',
-    avatar: 'https://i-pravatar.cc/150?u=sunita',
-    time: '1 day ago',
-    question: 'Has anyone tried the new wheat variety HD-3226? I am thinking of planting it next season.',
-    likes: 25,
-    comments: 8,
-  },
-];
+type Post = {
+    id: string;
+    authorId: string;
+    authorName: string;
+    authorAvatar: string;
+    question: string;
+    likes: number;
+    comments: number;
+    createdAt: Timestamp;
+};
 
 export default function CommunityForumPage() {
-    const [posts, setPosts] = useState(initialPosts);
+    const { user } = useUser();
+    const db = useFirestore();
+    const { toast } = useToast();
+    
+    const [newPost, setNewPost] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const postsQuery = useMemoFirebase(() => {
+        if (!db) return null;
+        return query(collection(db, 'forumPosts'), orderBy('createdAt', 'desc'));
+    }, [db]);
+    
+    const { data: posts, isLoading } = useCollection<Post>(postsQuery);
+
+    const handleCreatePost = async () => {
+        if (!user || !db || !newPost.trim()) return;
+
+        setIsSubmitting(true);
+        try {
+            const postsCollection = collection(db, 'forumPosts');
+            await addDoc(postsCollection, {
+                authorId: user.uid,
+                authorName: user.displayName || 'Anonymous',
+                authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+                question: newPost,
+                likes: 0,
+                comments: 0,
+                createdAt: serverTimestamp()
+            });
+            setNewPost('');
+            toast({
+                title: 'Post Created',
+                description: 'Your question has been added to the forum.'
+            });
+        } catch (error) {
+            console.error("Error creating post:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not create post. Please try again.'
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
 
     return (
         <div className="space-y-8">
@@ -55,30 +95,48 @@ export default function CommunityForumPage() {
                         <CardHeader>
                             <div className="flex items-center gap-4">
                                 <Avatar>
-                                    <AvatarImage src="https://picsum.photos/seed/avatar/100/100" alt="Farmer" />
-                                    <AvatarFallback>F</AvatarFallback>
+                                    <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/avatar/100/100"} alt={user?.displayName || "Farmer"} />
+                                    <AvatarFallback>{user?.displayName?.charAt(0) || 'F'}</AvatarFallback>
                                 </Avatar>
-                                <Input placeholder="Ask a question or share an update..." className="flex-1" />
-                                <Button>
-                                    <PlusCircle className="mr-2 h-4 w-4"/>
-                                    Create Post
+                                <Input 
+                                    placeholder="Ask a question or share an update..." 
+                                    className="flex-1" 
+                                    value={newPost}
+                                    onChange={(e) => setNewPost(e.target.value)}
+                                    disabled={isSubmitting || !user}
+                                />
+                                <Button onClick={handleCreatePost} disabled={isSubmitting || !newPost.trim() || !user}>
+                                    {isSubmitting ? 'Posting...' : (
+                                        <>
+                                            <PlusCircle className="mr-2 h-4 w-4"/>
+                                            Create Post
+                                        </>
+                                    )}
                                 </Button>
                             </div>
                         </CardHeader>
                     </Card>
 
                     <div className="space-y-6">
-                        {posts.map(post => (
+                        {isLoading && (
+                            <>
+                                <Skeleton className="h-48 w-full" />
+                                <Skeleton className="h-48 w-full" />
+                            </>
+                        )}
+                        {posts && posts.map(post => (
                             <Card key={post.id}>
                                 <CardHeader>
                                     <div className="flex items-center gap-3">
                                         <Avatar className="h-10 w-10">
-                                            <AvatarImage src={post.avatar} />
-                                            <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
+                                            <AvatarImage src={post.authorAvatar} />
+                                            <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <p className="font-semibold">{post.author}</p>
-                                            <p className="text-xs text-muted-foreground">{post.time}</p>
+                                            <p className="font-semibold">{post.authorName}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {post.createdAt ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
+                                            </p>
                                         </div>
                                     </div>
                                 </CardHeader>
@@ -97,7 +155,7 @@ export default function CommunityForumPage() {
                                     <div className="flex gap-2">
                                         <Button variant="outline" size="sm">View Post</Button>
                                         <Button size="sm" asChild>
-                                            <Link href={`/dashboard/chat?with=${encodeURIComponent(post.author)}`}>
+                                            <Link href={`/dashboard/chat?with=${encodeURIComponent(post.authorName)}`}>
                                                 <MessageSquare className="mr-2 h-4 w-4"/> Chat with Author
                                             </Link>
                                         </Button>
@@ -156,3 +214,5 @@ export default function CommunityForumPage() {
         </div>
     )
 }
+
+    
