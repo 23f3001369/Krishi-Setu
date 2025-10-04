@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -17,10 +17,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, ThumbsUp, PlusCircle, Search } from "lucide-react";
 import { Separator } from '@/components/ui/separator';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp, doc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 type Post = {
     id: string;
@@ -32,6 +33,92 @@ type Post = {
     comments: number;
     createdAt: Timestamp;
 };
+
+type Like = {
+    userId: string;
+};
+
+function PostCard({ post }: { post: Post }) {
+    const { user } = useUser();
+    const db = useFirestore();
+
+    const likesQuery = useMemoFirebase(() => {
+        if (!db) return null;
+        return collection(db, 'forumPosts', post.id, 'likes');
+    }, [db, post.id]);
+
+    const { data: likes } = useCollection<Like>(likesQuery);
+
+    const hasLiked = useMemo(() => {
+        return likes?.some(like => like.id === user?.uid);
+    }, [likes, user]);
+
+    const handleLike = async () => {
+        if (!user || !db) return;
+        const likeRef = doc(db, 'forumPosts', post.id, 'likes', user.uid);
+        const postRef = doc(db, 'forumPosts', post.id);
+
+        await runTransaction(db, async (transaction) => {
+            const postDoc = await transaction.get(postRef);
+            if (!postDoc.exists()) {
+                throw "Post does not exist!";
+            }
+
+            const currentLikes = postDoc.data().likes || 0;
+            const likeDoc = await transaction.get(likeRef);
+
+            if (likeDoc.exists()) {
+                // Unlike
+                transaction.delete(likeRef);
+                transaction.update(postRef, { likes: Math.max(0, currentLikes - 1) });
+            } else {
+                // Like
+                transaction.set(likeRef, { userId: user.uid });
+                transaction.update(postRef, { likes: currentLikes + 1 });
+            }
+        });
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage src={post.authorAvatar} />
+                        <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="font-semibold">{post.authorName}</p>
+                        <p className="text-xs text-muted-foreground">
+                            {post.createdAt ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
+                        </p>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="p-6">
+                <p className="text-sm">{post.question}</p>
+            </CardContent>
+            <CardFooter className="flex justify-between items-center p-6">
+                <div className="flex gap-2 text-sm text-muted-foreground">
+                    <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleLike} disabled={!user}>
+                        <ThumbsUp size={16} className={cn(hasLiked && "text-primary fill-primary")} /> {post.likes}
+                    </Button>
+                    <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                        <MessageSquare size={16} /> {post.comments}
+                    </Button>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm">View Post</Button>
+                    <Button size="sm" asChild>
+                        <Link href={`/dashboard/chat?with=${encodeURIComponent(post.authorName)}`}>
+                            <MessageSquare className="mr-2 h-4 w-4"/> Chat with Author
+                        </Link>
+                    </Button>
+                </div>
+            </CardFooter>
+        </Card>
+    );
+}
 
 export default function CommunityForumPage() {
     const { user } = useUser();
@@ -125,43 +212,7 @@ export default function CommunityForumPage() {
                             </>
                         )}
                         {posts && posts.map(post => (
-                            <Card key={post.id}>
-                                <CardHeader>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="h-10 w-10">
-                                            <AvatarImage src={post.authorAvatar} />
-                                            <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-semibold">{post.authorName}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {post.createdAt ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    <p className="text-sm">{post.question}</p>
-                                </CardContent>
-                                <CardFooter className="flex justify-between items-center p-6">
-                                    <div className="flex gap-2 text-sm text-muted-foreground">
-                                        <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                                            <ThumbsUp size={16} /> {post.likes}
-                                        </Button>
-                                        <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                                            <MessageSquare size={16} /> {post.comments}
-                                        </Button>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm">View Post</Button>
-                                        <Button size="sm" asChild>
-                                            <Link href={`/dashboard/chat?with=${encodeURIComponent(post.authorName)}`}>
-                                                <MessageSquare className="mr-2 h-4 w-4"/> Chat with Author
-                                            </Link>
-                                        </Button>
-                                    </div>
-                                </CardFooter>
-                            </Card>
+                            <PostCard key={post.id} post={post} />
                         ))}
                     </div>
                 </div>
@@ -214,5 +265,3 @@ export default function CommunityForumPage() {
         </div>
     )
 }
-
-    
