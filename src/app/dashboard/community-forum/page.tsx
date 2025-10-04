@@ -48,6 +48,9 @@ function PostCard({ post }: { post: Post }) {
     }, [db, post.id]);
 
     const { data: likes } = useCollection<Like>(likesQuery);
+    
+    // The number of likes is now the count of documents in the subcollection
+    const likeCount = likes?.length ?? 0;
 
     const hasLiked = useMemo(() => {
         return likes?.some(like => like.id === user?.uid);
@@ -58,6 +61,8 @@ function PostCard({ post }: { post: Post }) {
         const likeRef = doc(db, 'forumPosts', post.id, 'likes', user.uid);
         const postRef = doc(db, 'forumPosts', post.id);
 
+        // This transaction now updates the parent post's like count
+        // and adds/removes the user's like document in the subcollection.
         runTransaction(db, async (transaction) => {
             const postDoc = await transaction.get(postRef);
             if (!postDoc.exists()) {
@@ -68,21 +73,22 @@ function PostCard({ post }: { post: Post }) {
             const likeDoc = await transaction.get(likeRef);
 
             if (likeDoc.exists()) {
-                // Unlike
+                // Unlike: Delete the like document and decrement the count
                 transaction.delete(likeRef);
                 transaction.update(postRef, { likes: Math.max(0, currentLikes - 1) });
             } else {
-                // Like
-                const likeData = { userId: user.uid };
-                transaction.set(likeRef, likeData);
+                // Like: Create the like document and increment the count
+                transaction.set(likeRef, { userId: user.uid });
                 transaction.update(postRef, { likes: currentLikes + 1 });
             }
         }).catch((serverError) => {
+            // This error handling is now more accurate, pointing to the specific
+            // subcollection operation that might fail.
             const isUnlike = hasLiked;
             const permissionError = new FirestorePermissionError({
-                path: isUnlike ? likeRef.path : postRef.path,
-                operation: isUnlike ? 'delete' : 'update',
-                requestResourceData: isUnlike ? undefined : { likes: (post.likes || 0) + 1 },
+                path: likeRef.path, // Always operate on the like subcollection path
+                operation: isUnlike ? 'delete' : 'create',
+                requestResourceData: isUnlike ? undefined : { userId: user.uid },
             });
             errorEmitter.emit('permission-error', permissionError);
         });
@@ -110,7 +116,7 @@ function PostCard({ post }: { post: Post }) {
             <CardFooter className="flex justify-between items-center p-6">
                 <div className="flex gap-2 text-sm text-muted-foreground">
                     <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleLike} disabled={!user}>
-                        <ThumbsUp size={16} className={cn(hasLiked && "text-primary fill-primary")} /> {post.likes}
+                        <ThumbsUp size={16} className={cn(hasLiked && "text-primary fill-primary")} /> {likeCount}
                     </Button>
                     <Button variant="ghost" size="sm" className="flex items-center gap-1">
                         <MessageSquare size={16} /> {post.comments}
