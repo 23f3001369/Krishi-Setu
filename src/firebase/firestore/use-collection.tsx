@@ -65,9 +65,9 @@ export function useCollection<T = any>(
   useEffect(() => {
     // If the query/ref is not ready, set to a non-loading, empty state.
     if (!memoizedTargetRefOrQuery) {
-      setIsLoading(false);
       setData(null);
       setError(null);
+      setIsLoading(false);
       return;
     }
 
