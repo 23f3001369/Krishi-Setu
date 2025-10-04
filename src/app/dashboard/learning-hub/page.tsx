@@ -122,61 +122,97 @@ const articles = [
 const videos = [
   {
     id: '1',
-    title: 'How To Make Compost At Home',
-    description:
-      'A practical, step-by-step guide on creating your own compost pile to enrich your soil, from the popular YouTube channel "Epic Gardening".',
-    imageId: 'learning-hub-video-1',
-    link: 'https://www.youtube.com/watch?v=IC2Kj43u3wI'
+    title: 'Organic Pest Control Methods | Learn Organic Farming – Episode 5',
+    description: 'Explains natural ways to control pests without harmful chemicals.',
+    link: 'https://www.youtube.com/watch?v=_1BdRzoN-50',
+    imageId: 'learning-hub-article-3',
   },
   {
     id: '2',
-    title: 'Top 6 Worst Garden Pests And How To Deal With Them',
-    description:
-      'Learn to identify and manage common garden pests organically with this informative video from "The Gardening Channel With James Prigioni".',
+    title: 'Pest Management for Small Scale Growers',
+    description: 'Demonstrates integrated pest management techniques ideal for small farms.',
+    link: 'https://www.youtube.com/watch?v=79LQ0nOYlKU',
     imageId: 'learning-hub-article-3',
-    link: 'https://www.youtube.com/watch?v=F3-s3z7hT54'
   },
   {
     id: '3',
-    title: 'How to Build a Raised Bed Garden',
-    description:
-        'A complete guide to building, filling, and planting in a raised garden bed, from "Epic Gardening".',
-    imageId: 'learning-hub-video-2',
-    link: 'https://www.youtube.com/watch?v=fQe1-yYxG5g'
+    title: 'How to Control Insect Pests On Your Farm Without Using Chemicals',
+    description: 'Teaches eco-friendly methods to manage insect pests and protect crops.',
+    link: 'https://www.youtube.com/watch?v=PnHmZRCyP0Y',
+    imageId: 'crop-pests',
   },
   {
     id: '4',
-    title: 'Drip Irrigation System: Complete Guide',
-    description:
-      'A comprehensive walkthrough on setting up a drip irrigation system, perfect for conserving water on any scale, from "Epic Gardening".',
-    imageId: 'learning-hub-article-2',
-    link: 'https://www.youtube.com/watch?v=L-Qz1qG5g-k'
+    title: 'Weed Management in Organic Farming',
+    description: 'Explains manual and biological weed control strategies for sustainable farming.',
+    link: 'https://www.youtube.com/watch?v=lsVZcFhJ8pU',
+    imageId: 'farm-field',
   },
   {
     id: '5',
-    title: 'The #1 Easiest Way To Test Your Soil',
-    description:
-        'A simple and effective soil testing method you can do at home to understand your soil\'s composition, from "The Millennial Gardener".',
-    imageId: 'learning-hub-article-1',
-    link: 'https://www.youtube.com/watch?v=p-I8n2-H-Lw'
-  },
-  {
-    id: '9',
-    title: 'A Guide to Crop Rotation',
-    description:
-      'From "Nature\'s Always Right", this video explains the basics of crop rotation in a simple and easy-to-understand way for any scale.',
-    imageId: 'learning-hub-video-2',
-    link: 'https://www.youtube.com/watch?v=ma932h2gAkc',
+    title: 'How to Make Compost at Home | Easy Method for Farmers',
+    description: 'Step-by-step guide to turning farm waste into organic compost.',
+    link: 'https://www.youtube.com/watch?v=7y0v0uT0fUI',
+    imageId: 'learning-hub-video-1',
   },
   {
     id: '6',
-    title: 'Organic Farming for Beginners',
-    description:
-        'An introductory guide to the principles and practices of organic farming, covering everything from soil health to certification.',
-    imageId: 'hero-image',
-    link: 'https://www.youtube.com/watch?v=JPA01hM72i8'
+    title: 'How to Test Soil Fertility at Home',
+    description: 'Simple methods to check soil health and nutrient content.',
+    link: 'https://www.youtube.com/watch?v=MuPbW2F9sSU',
+    imageId: 'learning-hub-article-1',
+  },
+  {
+    id: '7',
+    title: 'Soil Preparation Techniques for Better Crop Yield',
+    description: 'Demonstrates ploughing, levelling, and other soil preparation methods.',
+    link: 'https://www.youtube.com/watch?v=a4jD83zNeOQ',
+    imageId: 'learning-hub-article-1',
+  },
+  {
+    id: '8',
+    title: 'Drip Irrigation for Organic Farming',
+    description: 'Teaches setup and maintenance of drip irrigation systems for efficient water use.',
+    link: 'https://www.youtube.com/watch?v=rLigcSTzuP0',
+    imageId: 'learning-hub-article-2',
+  },
+  {
+    id: '9',
+    title: 'Furrow Irrigation Method Explained',
+    description: 'Shows how to implement and manage furrow irrigation effectively.',
+    link: 'https://www.youtube.com/watch?v=CEQjuc0gpmM',
+    imageId: 'farm-irrigation',
+  },
+  {
+    id: '10',
+    title: 'Learn Organic Farming with Shankar – Episode 7: Irrigation',
+    description: 'Explains best irrigation practices for organic crops.',
+    link: 'https://www.youtube.com/live/sxmT4CdCkFs',
+    imageId: 'learning-hub-article-2',
+  },
+  {
+    id: '11',
+    title: 'Introduction to Organic Farming | Sustainable Agriculture',
+    description: 'Covers basics of organic farming and its long-term benefits for soil and farmers.',
+    link: 'https://www.youtube.com/watch?v=abikz7TV1-Y',
+    imageId: 'green-farm',
+  },
+  {
+    id: '12',
+    title: 'Crop Rotation and Mixed Cropping Practices',
+    description: 'Explains how crop rotation improves soil fertility and pest control.',
+    link: 'https://www.youtube.com/watch?v=KpC6BB5bHfA',
+    imageId: 'learning-hub-video-2',
+  },
+  {
+    id: '13',
+    title: 'Ploughing Techniques & Modern Implements',
+    description: 'Compares traditional and modern ploughing tools for efficient soil tillage.',
+    link: 'https://www.youtube.com/watch?v=y2wYnpU5oQ4',
+    imageId: 'farm-equipment',
   },
 ];
+
 
 function AskAgriVaani() {
   const [query, setQuery] = useState('');
