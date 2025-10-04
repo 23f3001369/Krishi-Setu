@@ -685,18 +685,27 @@ export default function CommunityForumPage() {
 
     const [newPost, setNewPost] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const postsQuery = useMemoFirebase(() => db ? query(collection(db, 'forumPosts'), orderBy('createdAt', 'desc')) : null, [db]);
     const { data: posts, isLoading: isLoadingPosts } = useCollection<Post>(postsQuery);
 
-    const enrichedPosts = useMemo((): EnrichedPost[] => {
+    const filteredPosts = useMemo(() => {
         if (!posts) return [];
-        return posts.map(post => ({
+        if (!searchTerm.trim()) return posts;
+        return posts.filter(post => 
+            post.question.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [posts, searchTerm]);
+
+    const enrichedPosts = useMemo((): EnrichedPost[] => {
+        if (!filteredPosts) return [];
+        return filteredPosts.map(post => ({
             ...post,
             userHasLiked: false,
             comments: []
         }));
-    }, [posts]);
+    }, [filteredPosts]);
 
     const isLoading = isLoadingPosts;
 
@@ -766,7 +775,9 @@ export default function CommunityForumPage() {
                         {isLoading && ( <> <Skeleton className="h-48 w-full" /> <Skeleton className="h-48 w-full" /> </> )}
                         {!isLoading && enrichedPosts.length > 0 && enrichedPosts.map(post => <PostCard key={post.id} post={post} /> )}
                          {!isLoading && enrichedPosts.length === 0 && (
-                             <Card><CardContent className="p-6"><p className="text-muted-foreground text-center">No posts yet. Be the first to ask a question!</p></CardContent></Card>
+                             <Card><CardContent className="p-6"><p className="text-muted-foreground text-center">
+                                {searchTerm ? 'No posts match your search.' : 'No posts yet. Be the first to ask a question!'}
+                            </p></CardContent></Card>
                          )}
                     </div>
                 </div>
@@ -777,7 +788,12 @@ export default function CommunityForumPage() {
                         <CardContent className="p-6">
                             <div className="relative">
                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="Search posts..." className="pl-8"/>
+                               <Input 
+                                    placeholder="Search posts..." 
+                                    className="pl-8"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
                             </div>
                         </CardContent>
                     </Card>
