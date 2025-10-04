@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -16,9 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, ThumbsUp, PlusCircle, Search } from "lucide-react";
 import { Separator } from '@/components/ui/separator';
-import { useCollection, useFirestore, useUser, useMemoFirebase, FirestorePermissionError } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, FirestorePermissionError } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp, doc, deleteDoc, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp, doc, deleteDoc, runTransaction, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
@@ -45,7 +45,7 @@ type EnrichedPost = Post & {
     likeCount: number;
 };
 
-function PostCard({ post, onLike }: { post: EnrichedPost; onLike: (postId: string) => void; }) {
+function PostCard({ post, onLike }: { post: EnrichedPost; onLike: (postId: string, hasLiked: boolean) => void; }) {
     const { user } = useUser();
 
     return (
@@ -69,7 +69,7 @@ function PostCard({ post, onLike }: { post: EnrichedPost; onLike: (postId: strin
             </CardContent>
             <CardFooter className="flex justify-between items-center p-6">
                 <div className="flex gap-2 text-sm text-muted-foreground">
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => onLike(post.id)} disabled={!user}>
+                    <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => onLike(post.id, post.userHasLiked)} disabled={!user}>
                         <ThumbsUp size={16} className={cn(post.userHasLiked && "text-primary fill-primary")} /> {post.likeCount}
                     </Button>
                     <Button variant="ghost" size="sm" className="flex items-center gap-1">
@@ -78,11 +78,13 @@ function PostCard({ post, onLike }: { post: EnrichedPost; onLike: (postId: strin
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm">View Post</Button>
-                    <Button size="sm" asChild>
-                        <Link href={`/dashboard/chat?with=${encodeURIComponent(post.authorName)}`}>
-                            <MessageSquare className="mr-2 h-4 w-4"/> Chat with Author
-                        </Link>
-                    </Button>
+                    {user?.uid !== post.authorId && (
+                        <Button size="sm" asChild>
+                            <Link href={`/dashboard/chat?with=${encodeURIComponent(post.authorName)}`}>
+                                <MessageSquare className="mr-2 h-4 w-4"/> Chat with Author
+                            </Link>
+                        </Button>
+                    )}
                 </div>
             </CardFooter>
         </Card>
@@ -102,30 +104,52 @@ export default function CommunityForumPage() {
         return query(collection(db, 'forumPosts'), orderBy('createdAt', 'desc'));
     }, [db]);
     
-    const { data: posts, isLoading: isLoadingPosts } = useCollection<Post>(postsQuery);
+    const { data: posts, isLoading: isLoadingPosts, error: postsError } = useCollection<Post>(postsQuery);
+    
+    const [likesData, setLikesData] = useState<Record<string, Like[]>>({});
+    const [isLoadingLikes, setIsLoadingLikes] = useState(true);
 
-    const likesQuery = useMemoFirebase(() => {
-        if (!db) return null;
-        return collection(db, 'forumPosts'); // Base collection for likes
-    }, [db]);
-
-    const { data: allLikes, isLoading: isLoadingLikes } = useCollection<Like>(likesQuery ? query(collection(likesQuery, 'likes')) : null);
+    useEffect(() => {
+        if (posts && db && user) {
+            const fetchLikes = async () => {
+                setIsLoadingLikes(true);
+                const newLikesData: Record<string, Like[]> = {};
+                for (const post of posts) {
+                    try {
+                        const likesCollectionRef = collection(db, 'forumPosts', post.id, 'likes');
+                        const likesSnapshot = await getDocs(likesCollectionRef);
+                        newLikesData[post.id] = likesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Like));
+                    } catch (e) {
+                         console.error(`Failed to fetch likes for post ${post.id}`, e);
+                         newLikesData[post.id] = []; // Set empty array on error
+                    }
+                }
+                setLikesData(newLikesData);
+                setIsLoadingLikes(false);
+            };
+            fetchLikes();
+        } else if (!posts && !isLoadingPosts) {
+            // Handle case where there are no posts
+            setIsLoadingLikes(false);
+        }
+    }, [posts, db, user, isLoadingPosts]);
+    
 
     const enrichedPosts = useMemo(() => {
         if (!posts) return [];
         return posts.map(post => {
-            const likesForPost = allLikes?.filter(like => like.id.startsWith(post.id)) ?? [];
+            const likesForPost = likesData[post.id] || [];
             return {
                 ...post,
                 likeCount: likesForPost.length,
-                userHasLiked: user ? likesForPost.some(like => like.id.endsWith(user.uid)) : false,
+                userHasLiked: user ? likesForPost.some(like => like.id === user.uid) : false,
             };
         });
-    }, [posts, allLikes, user]);
+    }, [posts, likesData, user]);
 
     const isLoading = isLoadingPosts || isLoadingLikes;
 
-    const handleLike = async (postId: string) => {
+    const handleLike = async (postId: string, hasLiked: boolean) => {
         if (!user || !db) {
             toast({
                 variant: 'destructive',
@@ -137,38 +161,47 @@ export default function CommunityForumPage() {
 
         const postRef = doc(db, 'forumPosts', postId);
         const likeRef = doc(db, 'forumPosts', postId, 'likes', user.uid);
-        const post = posts?.find(p => p.id === postId);
-        const hasLiked = enrichedPosts.find(p => p.id === postId)?.userHasLiked;
 
-        if (!post) return;
+        try {
+            await runTransaction(db, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) {
+                    throw "Post does not exist!";
+                }
 
-        runTransaction(db, async (transaction) => {
-            const postDoc = await transaction.get(postRef);
-            if (!postDoc.exists()) {
-                throw "Post does not exist!";
-            }
+                const currentLikesCount = postDoc.data().likes || 0;
 
-            const currentLikes = postDoc.data().likes || 0;
-            const likeDoc = await transaction.get(likeRef);
+                if (hasLiked) {
+                    // Unlike
+                    transaction.delete(likeRef);
+                    transaction.update(postRef, { likes: Math.max(0, currentLikesCount - 1) });
+                } else {
+                    // Like
+                    transaction.set(likeRef, { userId: user.uid });
+                    transaction.update(postRef, { likes: currentLikesCount + 1 });
+                }
+            });
 
-            if (likeDoc.exists()) {
-                // Unlike
-                transaction.delete(likeRef);
-                transaction.update(postRef, { likes: Math.max(0, currentLikes - 1) });
-            } else {
-                // Like
-                transaction.set(likeRef, { userId: user.uid });
-                transaction.update(postRef, { likes: currentLikes + 1 });
-            }
-        }).catch((serverError) => {
-            const isUnlike = hasLiked;
+            // Optimistically update UI
+            setLikesData(prev => {
+                const newLikes = { ...prev };
+                const postLikes = newLikes[postId] || [];
+                if (hasLiked) {
+                    newLikes[postId] = postLikes.filter(like => like.id !== user.uid);
+                } else {
+                    newLikes[postId] = [...postLikes, { id: user.uid, userId: user.uid }];
+                }
+                return newLikes;
+            });
+
+        } catch (serverError) {
             const permissionError = new FirestorePermissionError({
                 path: likeRef.path,
-                operation: isUnlike ? 'delete' : 'create',
-                requestResourceData: isUnlike ? undefined : { userId: user.uid },
+                operation: hasLiked ? 'delete' : 'create',
+                requestResourceData: hasLiked ? undefined : { userId: user.uid },
             });
             errorEmitter.emit('permission-error', permissionError);
-        });
+        }
     };
 
     const handleCreatePost = async () => {
@@ -251,9 +284,23 @@ export default function CommunityForumPage() {
                                 <Skeleton className="h-48 w-full" />
                             </>
                         )}
-                        {enrichedPosts.map(post => (
+                        {!isLoading && postsError && (
+                            <Card>
+                                <CardContent className="p-6">
+                                    <p className="text-destructive text-center">Error: Could not load posts. Please check your connection or permissions.</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                        {!isLoading && enrichedPosts.map(post => (
                             <PostCard key={post.id} post={post} onLike={handleLike} />
                         ))}
+                         {!isLoading && enrichedPosts.length === 0 && (
+                             <Card>
+                                <CardContent className="p-6">
+                                     <p className="text-muted-foreground text-center">No posts yet. Be the first to ask a question!</p>
+                                </CardContent>
+                            </Card>
+                         )}
                     </div>
                 </div>
 
