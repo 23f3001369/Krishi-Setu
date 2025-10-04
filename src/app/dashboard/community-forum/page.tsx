@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, ThumbsUp, PlusCircle, Search } from "lucide-react";
 import { Separator } from '@/components/ui/separator';
-import { useUser, useFirestore, useCollection, useMemoFirebase, FirestorePermissionError } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp, doc, deleteDoc, runTransaction, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -161,6 +162,21 @@ export default function CommunityForumPage() {
             return;
         }
 
+        // Optimistic UI Update
+        setLikesData(prev => {
+            const newLikes = { ...prev };
+            const postLikes = newLikes[postId] || [];
+            if (hasLiked) {
+                // Optimistically remove the like
+                newLikes[postId] = postLikes.filter(like => like.id !== user.uid);
+            } else {
+                // Optimistically add the like
+                newLikes[postId] = [...postLikes, { id: user.uid, userId: user.uid }];
+            }
+            return newLikes;
+        });
+
+
         const postRef = doc(db, 'forumPosts', postId);
         const likeRef = doc(db, 'forumPosts', postId, 'likes', user.uid);
 
@@ -182,24 +198,22 @@ export default function CommunityForumPage() {
                 transaction.update(postRef, { likes: currentLikesCount + 1 });
             }
         })
-        .then(() => {
-             // Optimistically update UI
-            setLikesData(prev => {
+        .catch((serverError) => {
+            // Revert optimistic update on error
+             setLikesData(prev => {
                 const newLikes = { ...prev };
                 const postLikes = newLikes[postId] || [];
-                if (hasLiked) {
-                    newLikes[postId] = postLikes.filter(like => like.id !== user.uid);
-                } else {
+                 if (hasLiked) { // Re-add the like that was optimistically removed
                     newLikes[postId] = [...postLikes, { id: user.uid, userId: user.uid }];
+                } else { // Remove the like that was optimistically added
+                    newLikes[postId] = postLikes.filter(like => like.id !== user.uid);
                 }
                 return newLikes;
             });
-        })
-        .catch((serverError) => {
-            // This will now catch security rule failures during the transaction
+            
             const isUnlike = hasLiked;
             const permissionError = new FirestorePermissionError({
-                path: likeRef.path, // We assume the error is on the subcollection first
+                path: likeRef.path, 
                 operation: isUnlike ? 'delete' : 'create',
                 requestResourceData: isUnlike ? undefined : { userId: user.uid },
             });
@@ -355,5 +369,3 @@ export default function CommunityForumPage() {
         </div>
     )
 }
-
-    
