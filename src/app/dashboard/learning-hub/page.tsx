@@ -190,27 +190,6 @@ const videos = [
     link: 'https://www.youtube.com/live/sxmT4CdCkFs',
     imageId: 'learning-hub-article-2',
   },
-  {
-    id: '11',
-    title: 'Introduction to Organic Farming | Sustainable Agriculture',
-    description: 'Covers basics of organic farming and its long-term benefits for soil and farmers.',
-    link: 'https://www.youtube.com/watch?v=abikz7TV1-Y',
-    imageId: 'green-farm',
-  },
-  {
-    id: '12',
-    title: 'Crop Rotation and Mixed Cropping Practices',
-    description: 'Explains how crop rotation improves soil fertility and pest control.',
-    link: 'https://www.youtube.com/watch?v=KpC6BB5bHfA',
-    imageId: 'learning-hub-video-2',
-  },
-  {
-    id: '13',
-    title: 'Ploughing Techniques & Modern Implements',
-    description: 'Compares traditional and modern ploughing tools for efficient soil tillage.',
-    link: 'https://www.youtube.com/watch?v=y2wYnpU5oQ4',
-    imageId: 'farm-equipment',
-  },
 ];
 
 
