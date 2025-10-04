@@ -253,5 +253,3 @@ export default function AgriNewsPage() {
     </div>
   );
 }
-
-    
