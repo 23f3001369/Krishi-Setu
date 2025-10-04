@@ -22,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -107,10 +109,10 @@ export function FarmerSignUpForm() {
       router.push("/login");
 
     } catch (error: any) {
-      // This will catch the re-thrown Firestore error as well as Auth errors
+      console.error("Signup error:", error);
+      let description: React.ReactNode = "An unknown error occurred during sign up.";
+
       if (error.name === 'FirebaseError') {
-          console.error("Signup error:", error);
-          let description: React.ReactNode = "An unknown error occurred during sign up.";
           switch (error.code) {
             case "auth/email-already-in-use":
               description = (
@@ -136,20 +138,19 @@ export function FarmerSignUpForm() {
               description = "There's an issue with the application configuration. Please contact support.";
               break;
             case "permission-denied":
-                 // This case will likely not be hit if the global handler is working, but it is good practice
                  description = "You do not have permission to perform this action. Please check the security rules.";
                  break;
             default:
                 description = "An unexpected error occurred. Please try again.";
                 break;
           }
-          toast({
-            variant: "destructive",
-            title: "Sign-up Failed",
-            description: description,
-          });
       }
-      // The global error handler will catch the FirestorePermissionError and display it
+      
+      toast({
+        variant: "destructive",
+        title: "Sign-up Failed",
+        description: description,
+      });
     } finally {
       setIsLoading(false);
     }
