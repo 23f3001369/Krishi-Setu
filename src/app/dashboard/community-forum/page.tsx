@@ -781,20 +781,6 @@ export default function CommunityForumPage() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader><CardTitle>Top Contributors</CardTitle></CardHeader>
-                        <CardContent className="space-y-4 p-6">
-                           <div className="flex items-center gap-3">
-                               <Avatar className="h-9 w-9"><AvatarImage src="https://i.pravatar.cc/150?u=contributor1" /><AvatarFallback>V</AvatarFallback></Avatar>
-                               <div><p className="text-sm font-semibold">Vikram Singh</p><p className="text-xs text-muted-foreground">215 points</p></div>
-                           </div>
-                            <Separator />
-                            <div className="flex items-center gap-3">
-                               <Avatar className="h-9 w-9"><AvatarImage src="https://i.pravatar.cc/150?u=contributor2" /><AvatarFallback>A</AvatarFallback></Avatar>
-                               <div><p className="text-sm font-semibold">Anjali Patel</p><p className="text-xs text-muted-foreground">180 points</p></div>
-                           </div>
-                        </CardContent>
-                    </Card>
                 </div>
             </div>
         </div>
