@@ -1,9 +1,11 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useAuth } from "@/firebase";
+import Link from 'next/link';
 
 const formSchema = z.object({
   identifier: z.string().min(1, "Please enter your email or mobile number."),
@@ -29,6 +33,7 @@ export function FarmerLoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const auth = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,26 +45,59 @@ export function FarmerLoginForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    // TODO: Implement Firebase login logic here for both email and phone
-    console.log(values);
 
-    // Mock successful login
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Login Successful",
-      description: "Redirecting to your dashboard...",
-    });
-    router.push("/dashboard");
+    if (!auth) {
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Firebase is not initialized. Please try again later.",
+        });
+        setIsLoading(false);
+        return;
+    }
 
-    // Example of error handling
-    // toast({
-    //   variant: "destructive",
-    //   title: "Uh oh! Something went wrong.",
-    //   description: "There was a problem with your request.",
-    // });
-    
-    setIsLoading(false);
+    try {
+      // Assuming the identifier is an email for now.
+      // Phone number login would require a different flow (Recaptcha, etc.)
+      await signInWithEmailAndPassword(auth, values.identifier, values.password);
+      
+      toast({
+        title: "Login Successful",
+        description: "Redirecting to your dashboard...",
+      });
+      router.push("/dashboard");
+
+    } catch (error: any) {
+      console.error("Login error:", error);
+      let description: React.ReactNode = "An unknown error occurred during login.";
+      
+      if (error.name === 'FirebaseError') {
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            description = 'Invalid email or password. Please try again.';
+            break;
+          case 'auth/invalid-email':
+            description = 'The email address you entered is not valid.';
+            break;
+          case 'auth/too-many-requests':
+            description = 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.';
+            break;
+          default:
+            description = 'An unexpected error occurred. Please try again.';
+            break;
+        }
+      }
+      
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: description,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -72,7 +110,7 @@ export function FarmerLoginForm() {
             <FormItem>
               <FormLabel>Email or Mobile Number</FormLabel>
               <FormControl>
-                <Input placeholder="name@example.com or 9876543210" {...field} />
+                <Input placeholder="name@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
