@@ -285,6 +285,40 @@
         }
       },
       "required": ["authorId", "authorName", "question", "createdAt"]
+    },
+    "Reply": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reply",
+      "description": "Represents a single reply to a comment.",
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "description": "The UID of the user who created the reply."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "The name of the user who created the reply."
+        },
+        "authorAvatar": {
+          "type": "string",
+          "description": "URL of the author's avatar."
+        },
+        "replyText": {
+          "type": "string",
+          "description": "The content of the reply."
+        },
+        "likes": {
+          "type": "number",
+          "description": "The number of likes the reply has received."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the reply was created."
+        }
+      },
+      "required": ["authorId", "authorName", "replyText", "createdAt"]
     }
   },
   "auth": {
@@ -426,10 +460,32 @@
             }
           ]
         }
+      },
+      {
+        "path": "/forumPosts/{postId}/comments/{commentId}/replies/{replyId}",
+        "definition": {
+            "entityName": "Reply",
+            "schema": {
+                "$ref": "#/backend/entities/Reply"
+            },
+            "description": "Stores replies to a specific comment.",
+            "params": [
+                {
+                    "name": "postId",
+                    "description": "The ID of the parent post."
+                },
+                {
+                    "name": "commentId",
+                    "description": "The ID of the parent comment."
+                },
+                {
+                    "name": "replyId",
+                    "description": "The unique ID for the reply."
+                }
+            ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to address the error 'Firebase: Error (auth/requests-to-this-api-identitytoolkit-method-google.cloud.identitytoolkit.v1.authenticationservice.signup-are-blocked.)' by aligning the data structure with the application's authentication and authorization requirements and prioritizing security and scalability. This error suggests there may be an issue with the Firebase Authentication configuration related to blocking user sign-ups. While the data structure itself won't directly fix this, it is important to structure data in a secure and efficient manner to prevent authorization issues. The design emphasizes Authorization Independence, clarity, and simplicity in security rules.\n\n**Authorization Independence:** The Farmer documents are stored directly under `/farmers/{farmerId}` which uses the Firebase Auth UID as the document ID, directly linking the user's authentication to their data. This eliminates the need for complex `get()` calls in security rules, making them more efficient and easier to debug.  Farm documents are stored under `/farms/{farmId}`, and include the `farmerId`. WeatherForecast documents are stored under `/weather_forecasts/{weatherForecastId}`. LearningArticle documents are stored under `/learning_articles/{learningArticleId}`.\n\n**Structural Segregation:**  Different data types are stored in separate collections (e.g., `farmers`, `farms`, `weather_forecasts`, `learning_articles`). This segregation simplifies security rules as each collection can have its own specific access control policies.  For example, only authenticated farmers should be able to create or modify their own farm data, while the weather forecast data might have different access rules depending on the source of the data.  Admin users could potentially have read/write access to all collections through secure backend functions, rather than direct Firestore rules.\n\n**Access Modeling:** Farmers' personal data is stored under `/farmers/{farmerId}`, enabling path-based ownership. Farms are stored under `/farms/{farmId}` with a `farmerId` field, enabling querying and listing farms owned by a specific farmer. WeatherForecasts are globally available under `/weather_forecasts/{weatherForecastId}`. LearningArticles are also stored globally under `/learning_articles/{learningArticleId}`. Global roles are implemented via a separate `/roles_admin/{uid}` collection.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations. For instance, listing all farms owned by a specific farmer can be achieved by querying the `/farms` collection with a `where('farmerId', '==', request.auth.uid)` clause. The `farmerId` field is indexed to make this query efficient.  Separating data into distinct collections with clear ownership allows for rules to be easily applied to prevent unauthorized listing of data.\n\nBy adhering to these principles and mandates, the Firestore structure is designed to be scalable, secure, and easily maintainable, minimizing the risk of authorization-related issues and ensuring data integrity."
   }
 }
-
-    
