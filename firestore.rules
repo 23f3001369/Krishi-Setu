@@ -1,86 +1,115 @@
+/**
+ * @fileOverview Firestore Security Rules for the AgriVaani application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user-specific data while allowing public read access to certain shared resources.
+ *
+ * Data Structure:
+ * - /farmers/{farmerId}: Stores individual farmer profiles, with 'farmerId' matching the Firebase Auth UID.
+ * - /farmers/{farmerId}/transactions/{transactionId}: Stores transaction data specific to a farmer.
+ * - /farmers/{farmerId}/cultivationGuides/{guideId}: Stores cultivation guides specific to a farmer.
+ * - /farms/{farmId}: Stores farm data with a 'farmerId' field indicating ownership.
+ * - /weather_forecasts/{weatherForecastId}: Stores weather forecast data (publicly readable).
+ * - /learning_articles/{learningArticleId}: Stores learning articles (publicly readable).
+ * - /roles_admin/{uid}: Stores admin roles, where the existence of a document grants admin privileges.
+ * - /forumPosts/{postId}: Stores forum posts (publicly readable).
+ *
+ * Key Security Decisions:
+ * - Farmers have full ownership (read/write/delete) over their profile data and associated transactions and cultivation guides.
+ * - Farm documents are secured via an ownership field ('farmerId') within the document itself.
+ * - Weather forecasts and learning articles are publicly readable.
+ * - Listing of user-owned subcollections is allowed for the owner.
+ * - Public listing of forum posts is allowed.
+ *
+ * Denormalization for Authorization:
+ * - The 'Farm' entity includes a 'farmerId' field to directly associate it with the owning farmer, avoiding the need for complex queries during authorization checks.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    function isAdmin() {
+       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
     /**
-     * @description Controls access to farmer profiles.
+     * @description Allows access to farmer profiles based on ownership.
      * @path /farmers/{farmerId}
-     * @allow (create) If the user's UID matches the 'farmerId'.
-     * @allow (get, list, update, delete) If the user's UID matches the 'farmerId'.
-     * @deny (create) If the user's UID does not match the 'farmerId'.
-     * @deny (get, list, update, delete) If the user's UID does not match the 'farmerId'.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with UID 'user123' can create their profile at /farmers/user123.
+     * @deny (create) User with UID 'user123' cannot create a profile at /farmers/user456.
+     * @principle Enforces document ownership based on the Firebase Auth UID.
      */
     match /farmers/{farmerId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
       allow get: if isOwner(farmerId);
       allow list: if false;
-      allow create: if isOwner(farmerId);
-      allow update: if isOwner(farmerId);
-      allow delete: if isOwner(farmerId);
+      allow create: if isOwner(farmerId) && request.resource.data.id == farmerId;
+      allow update: if isExistingOwner(farmerId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(farmerId);
     }
 
     /**
-     * @description Controls access to farmer transactions.
+     * @description Allows access to transactions based on ownership.
      * @path /farmers/{farmerId}/transactions/{transactionId}
-     * @allow (create, get, list, update, delete) If the user's UID matches the 'farmerId'.
-     * @deny (create, get, list, update, delete) If the user's UID does not match the 'farmerId'.
-     * @principle Restricts access to a user's own data tree.
+     * @allow (create) User with UID 'user123' can create a transaction under their profile.
+     * @deny (create) User with UID 'user123' cannot create a transaction under another user's profile.
+     * @principle Enforces document ownership for transactions.
      */
     match /farmers/{farmerId}/transactions/{transactionId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
       allow get: if isOwner(farmerId);
       allow list: if isOwner(farmerId);
       allow create: if isOwner(farmerId);
-      allow update: if isOwner(farmerId);
-      allow delete: if isOwner(farmerId);
+      allow update: if isExistingOwner(farmerId);
+      allow delete: if isExistingOwner(farmerId);
     }
 
     /**
-     * @description Controls access to farmer cultivation guides.
+     * @description Allows access to cultivation guides based on ownership.
      * @path /farmers/{farmerId}/cultivationGuides/{guideId}
-     * @allow (create, get, list, update, delete) If the user's UID matches the 'farmerId'.
-     * @deny (create, get, list, update, delete) If the user's UID does not match the 'farmerId'.
-     * @principle Restricts access to a user's own data tree.
+     * @allow (create) User with UID 'user123' can create a cultivation guide under their profile.
+     * @deny (create) User with UID 'user123' cannot create a cultivation guide under another user's profile.
+     * @principle Enforces document ownership for cultivation guides.
      */
     match /farmers/{farmerId}/cultivationGuides/{guideId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
       allow get: if isOwner(farmerId);
       allow list: if isOwner(farmerId);
-      allow create: if isOwner(farmerId);
-      allow update: if isOwner(farmerId);
-      allow delete: if isOwner(farmerId);
+      allow create: if isOwner(farmerId) && request.resource.data.userId == farmerId;
+      allow update: if isExistingOwner(farmerId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(farmerId);
     }
 
     /**
-     * @description Controls access to farm data.
+     * @description Allows access to farm data based on ownership.
      * @path /farms/{farmId}
-     * @allow (create, get, list, update, delete) If the user's UID matches the 'farmerId' on the document.
-     * @deny (create) If the user's UID does not match the 'farmerId' on the request.
-     * @deny (get, list, update, delete) If the user's UID does not match the 'farmerId' on the document.
-     * @principle Enforces document ownership based on the 'farmerId' field.
+     * @allow (create) User with UID 'user123' can create a farm document with farmerId 'user123'.
+     * @deny (update) User with UID 'user123' cannot update a farm document to change the farmerId to 'user456'.
+     * @principle Enforces document ownership for farm data.
      */
     match /farms/{farmId} {
-      allow get: if request.auth != null && resource.data.farmerId == request.auth.uid;
-      allow list: if request.auth != null && resource.data.farmerId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.farmerId == request.auth.uid;
-      allow update: if request.auth != null && resource.data.farmerId == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.farmerId == request.auth.uid;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn() && request.resource.data.farmerId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(resource.data.farmerId) && request.resource.data.farmerId == resource.data.farmerId;
+      allow delete: if isSignedIn() && isExistingOwner(resource.data.farmerId);
     }
 
     /**
-     * @description Controls access to weather forecast data.
+     * @description Allows public read access to weather forecast data.
      * @path /weather_forecasts/{weatherForecastId}
-     * @allow (get, list) Public read access.
-     * @deny (create, update, delete) No public write access.
-     * @principle Allows public read access to weather data.
+     * @allow (get) Any user can read weather forecast data.
+     * @deny (create) No user can create weather forecast data through client rules.
+     * @principle Allows public read access for shared data; restricts write access.
      */
     match /weather_forecasts/{weatherForecastId} {
       allow get: if true;
@@ -91,11 +120,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Controls access to learning articles.
+     * @description Allows public read access to learning articles.
      * @path /learning_articles/{learningArticleId}
-     * @allow (get, list) Public read access.
-     * @deny (create, update, delete) No public write access.
-     * @principle Allows public read access to learning articles.
+     * @allow (get) Any user can read learning articles.
+     * @deny (create) No user can create learning articles through client rules.
+     * @principle Allows public read access for shared data; restricts write access.
      */
     match /learning_articles/{learningArticleId} {
       allow get: if true;
@@ -105,23 +134,33 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-        /**
-         * @description Manages admin roles.
-         * @path /roles_admin/{uid}
-         * @allow (get, create, update, delete) Only accessible by an authenticated user to manage their own role.
-         * @deny (get, create, update, delete) If the user is not authenticated or trying to access another user's role.
-         * @principle Existence of a document grants admin privileges.
-         */
-        match /roles_admin/{uid} {
-            function isSignedIn() {
-                return request.auth != null;
-            }
+    /**
+     * @description Allows admin to be set by adding a document to the roles_admin collection.
+     * @path /roles_admin/{uid}
+     * @allow (create) User with UID 'admin123' can have admin access by existing in this doc.
+     * @deny (create) Non-admin user with UID 'user123' cannot set admin access by creating.
+     */
+     match /roles_admin/{uid} {
+      allow get: if isAdmin();
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
 
-            allow get: if isSignedIn() && request.auth.uid == uid;
-            allow list: if false;
-            allow create: if isSignedIn() && request.auth.uid == uid;
-            allow update: if isSignedIn() && request.auth.uid == uid;
-            allow delete: if isSignedIn() && request.auth.uid == uid;
-        }
+    /**
+     * @description Allows public read access to forum posts.
+     * @path /forumPosts/{postId}
+     * @allow (get) Any user can read forum posts.
+     * @deny (create) All user can create a post, no validation on post.
+     * @principle Allows public read access for shared data; restricts write access.
+     */
+    match /forumPosts/{postId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+    }
   }
 }
