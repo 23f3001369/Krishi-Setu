@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, ThumbsUp, PlusCircle, Search } from "lucide-react";
 import { Separator } from '@/components/ui/separator';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp, doc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -58,7 +58,7 @@ function PostCard({ post }: { post: Post }) {
         const likeRef = doc(db, 'forumPosts', post.id, 'likes', user.uid);
         const postRef = doc(db, 'forumPosts', post.id);
 
-        await runTransaction(db, async (transaction) => {
+        runTransaction(db, async (transaction) => {
             const postDoc = await transaction.get(postRef);
             if (!postDoc.exists()) {
                 throw "Post does not exist!";
@@ -73,9 +73,18 @@ function PostCard({ post }: { post: Post }) {
                 transaction.update(postRef, { likes: Math.max(0, currentLikes - 1) });
             } else {
                 // Like
-                transaction.set(likeRef, { userId: user.uid });
+                const likeData = { userId: user.uid };
+                transaction.set(likeRef, likeData);
                 transaction.update(postRef, { likes: currentLikes + 1 });
             }
+        }).catch((serverError) => {
+            const isUnlike = hasLiked;
+            const permissionError = new FirestorePermissionError({
+                path: isUnlike ? likeRef.path : postRef.path,
+                operation: isUnlike ? 'delete' : 'update',
+                requestResourceData: isUnlike ? undefined : { likes: (post.likes || 0) + 1 },
+            });
+            errorEmitter.emit('permission-error', permissionError);
         });
     };
 
@@ -139,32 +148,36 @@ export default function CommunityForumPage() {
         if (!user || !db || !newPost.trim()) return;
 
         setIsSubmitting(true);
-        try {
-            const postsCollection = collection(db, 'forumPosts');
-            await addDoc(postsCollection, {
-                authorId: user.uid,
-                authorName: user.displayName || 'Anonymous',
-                authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
-                question: newPost,
-                likes: 0,
-                comments: 0,
-                createdAt: serverTimestamp()
+        const postData = {
+            authorId: user.uid,
+            authorName: user.displayName || 'Anonymous',
+            authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+            question: newPost,
+            likes: 0,
+            comments: 0,
+            createdAt: serverTimestamp()
+        };
+        const postsCollection = collection(db, 'forumPosts');
+
+        addDoc(postsCollection, postData)
+            .then(() => {
+                setNewPost('');
+                toast({
+                    title: 'Post Created',
+                    description: 'Your question has been added to the forum.'
+                });
+            })
+            .catch((serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: postsCollection.path,
+                    operation: 'create',
+                    requestResourceData: postData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
-            setNewPost('');
-            toast({
-                title: 'Post Created',
-                description: 'Your question has been added to the forum.'
-            });
-        } catch (error) {
-            console.error("Error creating post:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not create post. Please try again.'
-            });
-        } finally {
-            setIsSubmitting(false);
-        }
     };
 
 
