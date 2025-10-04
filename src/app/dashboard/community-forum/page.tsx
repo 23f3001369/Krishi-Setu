@@ -41,13 +41,37 @@ type Like = {
     userId: string;
 };
 
+type Comment = {
+    id: string;
+    authorId: string;
+    authorName: string;
+    authorAvatar: string;
+    commentText: string;
+    createdAt: Timestamp;
+};
+
 type EnrichedPost = Post & {
     userHasLiked: boolean;
     likeCount: number;
+    commentCount: number;
+    comments: Comment[];
 };
 
-function PostCard({ post, onLike }: { post: EnrichedPost; onLike: (postId: string, hasLiked: boolean) => void; }) {
+
+function PostCard({ post, onLike, onComment }: { post: EnrichedPost; onLike: (postId: string, hasLiked: boolean) => void; onComment: (postId: string, commentText: string) => Promise<void> }) {
     const { user } = useUser();
+    const [showComments, setShowComments] = useState(false);
+    const [newCommentText, setNewCommentText] = useState('');
+    const [isPostingComment, setIsPostingComment] = useState(false);
+
+    const handlePostComment = async () => {
+        if (!newCommentText.trim()) return;
+
+        setIsPostingComment(true);
+        await onComment(post.id, newCommentText);
+        setNewCommentText('');
+        setIsPostingComment(false);
+    };
 
     return (
         <Card>
@@ -68,25 +92,69 @@ function PostCard({ post, onLike }: { post: EnrichedPost; onLike: (postId: strin
             <CardContent className="p-6">
                 <p className="text-sm">{post.question}</p>
             </CardContent>
-            <CardFooter className="flex justify-between items-center p-6">
-                <div className="flex gap-2 text-sm text-muted-foreground">
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => onLike(post.id, post.userHasLiked)} disabled={!user}>
-                        <ThumbsUp size={16} className={cn(post.userHasLiked && "text-primary fill-primary")} /> {post.likeCount}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                        <MessageSquare size={16} /> {post.comments}
-                    </Button>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm">View Post</Button>
-                    {user?.uid !== post.authorId && (
-                        <Button size="sm" asChild>
-                            <Link href={`/dashboard/chat?with=${encodeURIComponent(post.authorName)}`}>
-                                <MessageSquare className="mr-2 h-4 w-4"/> Chat with Author
-                            </Link>
+            <CardFooter className="flex-col items-start p-6">
+                 <div className="flex justify-between items-center w-full mb-4">
+                    <div className="flex gap-2 text-sm text-muted-foreground">
+                        <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => onLike(post.id, post.userHasLiked)} disabled={!user}>
+                            <ThumbsUp size={16} className={cn(post.userHasLiked && "text-primary fill-primary")} /> {post.likeCount}
                         </Button>
-                    )}
+                        <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={() => setShowComments(!showComments)}>
+                            <MessageSquare size={16} /> {post.commentCount}
+                        </Button>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm">View Post</Button>
+                         {user?.uid !== post.authorId && (
+                            <Button size="sm" asChild>
+                                <Link href={`/dashboard/chat?with=${encodeURIComponent(post.authorName)}`}>
+                                    <MessageSquare className="mr-2 h-4 w-4"/> Chat with Author
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
                 </div>
+                
+                 {showComments && (
+                    <div className="w-full mt-4 border-t pt-4">
+                        <h3 className="text-md font-semibold mb-3">Comments</h3>
+                        <div className="space-y-3 mb-4">
+                           {post.comments && post.comments.length > 0 ? (
+                                post.comments.map(comment => (
+                                    <div key={comment.id} className="flex items-start gap-3 text-sm">
+                                        <Avatar className="h-7 w-7">
+                                            <AvatarImage src={comment.authorAvatar} />
+                                            <AvatarFallback>{comment.authorName.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1">
+                                            <p>
+                                                <span className="font-semibold">{comment.authorName}</span>{" "}
+                                                <span className="text-muted-foreground text-xs">
+                                                    {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
+                                                </span>
+                                            </p>
+                                            <p>{comment.commentText}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No comments yet. Be the first to comment!</p>
+                            )}
+                        </div>
+                        {user && (
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Write a comment..."
+                                    value={newCommentText}
+                                    onChange={(e) => setNewCommentText(e.target.value)}
+                                    disabled={isPostingComment}
+                                />
+                                <Button onClick={handlePostComment} disabled={isPostingComment || !newCommentText.trim()}>
+                                    {isPostingComment ? 'Posting...' : 'Comment'}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </CardFooter>
         </Card>
     );
@@ -108,118 +176,151 @@ export default function CommunityForumPage() {
     const { data: posts, isLoading: isLoadingPosts, error: postsError } = useCollection<Post>(postsQuery);
     
     const [likesData, setLikesData] = useState<Record<string, Like[]>>({});
-    const [isLoadingLikes, setIsLoadingLikes] = useState(true);
+    const [commentsData, setCommentsData] = useState<Record<string, Comment[]>>({});
+    const [isLoadingSubcollections, setIsLoadingSubcollections] = useState(true);
 
     useEffect(() => {
-        if (posts && db && user) {
-            const fetchLikes = async () => {
-                setIsLoadingLikes(true);
+        if (posts && db) {
+            const fetchSubcollections = async () => {
+                setIsLoadingSubcollections(true);
                 const newLikesData: Record<string, Like[]> = {};
+                const newCommentsData: Record<string, Comment[]> = {};
+
                 for (const post of posts) {
                     try {
-                        const likesCollectionRef = collection(db, 'forumPosts', post.id, 'likes');
-                        const likesSnapshot = await getDocs(likesCollectionRef);
+                        const likesRef = collection(db, 'forumPosts', post.id, 'likes');
+                        const commentsRef = query(collection(db, 'forumPosts', post.id, 'comments'), orderBy('createdAt', 'asc'));
+
+                        const [likesSnapshot, commentsSnapshot] = await Promise.all([
+                            getDocs(likesRef),
+                            getDocs(commentsRef)
+                        ]);
+                        
                         newLikesData[post.id] = likesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Like));
+                        newCommentsData[post.id] = commentsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Comment));
                     } catch (e) {
-                         // This catch block is for network errors etc., not permission errors from the initial load.
-                         // Permission errors for 'list' are handled inside useCollection.
-                         console.error(`Failed to fetch likes for post ${post.id}`, e);
-                         newLikesData[post.id] = []; // Set empty array on error
+                         console.error(`Failed to fetch subcollections for post ${post.id}`, e);
+                         newLikesData[post.id] = [];
+                         newCommentsData[post.id] = [];
                     }
                 }
                 setLikesData(newLikesData);
-                setIsLoadingLikes(false);
+                setCommentsData(newCommentsData);
+                setIsLoadingSubcollections(false);
             };
-            fetchLikes();
+            fetchSubcollections();
         } else if (!posts && !isLoadingPosts) {
-            // Handle case where there are no posts
-            setIsLoadingLikes(false);
+            setIsLoadingSubcollections(false);
         }
-    }, [posts, db, user, isLoadingPosts]);
+    }, [posts, db, isLoadingPosts]);
     
 
     const enrichedPosts = useMemo(() => {
         if (!posts) return [];
         return posts.map(post => {
             const likesForPost = likesData[post.id] || [];
+            const commentsForPost = commentsData[post.id] || [];
             return {
                 ...post,
                 likeCount: likesForPost.length,
                 userHasLiked: user ? likesForPost.some(like => like.id === user.uid) : false,
+                commentCount: commentsForPost.length,
+                comments: commentsForPost,
             };
         });
-    }, [posts, likesData, user]);
+    }, [posts, likesData, commentsData, user]);
 
-    const isLoading = isLoadingPosts || isLoadingLikes;
+    const isLoading = isLoadingPosts || isLoadingSubcollections;
 
     const handleLike = (postId: string, hasLiked: boolean) => {
-        if (!user || !db) {
-            toast({
-                variant: 'destructive',
-                title: 'Not logged in',
-                description: 'You must be logged in to like a post.',
-            });
-            return;
-        }
+        if (!user || !db) return;
 
-        // Optimistic UI Update
         setLikesData(prev => {
-            const newLikes = { ...prev };
-            const postLikes = newLikes[postId] || [];
-            if (hasLiked) {
-                // Optimistically remove the like
-                newLikes[postId] = postLikes.filter(like => like.id !== user.uid);
-            } else {
-                // Optimistically add the like
-                newLikes[postId] = [...postLikes, { id: user.uid, userId: user.uid }];
-            }
-            return newLikes;
+            const currentLikes = prev[postId] || [];
+            const newLikes = hasLiked 
+                ? currentLikes.filter(like => like.id !== user.uid)
+                : [...currentLikes, { id: user.uid, userId: user.uid }];
+            return { ...prev, [postId]: newLikes };
         });
-
 
         const postRef = doc(db, 'forumPosts', postId);
         const likeRef = doc(db, 'forumPosts', postId, 'likes', user.uid);
 
         runTransaction(db, async (transaction) => {
             const postDoc = await transaction.get(postRef);
-            if (!postDoc.exists()) {
-                throw "Post does not exist!";
-            }
-
+            if (!postDoc.exists()) throw "Post does not exist!";
             const currentLikesCount = postDoc.data().likes || 0;
-
             if (hasLiked) {
-                // Unlike
                 transaction.delete(likeRef);
                 transaction.update(postRef, { likes: Math.max(0, currentLikesCount - 1) });
             } else {
-                // Like
                 transaction.set(likeRef, { userId: user.uid });
                 transaction.update(postRef, { likes: currentLikesCount + 1 });
             }
-        })
-        .catch((serverError) => {
-            // Revert optimistic update on error
+        }).catch((serverError) => {
              setLikesData(prev => {
-                const newLikes = { ...prev };
-                const postLikes = newLikes[postId] || [];
-                 if (hasLiked) { // Re-add the like that was optimistically removed
-                    newLikes[postId] = [...postLikes, { id: user.uid, userId: user.uid }];
-                } else { // Remove the like that was optimistically added
-                    newLikes[postId] = postLikes.filter(like => like.id !== user.uid);
-                }
-                return newLikes;
+                const currentLikes = prev[postId] || [];
+                 const newLikes = hasLiked
+                    ? [...currentLikes, { id: user.uid, userId: user.uid }]
+                    : currentLikes.filter(like => like.id !== user.uid);
+                return { ...prev, [postId]: newLikes };
             });
-            
-            const isUnlike = hasLiked;
             const permissionError = new FirestorePermissionError({
-                path: likeRef.path, 
-                operation: isUnlike ? 'delete' : 'create',
-                requestResourceData: isUnlike ? undefined : { userId: user.uid },
+                path: likeRef.path,
+                operation: hasLiked ? 'delete' : 'create',
+                requestResourceData: hasLiked ? undefined : { userId: user.uid },
             });
             errorEmitter.emit('permission-error', permissionError);
         });
     };
+    
+    const handleComment = async (postId: string, commentText: string) => {
+        if (!user || !db) return;
+        
+        const postRef = doc(db, 'forumPosts', postId);
+        const commentsCollectionRef = collection(db, 'forumPosts', postId, 'comments');
+        const newCommentRef = doc(commentsCollectionRef); // Create a reference with a new ID
+
+        const newCommentData = {
+            id: newCommentRef.id,
+            authorId: user.uid,
+            authorName: user.displayName || 'Anonymous',
+            authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+            commentText: commentText,
+            createdAt: Timestamp.now(),
+        };
+
+        // Optimistic update
+        setCommentsData(prev => ({
+            ...prev,
+            [postId]: [...(prev[postId] || []), newCommentData]
+        }));
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) throw "Post does not exist!";
+                const currentComments = postDoc.data().comments || 0;
+
+                transaction.set(newCommentRef, newCommentData);
+                transaction.update(postRef, { comments: currentComments + 1 });
+            });
+            toast({ title: "Comment posted!" });
+        } catch (serverError) {
+            // Revert optimistic update
+            setCommentsData(prev => ({
+                ...prev,
+                [postId]: (prev[postId] || []).filter(c => c.id !== newCommentRef.id)
+            }));
+             const permissionError = new FirestorePermissionError({
+                path: commentsCollectionRef.path,
+                operation: 'create',
+                requestResourceData: newCommentData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
+    };
+
 
     const handleCreatePost = async () => {
         if (!user || !db || !newPost.trim()) return;
@@ -309,7 +410,7 @@ export default function CommunityForumPage() {
                             </Card>
                         )}
                         {!isLoading && enrichedPosts.map(post => (
-                            <PostCard key={post.id} post={post} onLike={handleLike} />
+                            <PostCard key={post.id} post={post} onLike={handleLike} onComment={handleComment} />
                         ))}
                          {!isLoading && enrichedPosts.length === 0 && (
                              <Card>
