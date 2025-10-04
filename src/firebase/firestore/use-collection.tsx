@@ -65,16 +65,14 @@ export function useCollection<T = any>(
   useEffect(() => {
     // If the query/ref is not ready, set to a non-loading, empty state.
     if (!memoizedTargetRefOrQuery) {
-      setData(null);
       setIsLoading(false);
+      setData(null);
       setError(null);
       return;
     }
 
-    // Set loading state and clear previous errors/data.
+    // Set loading state at the beginning of the effect.
     setIsLoading(true);
-    setError(null);
-    setData(null);
 
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
@@ -106,8 +104,9 @@ export function useCollection<T = any>(
       }
     );
 
+    // Return the unsubscribe function to be called on cleanup.
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]);
+  }, [memoizedTargetRefOrQuery]); // Re-run effect only if the memoized query reference changes.
   
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
     throw new Error('useCollection was not properly memoized using useMemoFirebase');
