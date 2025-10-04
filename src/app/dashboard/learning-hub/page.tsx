@@ -190,6 +190,62 @@ const videos = [
     link: 'https://www.youtube.com/live/sxmT4CdCkFs',
     imageId: 'learning-hub-article-2',
   },
+  {
+    id: '11',
+    title: 'What is Organic Farming? | Agriculture | Biology | FuseSchool',
+    description: 'Explains the concept, principles and benefits of organic farming.',
+    link: 'https://www.youtube.com/watch?v=WhOrIUlrnPo',
+    imageId: 'hero-image',
+  },
+  {
+    id: '12',
+    title: 'Importance of Organic Farming | What is Organic Farming | Sustainable Agriculture',
+    description: 'Discusses why organic farming matters for environment, health and soil.',
+    link: 'https://www.youtube.com/watch?v=lRyXlvIJFWI',
+    imageId: 'hero-image',
+  },
+  {
+    id: '13',
+    title: 'Introduction to Organic Agriculture',
+    description: 'An educational session on origins, practices and challenges of organic agriculture.',
+    link: 'https://www.youtube.com/watch?v=Jwvw2X_CB38',
+    imageId: 'hero-image',
+  },
+  {
+    id: '14',
+    title: '30 ESSENTIAL Organic Farming Techniques For Small Farms & Market Gardens',
+    description: 'Shares 30 practical organic methods that small farmers can adopt.',
+    link: 'https://www.youtube.com/watch?v=mkEsLdNKlPM',
+    imageId: 'farm-field',
+  },
+  {
+    id: '15',
+    title: 'The Step By Step Guide to Crop Rotation',
+    description: 'Simple, visual explanation of how to rotate crops to maintain soil health.',
+    link: 'https://www.youtube.com/watch?v=64YapgN6G2w',
+    imageId: 'learning-hub-video-2',
+  },
+  {
+    id: '16',
+    title: 'Crop Rotation Made Simple - Easy Tutorial for Beginners',
+    description: 'Explains crop rotation with examples and how it helps prevent pests/diseases.',
+    link: 'https://www.youtube.com/watch?v=Q5bQXYN6tgY',
+    imageId: 'learning-hub-video-2',
+  },
+  {
+    id: '17',
+    title: 'Designing a Crop Rotation',
+    description: 'Teaches how to plan a rotation considering pests, fertility, and disease control.',
+    link: 'https://www.youtube.com/watch?v=Ow1dH58a-rk',
+    imageId: 'learning-hub-video-2',
+  },
+  {
+    id: '18',
+    title: 'Crop rotation',
+    description: 'Shows how crop rotation can stabilize organic matter, suppress weeds and improve soil.',
+    link: 'https://www.youtube.com/watch?v=CvCXQgLhCm4',
+    imageId: 'learning-hub-video-2',
+  },
 ];
 
 
