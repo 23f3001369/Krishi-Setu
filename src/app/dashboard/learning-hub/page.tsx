@@ -124,9 +124,9 @@ const videos = [
     id: '1',
     title: 'How To Make Compost At Home',
     description:
-      'A practical, step-by-step guide on creating your own compost pile to enrich your soil, from the popular YouTube channel "Garden Answer".',
+      'A practical, step-by-step guide on creating your own compost pile to enrich your soil, from the popular YouTube channel "Epic Gardening".',
     imageId: 'learning-hub-video-1',
-    link: 'https://www.youtube.com/watch?v=s8yGgS-14Sg'
+    link: 'https://www.youtube.com/watch?v=IC2Kj43u3wI'
   },
   {
     id: '2',
