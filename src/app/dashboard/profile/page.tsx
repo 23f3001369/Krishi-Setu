@@ -81,6 +81,7 @@ export default function ProfilePage() {
   
   const farmsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
+    // This query is now memoized, preventing re-renders from creating new query objects
     return query(collection(db, 'farms'), where('farmerId', '==', user.uid));
   }, [db, user?.uid]);
 

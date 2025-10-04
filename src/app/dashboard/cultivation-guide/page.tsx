@@ -142,13 +142,18 @@ export default function CultivationGuidePage() {
         variety: formData.variety,
       });
       
-      // Save the generated guide to Firestore
-      const guidesCollectionRef = collection(db, 'farmers', user.uid, 'cultivationGuides');
-      await addDoc(guidesCollectionRef, {
-        ...result,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-      });
+      const guidesCollectionRef = useMemoFirebase(() => {
+        if (!db || !user?.uid) return null;
+        return collection(db, 'farmers', user.uid, 'cultivationGuides');
+      }, [db, user?.uid]);
+
+      if (guidesCollectionRef) {
+        await addDoc(guidesCollectionRef, {
+            ...result,
+            userId: user.uid,
+            createdAt: serverTimestamp(),
+        });
+      }
       
       toast({
         title: 'Guide Created!',

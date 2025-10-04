@@ -16,7 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, ThumbsUp, PlusCircle, Search } from "lucide-react";
 import { Separator } from '@/components/ui/separator';
-import { useCollection, useFirestore, useUser, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, FirestorePermissionError } from '@/firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
 import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp, doc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,6 +42,7 @@ type Like = {
 function PostCard({ post }: { post: Post }) {
     const { user } = useUser();
     const db = useFirestore();
+    const { toast } = useToast();
 
     const likesQuery = useMemoFirebase(() => {
         if (!db) return null;
@@ -49,7 +51,6 @@ function PostCard({ post }: { post: Post }) {
 
     const { data: likes } = useCollection<Like>(likesQuery);
     
-    // The number of likes is now the count of documents in the subcollection
     const likeCount = likes?.length ?? 0;
 
     const hasLiked = useMemo(() => {
@@ -57,12 +58,18 @@ function PostCard({ post }: { post: Post }) {
     }, [likes, user]);
 
     const handleLike = async () => {
-        if (!user || !db) return;
-        const likeRef = doc(db, 'forumPosts', post.id, 'likes', user.uid);
+        if (!user || !db) {
+            toast({
+                variant: 'destructive',
+                title: 'Not logged in',
+                description: 'You must be logged in to like a post.',
+            });
+            return;
+        }
+        
         const postRef = doc(db, 'forumPosts', post.id);
+        const likeRef = doc(db, 'forumPosts', post.id, 'likes', user.uid);
 
-        // This transaction now updates the parent post's like count
-        // and adds/removes the user's like document in the subcollection.
         runTransaction(db, async (transaction) => {
             const postDoc = await transaction.get(postRef);
             if (!postDoc.exists()) {
@@ -73,11 +80,11 @@ function PostCard({ post }: { post: Post }) {
             const likeDoc = await transaction.get(likeRef);
 
             if (likeDoc.exists()) {
-                // Unlike: Delete the like document and decrement the count
+                // Unlike
                 transaction.delete(likeRef);
                 transaction.update(postRef, { likes: Math.max(0, currentLikes - 1) });
             } else {
-                // Like: Create the like document and increment the count
+                // Like
                 transaction.set(likeRef, { userId: user.uid });
                 transaction.update(postRef, { likes: currentLikes + 1 });
             }

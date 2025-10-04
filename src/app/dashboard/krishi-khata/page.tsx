@@ -68,6 +68,7 @@ export default function KrishiKhataPage() {
 
   const transactionsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
+    // This query is now memoized, preventing re-renders from creating new query objects
     return collection(db, 'farmers', user.uid, 'transactions');
   }, [db, user?.uid]);
 
@@ -356,5 +357,3 @@ function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'i
         </DialogContent>
     );
 }
-
-    
