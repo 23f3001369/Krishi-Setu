@@ -286,6 +286,44 @@
       },
       "required": ["authorId", "authorName", "question", "createdAt"]
     },
+    "Comment": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Comment",
+        "description": "Represents a single comment on a post.",
+        "type": "object",
+        "properties": {
+            "authorId": {
+                "type": "string",
+                "description": "The UID of the user who created the comment."
+            },
+            "authorName": {
+                "type": "string",
+                "description": "The name of the user who created the comment."
+            },
+            "authorAvatar": {
+                "type": "string",
+                "description": "URL of the author's avatar."
+            },
+            "commentText": {
+                "type": "string",
+                "description": "The content of the comment."
+            },
+            "likes": {
+                "type": "number",
+                "description": "The number of likes the comment has received."
+            },
+            "replies": {
+                "type": "number",
+                "description": "The number of replies on the comment."
+            },
+            "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the comment was created."
+            }
+        },
+        "required": ["authorId", "authorName", "commentText", "createdAt"]
+    },
     "Reply": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Reply",
@@ -519,6 +557,18 @@
               "name": "postId",
               "description": "The unique ID for the forum post."
             }
+          ]
+        }
+      },
+      {
+        "path": "/forumPosts/{postId}/comments/{commentId}",
+        "definition": {
+          "entityName": "Comment",
+          "schema": { "$ref": "#/backend/entities/Comment" },
+          "description": "Stores all comments for a specific post.",
+          "params": [
+            { "name": "postId", "description": "The ID of the parent post." },
+            { "name": "commentId", "description": "The unique ID for the comment." }
           ]
         }
       },
