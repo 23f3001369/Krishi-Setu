@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, ThumbsUp, PlusCircle, Search } from "lucide-react";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, Timestamp, doc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
@@ -38,17 +38,65 @@ type EnrichedPost = Post & {
 };
 
 
-function PostCard({ post }: { post: EnrichedPost }) {
+function PostCard({ post }: { post: Post }) {
     const { user } = useUser();
+    const db = useFirestore();
+    const { toast } = useToast();
 
-    const handleLikePost = () => {
-        // TODO: Implement like functionality
-        console.log("Liking post", post.id);
+    const likeRef = useMemoFirebase(() => {
+        if (!db || !user?.uid) return null;
+        return doc(db, 'forumPosts', post.id, 'likes', user.uid);
+    }, [db, post.id, user?.uid]);
+
+    const { data: likeDoc, isLoading: isLikeLoading } = useDoc(likeRef);
+    const userHasLiked = !!likeDoc;
+
+    const handleLikePost = async () => {
+        if (!user || !db) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to like a post.' });
+            return;
+        }
+        
+        const postRef = doc(db, 'forumPosts', post.id);
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const postSnapshot = await transaction.get(postRef);
+                if (!postSnapshot.exists()) {
+                    throw "Post does not exist!";
+                }
+
+                const currentLikes = postSnapshot.data().likes || 0;
+                const likeDocRef = doc(db, 'forumPosts', post.id, 'likes', user.uid);
+
+                if (userHasLiked) {
+                    // Unlike
+                    transaction.delete(likeDocRef);
+                    transaction.update(postRef, { likes: Math.max(0, currentLikes - 1) });
+                } else {
+                    // Like
+                    transaction.set(likeDocRef, { userId: user.uid, createdAt: serverTimestamp() });
+                    transaction.update(postRef, { likes: currentLikes + 1 });
+                }
+            });
+        } catch (serverError) {
+             const error = serverError as Error;
+             const permissionError = new FirestorePermissionError({
+                path: postRef.path + '/likes/' + user.uid,
+                operation: userHasLiked ? 'delete' : 'create',
+             });
+            errorEmitter.emit('permission-error', permissionError);
+            toast({ title: 'Error', description: error.message || 'Could not update like status.', variant: 'destructive' });
+        }
     };
 
     const handleComment = () => {
         // TODO: Implement comment functionality
         console.log("Commenting on post", post.id);
+        toast({
+            title: 'Coming Soon!',
+            description: 'Commenting functionality will be implemented in a future update.',
+        });
     };
 
     return (
@@ -72,8 +120,8 @@ function PostCard({ post }: { post: EnrichedPost }) {
             </CardContent>
             <CardFooter className="flex justify-between">
                 <div className="flex gap-2 text-sm text-muted-foreground">
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleLikePost} disabled={!user}>
-                        <ThumbsUp size={16} className={cn(post.userHasLiked && "text-primary fill-primary")} /> {post.likes}
+                    <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleLikePost} disabled={!user || isLikeLoading}>
+                        <ThumbsUp size={16} className={cn(userHasLiked && "text-primary fill-primary")} /> {post.likes}
                     </Button>
                     <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleComment}>
                         <MessageSquare size={16} /> {post.comments} Comment{post.comments === 1 ? '' : 's'}
@@ -112,15 +160,6 @@ export default function CommunityForumPage() {
             post.authorName.toLowerCase().includes(lowercasedSearchTerm)
         );
     }, [posts, searchTerm]);
-
-    const enrichedPosts = useMemo((): EnrichedPost[] => {
-        if (!filteredPosts) return [];
-        // In a real app, you'd fetch the user's likes to determine `userHasLiked`
-        return filteredPosts.map(post => ({
-            ...post,
-            userHasLiked: false, 
-        }));
-    }, [filteredPosts]);
 
     const isLoading = isLoadingPosts;
 
@@ -188,8 +227,8 @@ export default function CommunityForumPage() {
 
                     <div className="space-y-6">
                         {isLoading && ( <> <Skeleton className="h-48 w-full" /> <Skeleton className="h-48 w-full" /> </> )}
-                        {!isLoading && enrichedPosts.length > 0 && enrichedPosts.map(post => <PostCard key={post.id} post={post} /> )}
-                         {!isLoading && enrichedPosts.length === 0 && (
+                        {!isLoading && filteredPosts.length > 0 && filteredPosts.map(post => <PostCard key={post.id} post={post} /> )}
+                         {!isLoading && filteredPosts.length === 0 && (
                              <Card><CardContent className="p-6"><p className="text-muted-foreground text-center">
                                 {searchTerm ? 'No posts match your search.' : 'No posts yet. Be the first to ask a question!'}
                             </p></CardContent></Card>

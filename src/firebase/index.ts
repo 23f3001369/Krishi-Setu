@@ -3,7 +3,7 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, setDoc } from 'firebase/firestore' // Import setDoc
+import { getFirestore, setDoc, doc, deleteDoc, runTransaction } from 'firebase/firestore' // Import setDoc, doc, deleteDoc, runTransaction
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -48,4 +48,4 @@ export * from './non-blocking-updates';
 export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
-export { setDoc }; // Export setDoc
+export { setDoc, doc, deleteDoc, runTransaction };
