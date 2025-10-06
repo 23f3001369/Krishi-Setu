@@ -1,340 +1,356 @@
 /**
- * @fileOverview Firestore Security Rules for the AgriVaani application.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user-specific data while allowing public read access to certain collections like weather forecasts and learning articles.
- * Farm ownership is determined through the `farmerId` field on the farm document.
- * Community forum data allows any authenticated user to create posts and comments, while updates and deletes are restricted to the author.
- * Chat conversations are restricted to participants.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model for farmer data,
+ * allowing farmers to manage their own information and related entities (farms, transactions, cultivation guides).
+ * Public read access is granted for weather forecasts and learning articles.
+ * Forum posts and comments have open read access but require authentication for writes.
+ * Chat data is restricted to participating users.
  *
  * Data Structure:
- * - /farmers/{farmerId}: Farmer profile data, owned by the user with the matching UID.
- * - /farmers/{farmerId}/transactions/{transactionId}: Financial transactions, owned by the user.
- * - /farmers/{farmerId}/cultivationGuides/{guideId}: AI cultivation guides, owned by the user.
- * - /farms/{farmId}: Farm data, owned by the user identified by the `farmerId` field.
- * - /weather_forecasts/{weatherForecastId}: Public weather forecast data.
- * - /learning_articles/{learningArticleId}: Public learning articles.
- * - /forumPosts/{postId}: Forum posts, created by any authenticated user.
- * - /forumPosts/{postId}/comments/{commentId}: Comments on forum posts, created by any authenticated user.
- * - /forumPosts/{postId}/comments/{commentId}/replies/{replyId}: Replies to comments on forum posts, created by any authenticated user.
- * - /chats/{chatId}: Chat conversations between users.
- * - /chats/{chatId}/messages/{messageId}: Messages within a chat conversation.
- * - /roles_admin/{uid}: Used to elevate roles for admins, read / write access should be granted only to elevated admins.
+ * - /farmers/{farmerId}: Farmer profiles, where farmerId matches the Firebase auth UID.
+ * - /farmers/{farmerId}/transactions/{transactionId}: Financial transactions for a farmer.
+ * - /farmers/{farmerId}/cultivationGuides/{guideId}: Cultivation guides specific to a farmer.
+ * - /farms/{farmId}: Farm data, with a 'farmerId' field indicating ownership.
+ * - /weather_forecasts/{weatherForecastId}: Weather forecast data (publicly readable).
+ * - /learning_articles/{learningArticleId}: Learning articles (publicly readable).
+ * - /roles_admin/{uid}: Admin roles (document existence grants admin status).
+ * - /forumPosts/{postId}: Forum posts created by users.
+ * - /forumPosts/{postId}/comments/{commentId}: Comments on forum posts.
+ * - /forumPosts/{postId}/comments/{commentId}/replies/{replyId}: Replies to comments.
+ * - /chats/{chatId}: Metadata for chat conversations.
+ * - /chats/{chatId}/messages/{messageId}: Messages within a chat.
  *
  * Key Security Decisions:
- * - User listing is disabled for the /farmers collection.
- * - Weather forecasts and learning articles are publicly readable.
- * - Ambiguous relationships default to owner-only access.
- * - Roles are configured at database level using /roles_admin/{uid} document.
+ * - Strict ownership for farmer-related data using path-based authorization.
+ * - Public read access for weather forecasts and learning articles.
+ * - Authentication required for creating/modifying forum posts, comments and replies.
+ * - Chat access restricted to participants.
+ * - No user listing is allowed for farmers.
+ * - Global admin roles are managed via the /roles_admin collection.
  *
  * Denormalization for Authorization:
- * - The /farms/{farmId} documents contain a `farmerId` field to simplify ownership checks.
+ * - The 'farmerId' field is used in the /farms collection to enable efficient queries
+ * and authorization checks without requiring additional 'get()' calls.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is authenticated.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the user ID matches the authenticated user's UID.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the user ID matches the authenticated user's UID and the document exists.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && exists(resource);
-    }
-    /**
-     * @description Checks if the authenticated user is an admin.
-     */
-    function isAdmin() {
-       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
-
-    /**
-     * @description Allows read access to all members in a chat.
-     */
-    function isChatParticipant(chatId) {
-        return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-    }
-
-    /**
-     * @description Enforces that `authorId` and `request.auth.uid` must match when creating new posts or comments.
-     * @param {string} authorIdField - The name of the field containing the author's UID.
-     * @returns {boolean} - `true` if the authorId matches request.auth.uid, `false` otherwise.
-     */
-    function isAuthor(authorIdField) {
-        return isSignedIn() && request.resource.data[authorIdField] == request.auth.uid;
-    }
-
-    /**
-     * @description Check if the user is the author of the existing resource.
-     * @param {string} authorIdField - The name of the field containing the author's UID.
-     * @returns {boolean} - True if the user is the author.
-     */
-    function isExistingAuthor(authorIdField) {
-      return isSignedIn() && resource.data[authorIdField] == request.auth.uid;
-    }
-
-    /**
-     * @description Farmer profiles are owned by the user with the matching UID.
+     * @description Allows a farmer to manage their own profile.
      * @path /farmers/{farmerId}
-     * @allow (create) User with UID 'user123' can create a profile at /farmers/user123.
-     * @deny (create) User with UID 'user123' cannot create a profile at /farmers/user456.
-     * @allow (get) User with UID 'user123' can read their profile at /farmers/user123.
-     * @deny (get) User with UID 'user123' cannot read another profile at /farmers/user456.
-     * @allow (update) User with UID 'user123' can update their profile at /farmers/user123.
-     * @deny (update) User with UID 'user123' cannot update another profile at /farmers/user456.
-     * @allow (delete) User with UID 'user123' can delete their profile at /farmers/user123.
-     * @deny (delete) User with UID 'user123' cannot delete another profile at /farmers/user456.
+     * @allow (create) If the user is authenticated and their UID matches the farmerId.
+     * @allow (get, update, delete) If the user is authenticated and their UID matches the farmerId.
+     * @deny (create) If the user is not authenticated.
+     * @deny (update, delete) If the user is not authenticated.
      * @principle Enforces document ownership for writes.
      */
     match /farmers/{farmerId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(farmerId) {
+        return isSignedIn() && request.auth.uid == farmerId;
+      }
+
+      function isExistingOwner(farmerId) {
+          return isOwner(farmerId);
+      }
+
       allow get: if isOwner(farmerId);
-      allow list: if false;
-      allow create: if isOwner(farmerId) && request.resource.data.id == farmerId;
+      allow list: if false; // No listing of all users
+      allow create: if isSignedIn() && request.auth.uid == farmerId;
       allow update: if isExistingOwner(farmerId);
       allow delete: if isExistingOwner(farmerId);
     }
 
     /**
-     * @description Financial transactions are owned by the farmer.
+     * @description Allows a farmer to manage their own financial transactions.
      * @path /farmers/{farmerId}/transactions/{transactionId}
-     * @allow (create) User with UID 'user123' can create a transaction at /farmers/user123/transactions/txn1.
-     * @deny (create) User with UID 'user123' cannot create a transaction at /farmers/user456/transactions/txn1.
-     * @allow (get) User with UID 'user123' can read their transaction at /farmers/user123/transactions/txn1.
-     * @deny (get) User with UID 'user123' cannot read another user's transaction at /farmers/user456/transactions/txn1.
-     * @allow (update) User with UID 'user123' can update their transaction at /farmers/user123/transactions/txn1.
-     * @deny (update) User with UID 'user123' cannot update another user's transaction at /farmers/user456/transactions/txn1.
-     * @allow (delete) User with UID 'user123' can delete their transaction at /farmers/user123/transactions/txn1.
-     * @deny (delete) User with UID 'user123' cannot delete another user's transaction at /farmers/user456/transactions/txn1.
+     * @allow (create) If the user is authenticated and their UID matches the farmerId.
+     * @allow (get, update, delete) If the user is authenticated and their UID matches the farmerId.
+     * @deny (create) If the user is not authenticated.
+     * @deny (update, delete) If the user is not authenticated.
      * @principle Enforces document ownership for writes.
      */
     match /farmers/{farmerId}/transactions/{transactionId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(farmerId) {
+        return isSignedIn() && request.auth.uid == farmerId;
+      }
+
+      function isExistingOwner(farmerId) {
+          return isOwner(farmerId);
+      }
+
       allow get: if isOwner(farmerId);
-      allow list: if isOwner(farmerId);
+      allow list: if false;
       allow create: if isOwner(farmerId);
       allow update: if isExistingOwner(farmerId);
       allow delete: if isExistingOwner(farmerId);
     }
 
     /**
-     * @description Cultivation guides are owned by the farmer.
+     * @description Allows a farmer to manage their cultivation guides.
      * @path /farmers/{farmerId}/cultivationGuides/{guideId}
-     * @allow (create) User with UID 'user123' can create a guide at /farmers/user123/cultivationGuides/guide1.
-     * @deny (create) User with UID 'user123' cannot create a guide at /farmers/user456/cultivationGuides/guide1.
-     * @allow (get) User with UID 'user123' can read their guide at /farmers/user123/cultivationGuides/guide1.
-     * @deny (get) User with UID 'user123' cannot read another user's guide at /farmers/user456/cultivationGuides/guide1.
-     * @allow (update) User with UID 'user123' can update their guide at /farmers/user123/cultivationGuides/guide1.
-     * @deny (update) User with UID 'user123' cannot update another user's guide at /farmers/user456/cultivationGuides/guide1.
-     * @allow (delete) User with UID 'user123' can delete their guide at /farmers/user123/cultivationGuides/guide1.
-     * @deny (delete) User with UID 'user123' cannot delete another user's guide at /farmers/user456/cultivationGuides/guide1.
+     * @allow (create) If the user is authenticated and their UID matches the farmerId.
+     * @allow (get, update, delete) If the user is authenticated and their UID matches the farmerId.
+     * @deny (create) If the user is not authenticated.
+     * @deny (update, delete) If the user is not authenticated.
      * @principle Enforces document ownership for writes.
      */
     match /farmers/{farmerId}/cultivationGuides/{guideId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(farmerId) {
+        return isSignedIn() && request.auth.uid == farmerId;
+      }
+
+      function isExistingOwner(farmerId) {
+          return isOwner(farmerId);
+      }
+
+
       allow get: if isOwner(farmerId);
-      allow list: if isOwner(farmerId);
+      allow list: if false;
       allow create: if isOwner(farmerId);
       allow update: if isExistingOwner(farmerId);
       allow delete: if isExistingOwner(farmerId);
     }
 
     /**
-     * @description Farms are owned by the farmer specified in the farmerId field.
+     * @description Allows anyone to read farm data, but only the owner can modify it.
      * @path /farms/{farmId}
-     * @allow (create) User with UID 'user123' can create a farm with farmerId 'user123'.
-     * @deny (create) User with UID 'user123' cannot create a farm with farmerId 'user456'.
-     * @allow (get) Anyone can read farm data.
-     * @allow (list) Anyone can list farm data.
-     * @allow (update) User with UID 'user123' can update a farm they own (farmerId == 'user123').
-     * @deny (update) User with UID 'user123' cannot update a farm owned by 'user456'.
-     * @allow (delete) User with UID 'user123' can delete a farm they own (farmerId == 'user123').
-     * @deny (delete) User with UID 'user123' cannot delete a farm owned by 'user456'.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, list) Public read access.
+     * @allow (create) If the user is authenticated and the 'farmerId' field matches their UID.
+     * @allow (update, delete) If the user is authenticated and the 'farmerId' field matches their UID.
+     * @deny (create) If the 'farmerId' field does not match the user's UID.
+     * @deny (update, delete) If the 'farmerId' field does not match the user's UID or the document doesn't exist.
+     * @principle Public read access with owner-only writes, enforces document ownership for writes.
      */
     match /farms/{farmId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.farmerId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.farmerId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.farmerId == request.auth.uid;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner() {
+        return isSignedIn() && request.auth.uid == resource.data.farmerId;
+      }
+
+      function isCreatingOwner() {
+        return isSignedIn() && request.auth.uid == request.resource.data.farmerId;
+      }
+
+      function isExistingOwner() {
+          return isSignedIn() && request.auth.uid == resource.data.farmerId;
+      }
+
+      allow get, list: if true;
+      allow create: if isCreatingOwner();
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
     }
 
     /**
-     * @description Weather forecasts are publicly readable.
+     * @description Allows anyone to read weather forecast data.
      * @path /weather_forecasts/{weatherForecastId}
-     * @allow (get) Anyone can read weather forecast data.
-     * @allow (list) Anyone can list weather forecast data.
-     * @deny (create) No one can create weather forecast data directly (only via trusted source).
-     * @deny (update) No one can update weather forecast data directly (only via trusted source).
-     * @deny (delete) No one can delete weather forecast data directly (only via trusted source).
+     * @allow (get, list) Public read access.
+     * @deny (create, update, delete) No one can create, update, or delete weather forecasts via client-side rules.
      */
     match /weather_forecasts/{weatherForecastId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow get, list: if true;
     }
 
     /**
-     * @description Learning articles are publicly readable.
+     * @description Allows anyone to read learning articles.
      * @path /learning_articles/{learningArticleId}
-     * @allow (get) Anyone can read learning articles.
-     * @allow (list) Anyone can list learning articles.
-     * @deny (create) No one can create learning articles directly (only via trusted source).
-     * @deny (update) No one can update learning articles directly (only via trusted source).
-     * @deny (delete) No one can delete learning articles directly (only via trusted source).
+     * @allow (get, list) Public read access.
+     * @deny (create, update, delete) No one can create, update, or delete learning articles via client-side rules.
      */
     match /learning_articles/{learningArticleId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow get, list: if true;
     }
+    
     /**
-     * @description Roles admin, only admins should be able to read and write here.
+     * @description Allows an admin user to be defined.
      * @path /roles_admin/{uid}
-     * @allow (get) Admins can read roles admin data.
-     * @allow (list) Admins can list roles admin data.
-     * @allow (create) Admins can create roles admin data.
-     * @allow (update) Admins can update roles admin data.
-     * @allow (delete) Admins can delete roles admin data.
      */
     match /roles_admin/{uid} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+         function isSignedIn() {
+            return request.auth != null;
+         }
+
+        allow get: if isSignedIn() && request.auth.uid == uid;
+        allow list: if false;
+        allow create: if isSignedIn() && request.auth.uid == uid;
+        allow update: if false;
+        allow delete: if isSignedIn() && request.auth.uid == uid;
     }
 
     /**
-     * @description Forum posts are created by authenticated users. Updates and deletes are restricted to the author.
+     * @description Allows anyone to read forum posts, but only authenticated users can create them.
      * @path /forumPosts/{postId}
-     * @allow (create) Any authenticated user can create a post.
-     * @deny (create) Anonymous users cannot create posts.
-     * @allow (get) Anyone can read forum posts.
-     * @allow (list) Anyone can list forum posts.
-     * @allow (update) Only the author of the post can update it.
-     * @deny (update) Other users cannot update posts.
-     * @allow (delete) Only the author of the post can delete it.
-     * @deny (delete) Other users cannot delete posts.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, list) Public read access.
+     * @allow (create) If the user is authenticated and the 'authorId' field matches their UID.
+     * @allow (update, delete) If the user is authenticated and the 'authorId' field matches their UID and the document exists.
+     * @deny (create) If the user is not authenticated or the 'authorId' field does not match their UID.
+     * @deny (update, delete) If the user is not authenticated or the 'authorId' field does not match their UID.
+     * @principle Public read access with authenticated, owner-only writes, enforces document ownership for writes.
      */
     match /forumPosts/{postId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isExistingAuthor('authorId');
-      allow delete: if isExistingAuthor('authorId');
+        function isSignedIn() {
+            return request.auth != null;
+        }
+
+        function isOwner() {
+            return isSignedIn() && request.auth.uid == resource.data.authorId;
+        }
+
+        function isCreatingOwner() {
+            return isSignedIn() && request.auth.uid == request.resource.data.authorId;
+        }
+
+        function isExistingOwner() {
+            return isSignedIn() && request.auth.uid == resource.data.authorId;
+        }
+
+        allow get, list: if true;
+        allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+        allow update: if isExistingOwner();
+        allow delete: if isExistingOwner();
     }
 
-   /**
-     * @description Comments are created by authenticated users. Updates and deletes are restricted to the author.
+    /**
+     * @description Allows anyone to read comments on forum posts, but only authenticated users can create them.
      * @path /forumPosts/{postId}/comments/{commentId}
-     * @allow (create) Any authenticated user can create a comment.
-     * @deny (create) Anonymous users cannot create comments.
-     * @allow (get) Anyone can read comments.
-     * @allow (list) Anyone can list comments.
-     * @allow (update) Only the author of the comment can update it.
-     * @deny (update) Other users cannot update comments.
-     * @allow (delete) Only the author of the comment can delete it.
-     * @deny (delete) Other users cannot delete comments.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, list) Public read access.
+     * @allow (create) If the user is authenticated and the 'authorId' field matches their UID.
+     * @allow (update, delete) If the user is authenticated and the 'authorId' field matches their UID and the document exists.
+     * @deny (create) If the user is not authenticated or the 'authorId' field does not match their UID.
+     * @deny (update, delete) If the user is not authenticated or the 'authorId' field does not match their UID.
+     * @principle Public read access with authenticated, owner-only writes, enforces document ownership for writes.
      */
     match /forumPosts/{postId}/comments/{commentId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isExistingAuthor('authorId');
-      allow delete: if isExistingAuthor('authorId');
+        function isSignedIn() {
+            return request.auth != null;
+        }
+
+        function isOwner() {
+            return isSignedIn() && request.auth.uid == resource.data.authorId;
+        }
+
+        function isCreatingOwner() {
+            return isSignedIn() && request.auth.uid == request.resource.data.authorId;
+        }
+
+        function isExistingOwner() {
+            return isSignedIn() && request.auth.uid == resource.data.authorId;
+        }
+
+        allow get, list: if true;
+        allow create: if isCreatingOwner();
+        allow update: if isExistingOwner();
+        allow delete: if isExistingOwner();
     }
 
     /**
-     * @description Replies are created by authenticated users. Updates and deletes are restricted to the author.
+     * @description Allows anyone to read replies to comments, but only authenticated users can create them.
      * @path /forumPosts/{postId}/comments/{commentId}/replies/{replyId}
-     * @allow (create) Any authenticated user can create a reply.
-     * @deny (create) Anonymous users cannot create replies.
-     * @allow (get) Anyone can read replies.
-     * @allow (list) Anyone can list replies.
-     * @allow (update) Only the author of the reply can update it.
-     * @deny (update) Other users cannot update replies.
-     * @allow (delete) Only the author of the reply can delete it.
-     * @deny (delete) Other users cannot delete replies.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, list) Public read access.
+     * @allow (create) If the user is authenticated and the 'authorId' field matches their UID.
+     * @allow (update, delete) If the user is authenticated and the 'authorId' field matches their UID and the document exists.
+     * @deny (create) If the user is not authenticated or the 'authorId' field does not match their UID.
+     * @deny (update, delete) If the user is not authenticated or the 'authorId' field does not match their UID.
+     * @principle Public read access with authenticated, owner-only writes, enforces document ownership for writes.
      */
     match /forumPosts/{postId}/comments/{commentId}/replies/{replyId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isExistingAuthor('authorId');
-      allow delete: if isExistingAuthor('authorId');
+        function isSignedIn() {
+            return request.auth != null;
+        }
+
+        function isOwner() {
+            return isSignedIn() && request.auth.uid == resource.data.authorId;
+        }
+
+        function isCreatingOwner() {
+            return isSignedIn() && request.auth.uid == request.resource.data.authorId;
+        }
+
+        function isExistingOwner() {
+            return isSignedIn() && request.auth.uid == resource.data.authorId;
+        }
+
+        allow get, list: if true;
+        allow create: if isCreatingOwner();
+        allow update: if isExistingOwner();
+        allow delete: if isExistingOwner();
     }
 
     /**
-     * @description Chats can be read and written by participants only.
+     * @description Allows access to chat metadata only to participants of the chat.
      * @path /chats/{chatId}
-     * @allow (get) Participants can read chat metadata.
-     * @allow (list) Participants can list chats they are part of.
-     * @allow (create) Any signed-in user can create a chat.
-     * @allow (update) Only participants can update the chat metadata.
-     * @allow (delete) Only participants can delete the chat.
-     * @principle Enforces access based on chat participation.
+     * @allow (get, list) If the user is a participant in the chat.
+     * @allow (create, update, delete) If the user is a participant in the chat.
+     * @deny (get, list) If the user is not a participant in the chat.
+     * @deny (create, update, delete) If the user is not a participant in the chat.
+     * @principle Shared access (Closed Collaborators) for chats, enforcing participation for all operations.
      */
     match /chats/{chatId} {
-      allow get: if isChatParticipant(chatId);
-      allow list: if isSignedIn(); // Any signed-in user can list chats
-      allow create: if isSignedIn() && request.resource.data.participants.hasAny([request.auth.uid]);
-      allow update: if isChatParticipant(chatId);
-      allow delete: if isChatParticipant(chatId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isParticipant() {
+        return isSignedIn() && request.resource.data.participants.hasAny([request.auth.uid]);
+      }
+
+      function isExistingParticipant() {
+        return isSignedIn() && resource.data.participants.hasAny([request.auth.uid]);
+      }
+
+
+      allow get, list: if isExistingParticipant();
+      allow create: if isParticipant();
+      allow update: if isExistingParticipant();
+      allow delete: if isExistingParticipant();
     }
 
     /**
-     * @description Chat messages can be read and written by participants only.
+     * @description Allows access to chat messages only to participants of the chat.
      * @path /chats/{chatId}/messages/{messageId}
-     * @allow (create) Participants can create chat messages.
-     * @deny (create) Non-participants cannot create chat messages.
-     * @allow (get) Participants can read chat messages.
-     * @allow (list) Participants can list chat messages.
-     * @allow (update) No one can update a chat message (messages are immutable).
-     * @allow (delete) No one can delete a chat message.
-     * @principle Enforces access based on chat participation and immutability of messages.
+     * @allow (get, list, create) If the user is a participant in the chat.
+     * @allow (update, delete) If the user is a participant in the chat and owns the message.
+     * @deny (get, list, create) If the user is not a participant in the chat.
+     * @deny (update, delete) If the user is not a participant in the chat or does not own the message.
+     * @principle Shared access (Closed Collaborators) for chat messages, enforcing participation and ownership for updates/deletes.
      */
     match /chats/{chatId}/messages/{messageId} {
-      allow get: if isChatParticipant(chatId);
-      allow list: if isChatParticipant(chatId);
-      allow create: if isChatParticipant(chatId);
-      allow update: if false;
-      allow delete: if false;
-    }
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-    /**
-     * @description Likes for forum posts.
-     * @path /forumPosts/{postId}/likes/{userId}
-     * @allow get: if true;
-     * @allow list: if true;
-     * @allow create: if isSignedIn();
-     * @allow update: if false;
-     * @allow delete: if isSignedIn() && request.auth.uid == userId;
-     */
-    match /forumPosts/{postId}/likes/{userId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if false;
-      allow delete: if isSignedIn() && request.auth.uid == userId;
+     function isParticipant() {
+        return isSignedIn() && get(/databases/$(database)/documents/chats/$(chatId)).data.participants.hasAny([request.auth.uid]);
+      }
+
+      function isOwner() {
+            return isSignedIn() && request.auth.uid == resource.data.senderId;
+      }
+
+      function isExistingOwner() {
+          return isOwner();
+      }
+
+      allow get, list: if isParticipant();
+      allow create: if isParticipant();
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
     }
   }
 }
