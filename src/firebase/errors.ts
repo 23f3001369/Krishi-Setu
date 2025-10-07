@@ -5,6 +5,7 @@ type SecurityRuleContext = {
   path: string;
   operation: 'get' | 'list' | 'create' | 'update' | 'delete' | 'write';
   requestResourceData?: any;
+  message?: string;
 };
 
 interface FirebaseAuthToken {
@@ -116,8 +117,11 @@ export class FirestorePermissionError extends Error {
 
   constructor(context: SecurityRuleContext) {
     const requestObject = buildRequestObject(context);
-    super(buildErrorMessage(requestObject));
+    const message = context.message || buildErrorMessage(requestObject)
+    super(message);
     this.name = 'FirebaseError';
     this.request = requestObject;
   }
 }
+
+    
