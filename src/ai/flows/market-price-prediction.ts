@@ -33,6 +33,9 @@ const prompt = ai.definePrompt({
   name: 'marketPricePredictionPrompt',
   input: { schema: MarketPricePredictionInputSchema },
   output: { schema: MarketPricePredictionOutputSchema },
+  config: {
+    temperature: 0.2,
+  },
   prompt: `You are an expert agricultural market analyst in India. Your task is to predict the market price for a specific crop.
 
 Crop: {{{cropName}}}
