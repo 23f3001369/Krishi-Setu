@@ -24,11 +24,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Phone, Shield } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { Camera, Phone, Shield, Tractor, Sprout, MapPin, AreaChart, Edit, PlusCircle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, getDoc, collection, query, where } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
+
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -51,6 +54,89 @@ const passwordFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
+type Farm = {
+    id: string;
+    name: string;
+    size: number;
+    location: string;
+    mainCrops: string[];
+};
+
+function RegisteredFarmsCard() {
+    const { user } = useUser();
+    const db = useFirestore();
+
+    const farmsQuery = useMemoFirebase(() => {
+        if (!db || !user?.uid) return null;
+        return query(collection(db, 'farms'), where('farmerId', '==', user.uid));
+    }, [db, user?.uid]);
+
+    const { data: farms, isLoading } = useCollection<Farm>(farmsQuery);
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Tractor className="w-5 h-5 text-primary" />
+                    Registered Farms
+                </CardTitle>
+                <CardDescription>View and manage all your registered farms.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 p-6">
+                {isLoading ? (
+                    <>
+                        <Skeleton className="h-24 w-full" />
+                        <Skeleton className="h-24 w-full" />
+                    </>
+                ) : farms && farms.length > 0 ? (
+                    farms.map((farm, index) => (
+                       <React.Fragment key={farm.id}>
+                         {index > 0 && <Separator />}
+                         <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="font-semibold">{farm.name}</h3>
+                                <div className="text-sm text-muted-foreground mt-2 space-y-1">
+                                    <p className="flex items-center gap-2"><MapPin className="w-4 h-4" />{farm.location}</p>
+                                    <p className="flex items-center gap-2"><AreaChart className="w-4 h-4" />{farm.size} acres</p>
+                                    <p className="flex items-center gap-2"><Sprout className="w-4 h-4" />{farm.mainCrops.join(', ')}</p>
+                                </div>
+                            </div>
+                             <Button variant="outline" size="sm" asChild>
+                                <Link href={`/dashboard/farm-registration?id=${farm.id}`}>
+                                    <Edit className="w-3 h-3 mr-2" />
+                                    Edit
+                                </Link>
+                            </Button>
+                        </div>
+                       </React.Fragment>
+                    ))
+                ) : (
+                    <div className="text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+                        <p>You have not registered any farms yet.</p>
+                         <Button variant="secondary" className="mt-4" asChild>
+                            <Link href="/dashboard/farm-registration">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Register a Farm
+                            </Link>
+                        </Button>
+                    </div>
+                )}
+            </CardContent>
+            {farms && farms.length > 0 && (
+                 <CardFooter className="p-6 border-t">
+                    <Button variant="secondary" asChild>
+                        <Link href="/dashboard/farm-registration">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Register Another Farm
+                        </Link>
+                    </Button>
+                </CardFooter>
+            )}
+        </Card>
+    )
+}
+
 
 export default function ProfilePage() {
   const { toast } = useToast();
@@ -146,151 +232,158 @@ export default function ProfilePage() {
                 </p>
             </div>
 
-            <div className="grid gap-8">
-                <Card>
-                    <Form {...profileForm}>
-                    <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
-                        <CardHeader>
-                            <CardTitle>Account Information</CardTitle>
-                            <CardDescription>Update your personal details here.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6 p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="relative">
-                                    <Avatar className="h-20 w-20">
-                                        <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/avatar/200/200"} alt={user?.displayName || "Farmer"} />
-                                        <AvatarFallback>{user?.displayName?.charAt(0) || 'F'}</AvatarFallback>
-                                    </Avatar>
-                                    <Button size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full h-7 w-7">
-                                        <Camera className="h-4 w-4" />
-                                        <span className="sr-only">Change Photo</span>
-                                    </Button>
-                                </div>
-                                {isUserLoading ? (
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-6 w-32" />
-                                        <Skeleton className="h-4 w-48" />
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <h2 className="text-xl font-semibold">{profileForm.watch('name') || 'No Name'}</h2>
-                                        <p className="text-sm text-muted-foreground">{profileForm.watch('email')}</p>
-                                    </div>
-                                )}
-                            </div>
-                            <FormField
-                                control={profileForm.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Full Name</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Your Name" {...field} disabled={isUserLoading} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                            <FormField
-                                control={profileForm.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Email Address</FormLabel>
-                                    <FormControl>
-                                        <Input type="email" placeholder="your.email@example.com" {...field} disabled />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                            <FormField
-                                control={profileForm.control}
-                                name="mobile"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Mobile Number</FormLabel>
-                                    <FormControl>
+            <div className="grid gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2 grid gap-8">
+                    <Card>
+                        <Form {...profileForm}>
+                        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
+                            <CardHeader>
+                                <CardTitle>Account Information</CardTitle>
+                                <CardDescription>Update your personal details here.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6 p-6">
+                                <div className="flex items-center gap-4">
                                     <div className="relative">
-                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input placeholder="Your mobile number" {...field} className="pl-9" disabled={isUserLoading}/>
+                                        <Avatar className="h-20 w-20">
+                                            <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/avatar/200/200"} alt={user?.displayName || "Farmer"} />
+                                            <AvatarFallback>{user?.displayName?.charAt(0) || 'F'}</AvatarFallback>
+                                        </Avatar>
+                                        <Button size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full h-7 w-7">
+                                            <Camera className="h-4 w-4" />
+                                            <span className="sr-only">Change Photo</span>
+                                        </Button>
                                     </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                        </CardContent>
-                        <CardFooter className="p-6">
-                            <Button type="submit" disabled={isLoading || isUserLoading}>
-                                {isLoading ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                        </CardFooter>
-                    </form>
-                    </Form>
-                </Card>
+                                    {isUserLoading ? (
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-6 w-32" />
+                                            <Skeleton className="h-4 w-48" />
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <h2 className="text-xl font-semibold">{profileForm.watch('name') || 'No Name'}</h2>
+                                            <p className="text-sm text-muted-foreground">{profileForm.watch('email')}</p>
+                                        </div>
+                                    )}
+                                </div>
+                                <FormField
+                                    control={profileForm.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Full Name</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Your Name" {...field} disabled={isUserLoading} />
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                                <FormField
+                                    control={profileForm.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Email Address</FormLabel>
+                                        <FormControl>
+                                            <Input type="email" placeholder="your.email@example.com" {...field} disabled />
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                                <FormField
+                                    control={profileForm.control}
+                                    name="mobile"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Mobile Number</FormLabel>
+                                        <FormControl>
+                                        <div className="relative">
+                                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input placeholder="Your mobile number" {...field} className="pl-9" disabled={isUserLoading}/>
+                                        </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                            </CardContent>
+                            <CardFooter className="p-6">
+                                <Button type="submit" disabled={isLoading || isUserLoading}>
+                                    {isLoading ? 'Saving...' : 'Save Changes'}
+                                </Button>
+                            </CardFooter>
+                        </form>
+                        </Form>
+                    </Card>
 
-                <Card>
-                    <Form {...passwordForm}>
-                    <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Shield className="w-5 h-5 text-primary" />
-                                Security
-                            </CardTitle>
-                            <CardDescription>Change your password.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4 p-6">
-                            <FormField
-                                control={passwordForm.control}
-                                name="currentPassword"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Current Password</FormLabel>
-                                    <FormControl>
-                                        <Input type="password" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                            <FormField
-                                control={passwordForm.control}
-                                name="newPassword"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>New Password</FormLabel>
-                                    <FormControl>
-                                        <Input type="password" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                            <FormField
-                                control={passwordForm.control}
-                                name="confirmPassword"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Confirm New Password</FormLabel>
-                                    <FormControl>
-                                        <Input type="password" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                        </CardContent>
-                        <CardFooter className="p-6">
-                            <Button type="submit" disabled={isPasswordLoading}>
-                                {isPasswordLoading ? 'Updating...' : 'Change Password'}
-                            </Button>
-                        </CardFooter>
-                    </form>
-                    </Form>
-                </Card>
+                    <Card>
+                        <Form {...passwordForm}>
+                        <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Shield className="w-5 h-5 text-primary" />
+                                    Security
+                                </CardTitle>
+                                <CardDescription>Change your password.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4 p-6">
+                                <FormField
+                                    control={passwordForm.control}
+                                    name="currentPassword"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Current Password</FormLabel>
+                                        <FormControl>
+                                            <Input type="password" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                                <FormField
+                                    control={passwordForm.control}
+                                    name="newPassword"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>New Password</FormLabel>
+                                        <FormControl>
+                                            <Input type="password" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                                <FormField
+                                    control={passwordForm.control}
+                                    name="confirmPassword"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Confirm New Password</FormLabel>
+                                        <FormControl>
+                                            <Input type="password" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                            </CardContent>
+                            <CardFooter className="p-6">
+                                <Button type="submit" disabled={isPasswordLoading}>
+                                    {isPasswordLoading ? 'Updating...' : 'Change Password'}
+                                </Button>
+                            </CardFooter>
+                        </form>
+                        </Form>
+                    </Card>
+                </div>
+                <div className="lg:col-span-1">
+                    <RegisteredFarmsCard />
+                </div>
             </div>
         </div>
     </>
   );
 }
+
+    
