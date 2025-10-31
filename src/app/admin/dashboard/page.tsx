@@ -26,7 +26,7 @@ export default function AdminDashboardPage() {
             <p className="text-muted-foreground">Welcome to the AgriAssist admin panel. Manage users, content, and system settings from here.</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle>User Management</CardTitle>
@@ -36,18 +36,6 @@ export default function AdminDashboardPage() {
                   <p className="text-sm text-muted-foreground">View, manage, and moderate farmer accounts.</p>
                   <Button variant="outline" className="mt-4 w-full" asChild>
                     <Link href="/admin/users">Manage Users</Link>
-                  </Button>
-              </CardContent>
-          </Card>
-          <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle>Content Management</CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent className="p-6">
-                  <p className="text-sm text-muted-foreground">Manage articles and videos in the Learning Hub.</p>
-                  <Button variant="outline" className="mt-4 w-full" asChild>
-                    <Link href="/admin/content">Manage Content</Link>
                   </Button>
               </CardContent>
           </Card>

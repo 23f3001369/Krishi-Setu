@@ -19,7 +19,6 @@ import {
 const navItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/admin/users', icon: Users, label: 'User Management' },
-  { href: '/admin/content', icon: BookOpen, label: 'Content Management' },
   { href: '/admin/settings', icon: Settings, label: 'System Settings' },
 ];
 
