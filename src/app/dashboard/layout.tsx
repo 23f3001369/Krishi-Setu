@@ -64,11 +64,6 @@ const navItems = [
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
 
-const upcomingFeatures = [
-    { href: '/dashboard/agri-bazar', icon: ShoppingCart, label: 'Agri Bazar' },
-    { href: '/dashboard/krishi-yantra-mitra', icon: Tractor, label: 'Krishi Yantra Mitra' },
-]
-
 const logoutItem = { href: '/', icon: LogOut, label: 'Log out' };
 
 export default function DashboardLayout({
@@ -124,24 +119,6 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-             <SidebarGroup>
-                <SidebarGroupLabel>Upcoming Features</SidebarGroupLabel>
-                 <SidebarMenu>
-                    {upcomingFeatures.map((item) => (
-                        <SidebarMenuItem key={item.href}>
-                        <Link href={item.href}>
-                            <SidebarMenuButton
-                            isActive={pathname === item.href}
-                            tooltip={item.label}
-                            >
-                            <item.icon />
-                            <span>{item.label}</span>
-                            </SidebarMenuButton>
-                        </Link>
-                        </SidebarMenuItem>
-                    ))}
-                </SidebarMenu>
-            </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
               <SidebarMenu>
@@ -215,25 +192,6 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
                    {item.badge && <span className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{item.badge}</span>}
                 </Link>
               ))}
-
-              <Separator className="my-2" />
-              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase">Upcoming</p>
-                {upcomingFeatures.map((item) => (
-                    <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2 transition-all',
-                        pathname === item.href ? 'text-primary bg-muted' : 'text-muted-foreground hover:text-primary'
-                    )}
-                    >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                    </Link>
-                ))}
-
-
             </nav>
             <div className="mt-auto p-4 border-t">
                  <Link
