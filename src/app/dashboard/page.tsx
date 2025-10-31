@@ -1,9 +1,9 @@
 
 
 import WeatherForecast from "@/components/dashboard/weather-forecast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Leaf, Sun, Wind, Tractor, ShoppingCart } from "lucide-react";
+import { Leaf, Sun, Wind, Tractor, ShoppingCart, Users, Database } from "lucide-react";
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -55,10 +55,17 @@ export default function DashboardPage() {
           <Card className="bg-muted/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><ShoppingCart /> Agri Bazar</CardTitle>
-              <CardDescription>Find nearby shops for your agricultural needs.</CardDescription>
+              <CardDescription>A marketplace to find nearby shops for all your agricultural needs.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">This feature will allow you to search for local suppliers of seeds, fertilizers, and other farm essentials.</p>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-sm">What it does:</h4>
+                <p className="text-sm text-muted-foreground">Agri Bazar will allow you to search for local suppliers of seeds, fertilizers, and other farm essentials, view their product categories, and get contact information.</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm">How it will be implemented:</h4>
+                <p className="text-sm text-muted-foreground">This feature will be built using a client-side interface to search and filter a list of mock supplier data. In a full implementation, this data would come from a Firestore database collection of registered suppliers.</p>
+              </div>
             </CardContent>
             <CardFooter>
                <Button variant="secondary" asChild>
@@ -69,10 +76,17 @@ export default function DashboardPage() {
           <Card className="bg-muted/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Tractor /> Krishi Yantra Mitra</CardTitle>
-              <CardDescription>Peer-to-peer equipment rental portal.</CardDescription>
+              <CardDescription>A peer-to-peer equipment rental portal to book machines on demand.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Rent out your idle equipment or book machines on demand from fellow farmers in your area.</p>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-sm">What it does:</h4>
+                <p className="text-sm text-muted-foreground">This feature will connect farmers, allowing them to rent out their idle equipment or book machines from others in their area.</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm">How it will be implemented:</h4>
+                 <p className="text-sm text-muted-foreground">The implementation will involve creating a new Firestore collection for equipment listings. Farmers will be able to add, view, and search for equipment, with rules ensuring they can only manage their own listings.</p>
+              </div>
             </CardContent>
              <CardFooter>
                <Button variant="secondary" asChild>
