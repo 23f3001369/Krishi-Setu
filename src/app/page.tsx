@@ -79,21 +79,21 @@ export default function Home() {
             </div>
             <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3 lg:max-w-none mt-12">
               <div className="grid gap-1 text-center p-6 rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
-                <h3 className="text-lg font-bold">AI Crop Recommendation</h3>
+                <h3 className="text-lg font-bold">Suite of AI Tools</h3>
                 <p className="text-sm text-muted-foreground">
-                  Leverage our AI to get recommendations for the best crops to plant based on your farm's unique conditions.
+                  From crop recommendations and disease detection to market price predictions, our AI is here to help you make smarter decisions.
                 </p>
               </div>
               <div className="grid gap-1 text-center p-6 rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
-                <h3 className="text-lg font-bold">Real-time Weather Forecasts</h3>
+                <h3 className="text-lg font-bold">Krishi Khata</h3>
                 <p className="text-sm text-muted-foreground">
-                  Stay ahead of the weather with up-to-date forecasts and alerts, helping you protect your crops.
+                  Manage your farm's finances with our easy-to-use digital ledger. Track income and expenses to understand your profitability.
                 </p>
               </div>
               <div className="grid gap-1 text-center p-6 rounded-lg bg-background shadow-sm hover:shadow-md transition-shadow">
-                <h3 className="text-lg font-bold">AgriVaani Learning Hub</h3>
+                <h3 className="text-lg font-bold">Community Forum</h3>
                 <p className="text-sm text-muted-foreground">
-                  Access a rich library of articles, videos, and Q&amp;As to expand your farming knowledge.
+                   Connect with a community of fellow farmers. Ask questions, share your experiences, and learn from others.
                 </p>
               </div>
             </div>
