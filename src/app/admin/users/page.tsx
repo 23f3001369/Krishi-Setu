@@ -176,7 +176,6 @@ export default function UserManagementPage() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead className="hidden sm:table-cell">Farm Name</TableHead>
-                  <TableHead className="hidden md:table-cell">Joined</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
                   </TableHead>
@@ -188,7 +187,6 @@ export default function UserManagementPage() {
                         <TableRow key={i}>
                             <TableCell><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-full" /><div className="space-y-1"><Skeleton className="h-5 w-32" /><Skeleton className="h-4 w-40" /></div></div></TableCell>
                             <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
-                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                             <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                         </TableRow>
                     ))
@@ -209,7 +207,6 @@ export default function UserManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{user.farmName}</TableCell>
-                    <TableCell className="hidden md:table-cell">{user.createdAt ? user.createdAt.toDate().toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
