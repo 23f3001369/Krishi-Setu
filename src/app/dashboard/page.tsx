@@ -1,7 +1,10 @@
 
+
 import WeatherForecast from "@/components/dashboard/weather-forecast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, Sun, Wind } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Leaf, Sun, Wind, Tractor, ShoppingCart } from "lucide-react";
+import Link from 'next/link';
 
 export default function DashboardPage() {
   return (
@@ -45,6 +48,41 @@ export default function DashboardPage() {
       </div>
 
       <WeatherForecast />
+      
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight font-headline mb-4">Upcoming Features</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="bg-muted/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><ShoppingCart /> Agri Bazar</CardTitle>
+              <CardDescription>Find nearby shops for your agricultural needs.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">This feature will allow you to search for local suppliers of seeds, fertilizers, and other farm essentials.</p>
+            </CardContent>
+            <CardFooter>
+               <Button variant="secondary" asChild>
+                <Link href="/dashboard/agri-bazar">Explore</Link>
+               </Button>
+            </CardFooter>
+          </Card>
+          <Card className="bg-muted/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Tractor /> Krishi Yantra Mitra</CardTitle>
+              <CardDescription>Peer-to-peer equipment rental portal.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">Rent out your idle equipment or book machines on demand from fellow farmers in your area.</p>
+            </CardContent>
+             <CardFooter>
+               <Button variant="secondary" asChild>
+                 <Link href="/dashboard/krishi-yantra-mitra">Explore</Link>
+               </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+
     </div>
   );
 }

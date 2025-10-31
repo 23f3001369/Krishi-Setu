@@ -16,7 +16,6 @@ import {
   Wallet,
   ClipboardList,
   Users,
-  ShoppingCart,
   MessageSquare,
   Bell,
   List,
@@ -58,8 +57,6 @@ const navItems = [
   { href: '/dashboard/market-price-prediction', icon: TrendingUp, label: 'Market Price AI' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'AgriVaani' },
   { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
-  { href: '/dashboard/agri-bazar', icon: ShoppingCart, label: 'Agri Bazar' },
-  { href: '/dashboard/krishi-yantra-mitra', icon: Tractor, label: 'Krishi Yantra Mitra' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
 
