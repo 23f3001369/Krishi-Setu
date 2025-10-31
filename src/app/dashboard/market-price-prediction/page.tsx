@@ -30,7 +30,6 @@ import {
 import {
   marketPricePrediction,
 } from '@/ai/flows/market-price-prediction';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { z } from 'zod';
 
@@ -48,8 +47,6 @@ export const MarketPricePredictionOutputSchema = z.object({
 });
 export type MarketPricePredictionOutput = z.infer<typeof MarketPricePredictionOutputSchema>;
 
-
-const heroImage = PlaceHolderImages.find(p => p.id === 'market-price-hero');
 
 export default function MarketPricePredictionPage() {
   const [formData, setFormData] = useState({
@@ -81,7 +78,7 @@ export default function MarketPricePredictionPage() {
       setResult(prediction);
     } catch (e) {
       console.error(e);
-      setError('Failed to get a price prediction. The AI model might be busy. Please try again.');
+      setError('Failed to get a price prediction. The model might be busy. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -99,10 +96,10 @@ export default function MarketPricePredictionPage() {
     <div className="space-y-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">
-          AI Mandi Price Prediction
+          Mandi Price Prediction
         </h1>
         <p className="text-muted-foreground">
-          Get AI-powered forecasts based on data from well-known agricultural market websites.
+          Get forecasts based on data from well-known agricultural market websites.
         </p>
       </div>
 
@@ -110,7 +107,7 @@ export default function MarketPricePredictionPage() {
         <CardHeader>
           <CardTitle>Get Price Prediction</CardTitle>
           <CardDescription>
-            Enter a crop and market to get a price forecast from our AI market analyst.
+            Enter a crop and market to get a price forecast from our market analyst.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
@@ -180,7 +177,7 @@ export default function MarketPricePredictionPage() {
             </div>
             <Alert>
               <Lightbulb className="h-4 w-4" />
-              <AlertTitle>AI Analyst's Reasoning</AlertTitle>
+              <AlertTitle>Analyst's Reasoning</AlertTitle>
               <AlertDescription>{result.reasoning}</AlertDescription>
             </Alert>
 
@@ -188,7 +185,7 @@ export default function MarketPricePredictionPage() {
                 <Bot className="h-4 w-4" />
                 <AlertTitle>Disclaimer</AlertTitle>
                 <AlertDescription>
-                    This AI-generated prediction is for informational purposes only and is not financial advice. Market conditions can change rapidly.
+                    This generated prediction is for informational purposes only and is not financial advice. Market conditions can change rapidly.
                 </AlertDescription>
             </Alert>
           </CardContent>
