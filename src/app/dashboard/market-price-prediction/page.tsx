@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Card,
@@ -32,6 +32,12 @@ import {
 } from '@/ai/flows/market-price-prediction';
 import { Skeleton } from '@/components/ui/skeleton';
 import { z } from 'zod';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 // Define schemas and types here, in the client component.
 export const MarketPricePredictionInputSchema = z.object({
@@ -43,6 +49,11 @@ export type MarketPricePredictionInput = z.infer<typeof MarketPricePredictionInp
 export const MarketPricePredictionOutputSchema = z.object({
   predictedPrice: z.string().describe('The predicted price range in Indian Rupees (Rs.) per standard unit (e.g., "Rs. 1800 - Rs. 2200 per quintal").'),
   trend: z.enum(['upward', 'downward', 'stable']).describe('The anticipated price trend over the next 2-4 weeks.'),
+  trendConfidence: z.object({
+      upward: z.number().describe('The confidence percentage (0-100) that the price trend will be upward.'),
+      downward: z.number().describe('The confidence percentage (0-100) that the price trend will be downward.'),
+      stable: z.number().describe('The confidence percentage (0-100) that the price trend will be stable.'),
+  }).describe('The confidence levels for each possible trend. The sum must be 100.'),
   reasoning: z.string().describe('A brief explanation for the prediction, mentioning factors like seasonality, demand, and recent events.'),
 });
 export type MarketPricePredictionOutput = z.infer<typeof MarketPricePredictionOutputSchema>;
@@ -90,6 +101,21 @@ export default function MarketPricePredictionPage() {
       case 'downward': return <TrendingDown className="h-4 w-4 text-red-500" />;
       default: return <CircleDot className="h-4 w-4 text-yellow-500" />;
     }
+  };
+
+  const trendChartData = useMemo(() => {
+    if (!result?.trendConfidence) return [];
+    return [
+      { name: 'Upward', value: result.trendConfidence.upward, fill: 'var(--chart-1)' },
+      { name: 'Downward', value: result.trendConfidence.downward, fill: 'var(--chart-2)' },
+      { name: 'Stable', value: result.trendConfidence.stable, fill: 'var(--chart-3)' },
+    ].filter(item => item.value > 0);
+  }, [result]);
+
+  const chartConfig = {
+      upward: { label: 'Upward', color: 'hsl(var(--chart-1))' },
+      downward: { label: 'Downward', color: 'hsl(var(--chart-2))' },
+      stable: { label: 'Stable', color: 'hsl(var(--chart-3))' },
   };
 
   return (
@@ -162,19 +188,41 @@ export default function MarketPricePredictionPage() {
             <CardTitle>Prediction for {formData.cropName} in {formData.marketLocation}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
-            <div className="grid gap-4 sm:grid-cols-2">
+             <div className="grid gap-4 sm:grid-cols-2">
                 <div className="p-4 rounded-lg bg-muted flex flex-col items-center justify-center text-center">
                      <p className="text-sm text-muted-foreground flex items-center gap-1"><DollarSign className="w-3 h-3" /> Predicted Price</p>
                      <p className="text-2xl font-bold text-primary">{result.predictedPrice}</p>
                 </div>
                  <div className="p-4 rounded-lg bg-muted flex flex-col items-center justify-center text-center">
-                     <p className="text-sm text-muted-foreground flex items-center gap-1"><BarChart className="w-3 h-3" /> Next 2-4 Week Trend</p>
+                     <p className="text-sm text-muted-foreground flex items-center gap-1"><BarChart className="w-3 h-3" /> Most Likely Trend</p>
                      <p className="text-2xl font-bold capitalize flex items-center gap-2">
                         <TrendIcon trend={result.trend} />
                         {result.trend}
                     </p>
                 </div>
             </div>
+
+            {trendChartData.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Trend Confidence</CardTitle>
+                        <CardDescription>Confidence level for each potential price trend.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 flex items-center justify-center">
+                        <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
+                            <PieChart>
+                                <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+                                <Pie data={trendChartData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
+                                    {trendChartData.map((entry) => (
+                                        <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                                    ))}
+                                </Pie>
+                            </PieChart>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+            )}
+
             <Alert>
               <Lightbulb className="h-4 w-4" />
               <AlertTitle>Analyst's Reasoning</AlertTitle>
@@ -206,6 +254,7 @@ function ResultSkeleton() {
                     <Skeleton className="h-20 w-full" />
                     <Skeleton className="h-20 w-full" />
                 </div>
+                <Skeleton className="h-40 w-full" />
                 <div className="space-y-2">
                     <Skeleton className="h-5 w-1/4" />
                     <Skeleton className="h-10 w-full" />

@@ -23,9 +23,9 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 120 61% 40%;
-    --chart-1: 120 61% 40%;
-    --chart-2: 39 100% 50%;
-    --chart-3: 197 37% 24%;
+    --chart-1: 120 70% 50%; /* Green for Upward */
+    --chart-2: 0 70% 50%; /* Red for Downward */
+    --chart-3: 48 96% 50%; /* Yellow for Stable */
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
@@ -51,9 +51,9 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 120 61% 50%;
-    --chart-1: 120 61% 50%;
-    --chart-2: 39 100% 50%;
-    --chart-3: 30 80% 55%;
+    --chart-1: 120 70% 60%; /* Lighter Green for Upward */
+    --chart-2: 0 70% 60%; /* Lighter Red for Downward */
+    --chart-3: 48 96% 60%; /* Lighter Yellow for Stable */
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
