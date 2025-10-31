@@ -101,16 +101,16 @@ export default function MarketPricePredictionPage() {
     switch (trend) {
       case 'upward': return <TrendingUp className="h-4 w-4 text-green-500" />;
       case 'downward': return <TrendingDown className="h-4 w-4 text-red-500" />;
-      default: return <CircleDot className="h-4 w-4 text-yellow-500" />;
+      default: return <CircleDot className="h-4 w-4 text-blue-500" />;
     }
   };
 
   const trendChartData = useMemo(() => {
     if (!result?.trendConfidence) return [];
     return [
-      { name: 'Upward', value: result.trendConfidence.upward, fill: 'var(--chart-1)' },
-      { name: 'Downward', value: result.trendConfidence.downward, fill: 'var(--chart-2)' },
-      { name: 'Stable', value: result.trendConfidence.stable, fill: 'var(--chart-3)' },
+      { name: 'Upward', value: result.trendConfidence.upward, fill: 'hsl(var(--chart-1))' },
+      { name: 'Downward', value: result.trendConfidence.downward, fill: 'hsl(var(--chart-2))' },
+      { name: 'Stable', value: result.trendConfidence.stable, fill: 'hsl(var(--chart-3))' },
     ].filter(item => item.value > 0);
   }, [result]);
 
@@ -122,6 +122,7 @@ export default function MarketPricePredictionPage() {
 
   const RADIAN = Math.PI / 180;
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+    if (percent === 0) return null;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -148,7 +149,7 @@ export default function MarketPricePredictionPage() {
         <CardHeader>
           <CardTitle>Get Price Prediction</CardTitle>
           <CardDescription>
-            Enter a crop and market to get a price forecast from our market analyst.
+            Enter a crop and market to get a forecast from our market analyst.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
