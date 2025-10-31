@@ -51,7 +51,7 @@ const getWeatherForecastFlow = ai.defineFlow(
   async ({ lat, lon }) => {
     const apiKey = process.env.OPENWEATHER_API_KEY;
     if (!apiKey || apiKey === 'YOUR_OPENWEATHER_API_KEY') {
-      throw new Error('OpenWeather API key is not configured.');
+      throw new Error('The OpenWeather API key is not configured in the environment variables. Please add it to your Vercel project settings.');
     }
 
     const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
