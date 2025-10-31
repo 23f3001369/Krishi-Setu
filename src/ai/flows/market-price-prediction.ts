@@ -8,10 +8,28 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { getCropPrice } from '@/lib/market-data';
 
 // Input and Output schemas are now defined in the client component
 // to adhere to 'use server' constraints.
 import type { MarketPricePredictionInput, MarketPricePredictionOutput } from '@/app/dashboard/market-price-prediction/page';
+
+
+const getMarketPriceTool = ai.defineTool(
+    {
+        name: 'getMarketPrice',
+        description: 'Get the current market price of a specific crop in a given location.',
+        inputSchema: z.object({
+            crop: z.string().describe('The name of the crop.'),
+            location: z.string().describe('The market location (e.g., state or city).'),
+        }),
+        outputSchema: z.object({
+            price: z.number().describe('The current price per quintal.'),
+        }),
+    },
+    async (input) => getCropPrice(input.crop, input.location)
+);
+
 
 export async function marketPricePrediction(input: MarketPricePredictionInput): Promise<MarketPricePredictionOutput> {
   return marketPricePredictionFlow(input);
@@ -33,16 +51,19 @@ const prompt = ai.definePrompt({
   name: 'marketPricePredictionPrompt',
   input: { schema: MarketPricePredictionInputSchema },
   output: { schema: MarketPricePredictionOutputSchema },
+  tools: [getMarketPriceTool],
   config: {
     temperature: 0.2,
   },
   prompt: `You are an expert agricultural market analyst in India. Your task is to predict the market price for a specific crop.
 
+First, use the getMarketPrice tool to fetch the current price for the given crop and location.
+
 Crop: {{{cropName}}}
 Market/Region: {{{marketLocation}}}
 
-Based on real-time data from commodityonline.com, current market dynamics, and seasonal trends, provide the following:
-1.  A predicted price range in Indian Rupees (Rs) per quintal.
+Based on the current price obtained from the tool, and considering market dynamics and seasonal trends, provide the following:
+1.  A predicted price range in Indian Rupees (Rs) per quintal for the next 2-4 weeks. This range should be anchored realistically around the current price.
 2.  The likely price trend for the next 2-4 weeks (upward, downward, or stable).
 3.  A concise reasoning for your prediction, considering factors like seasonality, demand, supply, and recent weather events or government policies.
 
