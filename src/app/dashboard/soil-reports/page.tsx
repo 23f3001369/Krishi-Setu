@@ -15,9 +15,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, Timestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FlaskConical, FileText, Image as ImageIcon, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
@@ -36,10 +35,18 @@ export default function SoilReportsPage() {
 
   const reportsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
-    return query(collection(db, 'farmers', user.uid, 'soilReports'), orderBy('createdAt', 'desc'));
+    // Removed orderBy from the query to prevent indexing issues.
+    // Sorting will be handled on the client-side.
+    return query(collection(db, 'farmers', user.uid, 'soilReports'));
   }, [db, user?.uid]);
 
   const { data: reports, isLoading } = useCollection<SoilReport>(reportsQuery);
+
+  // Sort reports on the client side after fetching
+  const sortedReports = React.useMemo(() => {
+    if (!reports) return [];
+    return [...reports].sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
+  }, [reports]);
 
   return (
     <div className="space-y-8">
@@ -64,9 +71,9 @@ export default function SoilReportsPage() {
             </div>
           )}
 
-          {!isLoading && reports && reports.length > 0 ? (
+          {!isLoading && sortedReports && sortedReports.length > 0 ? (
             <Accordion type="single" collapsible className="w-full">
-              {reports.map((report) => (
+              {sortedReports.map((report) => (
                 <AccordionItem value={report.id} key={report.id}>
                   <AccordionTrigger>
                     <div className="flex items-center gap-4 text-left">
