@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Defines security rules for the AgriVaani Firestore database.
  *
@@ -17,22 +18,18 @@
  * - /forumPosts/{postId}: Community forum posts.
  * - /forumPosts/{postId}/comments/{commentId}: Comments on forum posts.
  * - /forumPosts/{postId}/comments/{commentId}/replies/{replyId}: Replies to comments.
- * - /chats/{chatId}: Chat conversations between users.
- * - /chats/{chatId}/messages/{messageId}: Messages within a chat conversation.
  *
  * Key Security Decisions:
  * - Strict owner-only access for farmer profiles and their subcollections.
  * - Public read access for farm data, weather forecasts, and learning articles, with owner-only writes for farm data.
  * - Admin-only access for managing admin roles.
  * - Public read access for forum posts, comments, and replies, with author-only creation and deletion.
- * - Chat access restricted to participants of the chat.
  * - No client-side updates or deletes for weather forecasts and learning articles.
  * - Listing of admin UIDs is explicitly disallowed for security.
  *
  * Denormalization for Authorization:
  * - Farm documents include a `farmerId` field to allow for efficient ownership checks without additional reads.
  * - Forum posts include `authorId`, which is used for validating ownership.
- * - Chat documents include an array of `participants` UIDs, as this information cannot be determined from the path.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -303,36 +300,6 @@ service cloud.firestore {
             allow update: if false;
           }
         }
-      }
-    }
-
-    /**
-     * @description Manages access to chat conversations.
-     * @path /chats/{chatId}
-     * @allow (read) The user can read if the signed in user is in participants array.
-     * @allow (update) The user can update if the signed in user is in participants array.
-     * @allow (create) The user can create if the signed in user is in participants array and participants size is greater than or equal to 2.
-     * @deny (delete) The user can not delete.
-     * @principle A user can only access a chat if their UID is in the 'participants' array.
-     */
-    match /chats/{chatId} {
-      allow read, update: if isSignedIn() && request.auth.uid in resource.data.participants; // Read/update if participant
-      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participants // Create if requesting user is a participant
-                       && request.resource.data.participants.size() >= 2; // And has at least 2 participants (for 1:1 chat setup)
-      allow delete: if false; // Chats are typically not deleted by users directly
-
-      /**
-       * @description Manages access to messages within a chat conversation.
-       * @path /chats/{chatId}/messages/{messageId}
-       * @allow (read) The user can read if the signed in user is in participants array of the chat.
-       * @allow (create) The user can create if the signed in user is in participants array of the chat.
-       * @deny (update) The user can not update.
-       * @deny (delete) The user can not delete.
-       * @principle Only participants of the parent chat can read/create messages. Messages are immutable.
-       */
-      match /messages/{messageId} {
-        allow read, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
-        allow update, delete: if false; // Messages are immutable after sending
       }
     }
   }

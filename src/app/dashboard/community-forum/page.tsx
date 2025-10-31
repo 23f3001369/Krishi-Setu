@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -646,13 +647,6 @@ function PostCard({ post }: { post: EnrichedPost }) {
                             <MessageSquare size={16} /> {post.comments} Comment{post.comments === 1 ? '' : 's'}
                         </Button>
                     </div>
-                    {user && user?.uid !== post.authorId && (
-                        <Button size="sm" asChild>
-                            <Link href={`/dashboard/chat?with=${post.authorId}`}>
-                                <MessageSquare className="mr-2 h-4 w-4"/> Chat with Author
-                            </Link>
-                        </Button>
-                    )}
                 </div>
 
                  {showComments && (
