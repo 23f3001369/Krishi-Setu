@@ -32,9 +32,9 @@
     },
     {
       "id": "hero-image",
-      "description": "Hero image for the landing page showing a lush green field.",
-      "imageUrl": "https://images.unsplash.com/photo-1564245598219-2edc8220lba8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxncmVlbiUyMGZhcm18ZW58MHx8fHwxNzU5MTE4NzkwfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "green farm"
+      "description": "A placeholder image of a farm.",
+      "imageUrl": "https://images.unsplash.com/photo-1529313780224-1a12b68bed16?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxmYXJtfGVufDB8fHx8MTc2MTk0OTk5Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "farm"
     },
     {
       "id": "farm-photo-1",
