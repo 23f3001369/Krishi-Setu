@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A server-side flow to fetch weather data from OpenWeather API.
@@ -53,7 +54,7 @@ const getWeatherForecastFlow = ai.defineFlow(
       throw new Error('OpenWeather API key is not configured.');
     }
 
-    const url = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly&appid=${apiKey}&units=metric`;
+    const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -61,26 +62,57 @@ const getWeatherForecastFlow = ai.defineFlow(
     }
     const data = await response.json();
 
-    const getDayString = (dt: number, index: number) => {
+    if (data.cod !== "200") {
+        throw new Error(data.message || "City not found");
+    }
+
+    const getDayString = (date: Date, index: number) => {
         if (index === 0) return 'Today';
         if (index === 1) return 'Tomorrow';
-        return new Date(dt * 1000).toLocaleDateString('en-US', { weekday: 'short' });
+        return date.toLocaleDateString('en-US', { weekday: 'short' });
     }
+
+    // Process forecast data to group by day
+    const dailyData: { [key: string]: { temps: number[], icons: string[] } } = {};
+    data.list.forEach((item: any) => {
+        const date = new Date(item.dt * 1000).toISOString().split('T')[0];
+        if (!dailyData[date]) {
+            dailyData[date] = { temps: [], icons: [] };
+        }
+        dailyData[date].temps.push(item.main.temp);
+        dailyData[date].icons.push(item.weather[0].icon);
+    });
+
+    const dailyForecasts = Object.keys(dailyData).slice(0, 7).map((date, index) => {
+        const dayInfo = dailyData[date];
+        const avgTemp = dayInfo.temps.reduce((a, b) => a + b, 0) / dayInfo.temps.length;
+        
+        // Find most frequent icon for the day
+        const iconCounts = dayInfo.icons.reduce((acc, icon) => {
+            acc[icon] = (acc[icon] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        const mostFrequentIcon = Object.keys(iconCounts).reduce((a, b) => iconCounts[a] > iconCounts[b] ? a : b);
+
+        return {
+            day: getDayString(new Date(date), index),
+            temp: Math.round(avgTemp),
+            icon: mostFrequentIcon.replace('n', 'd'), // Prefer day icons
+        };
+    });
+
+    const currentData = data.list[0];
 
     return {
       current: {
-        temp: Math.round(data.current.temp),
-        condition: data.current.weather[0].main,
-        icon: data.current.weather[0].icon,
-        wind: Math.round(data.current.wind_speed * 3.6), // m/s to km/h
-        humidity: data.current.humidity,
+        temp: Math.round(currentData.main.temp),
+        condition: currentData.weather[0].main,
+        icon: currentData.weather[0].icon,
+        wind: Math.round(currentData.wind.speed * 3.6), // m/s to km/h
+        humidity: currentData.main.humidity,
       },
-      daily: data.daily.slice(0, 7).map((day: any, index: number) => ({
-        day: getDayString(day.dt, index),
-        temp: Math.round(day.temp.day),
-        icon: day.weather[0].icon,
-      })),
-      alerts: (data.alerts || []).map((alert: any) => ({
+      daily: dailyForecasts,
+      alerts: (data.alerts || []).map((alert: any) => ({ // This might be empty with the new endpoint
         title: alert.event,
         description: alert.description,
       })),
