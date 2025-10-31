@@ -56,9 +56,9 @@
     },
     {
       "id": "market-price-hero",
-      "description": "A hero image for the Market Price Prediction page, showing a bustling market.",
-      "imageUrl": "https://images.unsplash.com/photo-1578500424754-4064b220c58e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYXJtJTIwbWFya2V0fGVufDB8fHx8MTc2MDY4Mjc2Mnww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "farm market"
+      "description": "A hero image for the Mandi Price Prediction page, showing a vibrant agricultural market.",
+      "imageUrl": "https://images.unsplash.com/photo-1610394362545-c49c72c1615f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhZ3JpY3VsdHVyYWwlMjBtYXJrZXR8ZW58MHx8fHwxNzYyMDExNDM4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "agricultural market"
     },
     {
       "id": "agri-bazar-hero",
