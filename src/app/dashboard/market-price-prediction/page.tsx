@@ -142,7 +142,7 @@ export default function MarketPricePredictionPage() {
             disabled={isLoading || !formData.cropName || !formData.marketLocation}
           >
             <Bot className="mr-2 h-4 w-4" />
-            {isLoading ? 'Analyzing Market...' : 'Predict Price'}
+            {isLoading ? 'Analyzing Market...' : 'Know Price'}
           </Button>
         </CardFooter>
       </Card>
