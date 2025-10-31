@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Sun, Cloud, CloudRain, CloudSun, AlertTriangle, Wind, Droplets, History, Cloudy, Snowflake, CloudLightning, Tornado, CloudFog } from "lucide-react";
+import { Sun, Cloud, CloudRain, CloudSun, AlertTriangle, Wind, Droplets, History, Cloudy, Snowflake, CloudLightning, Tornado, CloudFog, MapPin } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription as AlertDescriptionShadcn } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,25 +25,46 @@ const iconMap: { [key: string]: React.ElementType } = {
 
 export default function WeatherForecast() {
     const [weather, setWeather] = useState<WeatherOutput | null>(null);
+    const [location, setLocation] = useState<{lat: number, lon: number} | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Default location (e.g., Nashik, India). In a real app, this would be user-configurable.
-        const location = { lat: 20.0, lon: 73.78 }; 
+        if (!navigator.geolocation) {
+            setError("Geolocation is not supported by your browser.");
+            setIsLoading(false);
+            return;
+        }
 
-        getWeatherForecast(location)
-            .then(data => {
-                setWeather(data);
-            })
-            .catch(err => {
-                console.error(err);
-                setError(err.message || 'Could not fetch weather data.');
-            })
-            .finally(() => {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setLocation({
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                });
+            },
+            () => {
+                setError("Unable to retrieve your location. Please enable location services in your browser.");
                 setIsLoading(false);
-            });
+            }
+        );
     }, []);
+
+    useEffect(() => {
+        if (location) {
+            getWeatherForecast(location)
+                .then(data => {
+                    setWeather(data);
+                })
+                .catch(err => {
+                    console.error(err);
+                    setError(err.message || 'Could not fetch weather data.');
+                })
+                .finally(() => {
+                    setIsLoading(false);
+                });
+        }
+    }, [location]);
 
   const CurrentIcon = weather ? iconMap[weather.current.icon] || Tornado : null;
 
@@ -51,7 +72,7 @@ export default function WeatherForecast() {
     <Card>
       <CardHeader>
         <CardTitle>Weather Forecast</CardTitle>
-        <CardDescription>Current conditions and 7-day outlook for your farm location.</CardDescription>
+        <CardDescription>Current conditions and 7-day outlook for your location.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {isLoading ? (
@@ -63,6 +84,7 @@ export default function WeatherForecast() {
                 <AlertDescriptionShadcn>
                     {error}
                     {error.includes('API key') && ' Please add your OpenWeather API key to the .env.local file.'}
+                    {!error.includes('API key') && error.includes('location') && <MapPin className="h-4 w-4 inline-block mr-2" />}
                 </AlertDescriptionShadcn>
             </Alert>
         ) : weather ? (
