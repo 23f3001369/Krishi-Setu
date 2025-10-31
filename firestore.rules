@@ -70,17 +70,17 @@ service cloud.firestore {
      * @allow (list) Any signed in user can list all the farmers `request.auth.uid != null`.
      * @allow (create) User A can create their profile: `request.auth.uid == "user_a"`.
      * @allow (update) User A can update their profile: `request.auth.uid == "user_a"`.
-     * @allow (delete) User A can delete their profile: `request.auth.uid == "user_a"`.
+     * @allow (delete) User A can delete their profile: `request.auth.uid == "user_a"`. Admin can delete any profile.
      * @deny (get) User B cannot read User A's profile: `request.auth.uid != "user_a"`.
      * @deny (create) User B cannot create User A's profile: `request.auth.uid != "user_a"`.
      * @principle Owner-only access for individual profiles; authenticated users can list all for chat.
      */
     match /farmers/{farmerId} {
-      allow get: if isOwner(farmerId);
+      allow get: if isOwner(farmerId) || isAdmin();
       allow list: if isSignedIn(); // Allow signed-in users to list farmer profiles (for chat)
       allow create: if isOwner(farmerId) && request.resource.data.id == farmerId; // Ensure UID matches document ID
-      allow update: if isExistingOwner(farmerId);
-      allow delete: if isExistingOwner(farmerId);
+      allow update: if isExistingOwner(farmerId) || isAdmin();
+      allow delete: if isOwner(farmerId) || isAdmin();
 
        /**
        * @description Manages access to farmer transactions.
@@ -126,8 +126,8 @@ service cloud.firestore {
     match /farms/{farmId} {
       allow get, list: if true; // Public read
       allow create: if isSignedIn() && request.resource.data.farmerId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.farmerId);
-      allow delete: if isExistingOwner(resource.data.farmerId);
+      allow update: if isExistingOwner(resource.data.farmerId) || isAdmin();
+      allow delete: if isExistingOwner(resource.data.farmerId) || isAdmin();
     }
 
     /**
@@ -197,7 +197,7 @@ service cloud.firestore {
       allow update: if
         isExistingOwner(resource.data.authorId) || // Post author can update anything
         (isSignedIn() && hasOnlyChangedFields(['likes', 'comments', 'imageUrl'])); // Any signed-in user can update only likes/comments counts and imageUrl
-      allow delete: if isExistingOwner(resource.data.authorId); // Only post author can delete the post
+      allow delete: if isExistingOwner(resource.data.authorId) || isAdmin(); // Only post author or admin can delete the post
 
       /**
        * @description Manages likes for a specific forum post.
@@ -234,7 +234,7 @@ service cloud.firestore {
         allow update: if
           isExistingOwner(resource.data.authorId) || // Comment author can update anything
           (isSignedIn() && hasOnlyChangedFields(['likes', 'replies'])); // Any signed-in user can update only likes/replies counts
-        allow delete: if isOwner(resource.data.authorId) || isPostAuthor(postId); // Comment author OR post author can delete comment
+        allow delete: if isOwner(resource.data.authorId) || isPostAuthor(postId) || isAdmin(); // Comment author, post author or admin can delete comment
 
         /**
          * @description Manages likes for a specific comment.
@@ -271,7 +271,7 @@ service cloud.firestore {
           allow update: if
             isExistingOwner(resource.data.authorId) || // Reply author can update anything
             (isSignedIn() && hasOnlyChangedFields(['likes'])); // Any signed-in user can update only likes count
-          allow delete: if isOwner(resource.data.authorId); // Only reply author can delete their reply
+          allow delete: if isOwner(resource.data.authorId) || isAdmin(); // Only reply author or admin can delete their reply
 
           /**
            * @description Manages likes for a specific reply.
@@ -293,5 +293,4 @@ service cloud.firestore {
     }
   }
 }
-
     
