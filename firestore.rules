@@ -66,8 +66,8 @@ service cloud.firestore {
     /**
      * @description Manages access to farmer profiles. Allows signed-in users to list all profiles.
      * @path /farmers/{farmerId}
-     * @allow (get) User A can read their own profile: `request.auth.uid == "user_a"`.
-     * @allow (list) Any signed in user can list all the farmers `request.auth.uid != null`.
+     * @allow (get) User A can read their own profile: `request.auth.uid == "user_a"`. Admins can read any profile.
+     * @allow (list) Any signed in user can list all the farmers `request.auth.uid != null`. Admins can list all.
      * @allow (create) User A can create their profile: `request.auth.uid == "user_a"`.
      * @allow (update) User A can update their profile: `request.auth.uid == "user_a"`.
      * @allow (delete) User A can delete their profile: `request.auth.uid == "user_a"`. Admin can delete any profile.
@@ -76,8 +76,8 @@ service cloud.firestore {
      * @principle Owner-only access for individual profiles; authenticated users can list all for chat.
      */
     match /farmers/{farmerId} {
-      allow get: if isOwner(farmerId) || isAdmin();
-      allow list: if isSignedIn(); // Allow signed-in users to list farmer profiles (for chat)
+      allow read: if isOwner(farmerId) || isAdmin();
+      allow list: if isSignedIn() || isAdmin(); // Allow signed-in users to list farmer profiles (for chat)
       allow create: if isOwner(farmerId) && request.resource.data.id == farmerId; // Ensure UID matches document ID
       allow update: if isExistingOwner(farmerId) || isAdmin();
       allow delete: if isOwner(farmerId) || isAdmin();
@@ -114,8 +114,8 @@ service cloud.firestore {
     /**
      * @description Manages access to farm data.
      * @path /farms/{farmId}
-     * @allow (get) Anyone can get farm data.
-     * @allow (list) Anyone can list farm data.
+     * @allow (get) Anyone can get farm data. Admins can read any.
+     * @allow (list) Anyone can list farm data. Admins can list all.
      * @allow (create) User A can create farm data if they are signed in and the farmerId matches: `request.auth.uid == "user_a"`.
      * @allow (update) User A can update farm data if the farmerId matches: `resource.data.farmerId == "user_a"`.
      * @allow (delete) User A can delete farm data if the farmerId matches: `resource.data.farmerId == "user_a"`.
@@ -124,7 +124,7 @@ service cloud.firestore {
      * @principle Public read; owner-only create/update/delete based on `farmerId` field.
      */
     match /farms/{farmId} {
-      allow get, list: if true; // Public read
+      allow read: if true || isAdmin(); // Public read
       allow create: if isSignedIn() && request.resource.data.farmerId == request.auth.uid;
       allow update: if isExistingOwner(resource.data.farmerId) || isAdmin();
       allow delete: if isExistingOwner(resource.data.farmerId) || isAdmin();
