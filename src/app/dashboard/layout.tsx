@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Bell,
   List,
+  TrendingUp,
 } from 'lucide-react';
 
 import {
@@ -54,6 +55,7 @@ const navItems = [
   { href: '/dashboard/cultivation-guide', icon: ClipboardList, label: 'New Guide' },
   { href: '/dashboard/crop-recommendation', icon: BrainCircuit, label: 'AI Crop Tool' },
   { href: '/dashboard/disease-detection', icon: TestTubeDiagonal, label: 'AI Disease Detection' },
+  { href: '/dashboard/market-price-prediction', icon: TrendingUp, label: 'Market Price AI' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'AgriVaani' },
   { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
   { href: '/dashboard/agri-bazar', icon: ShoppingCart, label: 'Agri Bazar' },

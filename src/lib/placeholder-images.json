@@ -55,10 +55,10 @@
       "imageHint": "crop cultivation"
     },
     {
-      "id": "agrinews-hero",
-      "description": "A hero image for the AgriNews page, showing a farmer reading a newspaper in a field.",
-      "imageUrl": "https://images.unsplash.com/photo-1620714223084-8628df8c3547?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYXJtZXIlMjBuZXdzfGVufDB8fHx8MTc1OTYyNzU2NHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "farmer news"
+      "id": "market-price-hero",
+      "description": "A hero image for the Market Price Prediction page, showing a bustling market.",
+      "imageUrl": "https://images.unsplash.com/photo-1578500424754-4064b220c58e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmYXJtJTIwbWFya2V0fGVufDB8fHx8MTc2MDY4Mjc2Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "farm market"
     },
     {
       "id": "agri-bazar-hero",
