@@ -516,16 +516,7 @@ export default function LearningHubPage() {
       
       <section>
         <h2 className="text-2xl font-bold font-headline mb-4">Upcoming Features</h2>
-         <div className="grid gap-4 md:grid-cols-2">
-            <Card className="bg-muted/40">
-              <CardHeader className="flex flex-row items-center gap-4">
-                  <Radio className="w-8 h-8 text-primary" />
-                  <div>
-                    <CardTitle>Agri Radio</CardTitle>
-                    <CardDescription>A radio stream with expert interviews, weather alerts, and farming practices, accessible offline.</CardDescription>
-                  </div>
-              </CardHeader>
-            </Card>
+         <div className="grid gap-4 md:grid-cols-1">
              <Card className="bg-muted/40">
               <CardHeader className="flex flex-row items-center gap-4">
                    <Library className="w-8 h-8 text-primary" />
