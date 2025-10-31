@@ -1,15 +1,13 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -22,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, BookOpen, Settings, Search, Users, Trash2, Eye, Ban, AlertTriangle, Wheat } from "lucide-react";
+import { MoreHorizontal, Search, Users, Trash2, Eye, Ban, AlertTriangle, Wheat } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,90 +48,130 @@ import {
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, updateDoc, deleteDoc, Timestamp, query, where } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Mock data for users
-const initialUsers = [
-  {
-    id: "usr_1",
-    name: "Farmer",
-    email: "farmer@agriassist.com",
-    farmName: "Sunny Meadows Farm",
-    status: "Active",
-    joined: "2023-10-26",
-    majorCrops: "Corn, Soybeans",
-    profilePicUrl: "https://i.pravatar.cc/150?u=usr_1",
-  },
-  {
-    id: "usr_2",
-    name: "Jane Doe",
-    email: "jane.d@example.com",
-    farmName: "Green Acres",
-    status: "Active",
-    joined: "2023-09-15",
-    majorCrops: "Wheat, Barley",
-    profilePicUrl: "https://i.pravatar.cc/150?u=usr_2",
-  },
-  {
-    id: "usr_3",
-    name: "Peter Jones",
-    email: "p.jones@example.com",
-    farmName: "Harvest Moon Fields",
-    status: "Pending",
-    joined: "2023-11-01",
-    majorCrops: "Potatoes, Carrots",
-    profilePicUrl: "https://i.pravatar.cc/150?u=usr_3",
-  },
-   {
-    id: "usr_4",
-    name: "Maria Garcia",
-    email: "maria.g@example.com",
-    farmName: "El Sol Ranch",
-    status: "Inactive",
-    joined: "2023-05-20",
-    majorCrops: "Tomatoes, Peppers",
-    profilePicUrl: "https://i.pravatar.cc/150?u=usr_4",
-  },
-];
+// Data Types from Firestore
+type Farmer = {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  status: 'Active' | 'Inactive' | 'Pending';
+  createdAt: Timestamp;
+  photoURL?: string;
+};
 
-type User = typeof initialUsers[0];
+type Farm = {
+  id: string;
+  farmerId: string;
+  name: string;
+  mainCrops: string[];
+};
+
+// Combined type for UI
+type EnrichedFarmer = Farmer & {
+  farmName?: string;
+  majorCrops?: string;
+};
+
 
 export default function UserManagementPage() {
     const [searchTerm, setSearchTerm] = useState('');
-    const [users, setUsers] = useState(initialUsers);
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [selectedUser, setSelectedUser] = useState<EnrichedFarmer | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.farmName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const db = useFirestore();
+    const { toast } = useToast();
 
-    const handleViewDetails = (user: User) => {
+    // Fetch all farmers
+    const farmersQuery = useMemoFirebase(() => db ? collection(db, 'farmers') : null, [db]);
+    const { data: farmers, isLoading: isLoadingFarmers } = useCollection<Farmer>(farmersQuery);
+
+    // Fetch all farms
+    const farmsQuery = useMemoFirebase(() => db ? collection(db, 'farms') : null, [db]);
+    const { data: farms, isLoading: isLoadingFarms } = useCollection<Farm>(farmsQuery);
+
+    // Combine farmer and farm data
+    const enrichedUsers = useMemo((): EnrichedFarmer[] => {
+        if (!farmers || !farms) return [];
+
+        const farmsByFarmerId = new Map<string, Farm[]>();
+        farms.forEach(farm => {
+            if (!farmsByFarmerId.has(farm.farmerId)) {
+                farmsByFarmerId.set(farm.farmerId, []);
+            }
+            farmsByFarmerId.get(farm.farmerId)!.push(farm);
+        });
+
+        return farmers.map(farmer => {
+            const userFarms = farmsByFarmerId.get(farmer.id);
+            const mainFarm = userFarms?.[0]; // Get the first farm for simplicity
+            return {
+                ...farmer,
+                farmName: mainFarm?.name || 'N/A',
+                majorCrops: mainFarm?.mainCrops?.join(', ') || 'N/A',
+            };
+        });
+    }, [farmers, farms]);
+    
+    const filteredUsers = useMemo(() => {
+         return enrichedUsers.filter(user =>
+            user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (user.farmName && user.farmName.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+    }, [enrichedUsers, searchTerm]);
+
+
+    const handleViewDetails = (user: EnrichedFarmer) => {
         setSelectedUser(user);
         setIsDetailsOpen(true);
     };
 
-    const handleSuspendUser = (userId: string) => {
-        setUsers(users.map(user => 
-            user.id === userId ? { ...user, status: user.status === 'Active' ? 'Inactive' : 'Active' } : user
-        ));
+    const handleSuspendUser = async (user: EnrichedFarmer) => {
+        if (!db) return;
+        const userDocRef = doc(db, 'farmers', user.id);
+        const newStatus = user.status === 'Active' ? 'Inactive' : 'Active';
+        try {
+            await updateDoc(userDocRef, { status: newStatus });
+            toast({
+                title: `User ${newStatus === 'Active' ? 'Activated' : 'Suspended'}`,
+                description: `${user.name}'s account status has been updated.`,
+            });
+        } catch (error) {
+            console.error("Error updating user status:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not update user status.' });
+        }
+    };
+    
+    const openDeleteConfirm = (user: EnrichedFarmer) => {
+        setSelectedUser(user);
+        setIsDeleteConfirmOpen(true);
     };
 
-    const handleDeleteUser = () => {
-        if (selectedUser) {
-            setUsers(users.filter(user => user.id !== selectedUser.id));
+    const handleDeleteUser = async () => {
+        if (!selectedUser || !db) return;
+        const userDocRef = doc(db, 'farmers', selectedUser.id);
+        try {
+            await deleteDoc(userDocRef);
+            toast({
+                title: 'User Deleted',
+                description: `${selectedUser.name}'s account has been permanently deleted.`,
+            });
+            // Note: This only deletes the farmer doc. Associated farms/etc. would need a Cloud Function.
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete user account.' });
         }
         setIsDeleteConfirmOpen(false);
         setSelectedUser(null);
     };
     
-    const openDeleteConfirm = (user: User) => {
-        setSelectedUser(user);
-        setIsDeleteConfirmOpen(true);
-    };
-
+    const isLoading = isLoadingFarmers || isLoadingFarms;
 
   return (
     <>
@@ -152,7 +190,7 @@ export default function UserManagementPage() {
                   All Users
                 </CardTitle>
                 <CardDescription>
-                  Total: {users.length} users.
+                  Total: {enrichedUsers.length} users.
                 </CardDescription>
               </div>
               <div className="relative">
@@ -181,7 +219,17 @@ export default function UserManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {isLoading ? (
+                    [...Array(4)].map((_, i) => (
+                        <TableRow key={i}>
+                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
+                            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                            <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                        </TableRow>
+                    ))
+                ) : filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="font-medium">{user.name}</div>
@@ -190,7 +238,7 @@ export default function UserManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{user.farmName}</TableCell>
-                    <TableCell className="hidden md:table-cell">{new Date(user.joined).toLocaleDateString()}</TableCell>
+                    <TableCell className="hidden md:table-cell">{user.createdAt ? user.createdAt.toDate().toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell>
                       <Badge variant={user.status === 'Active' ? 'default' : user.status === 'Pending' ? 'secondary' : 'destructive'}>
                         {user.status}
@@ -210,7 +258,7 @@ export default function UserManagementPage() {
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => handleSuspendUser(user.id)}>
+                          <DropdownMenuItem onSelect={() => handleSuspendUser(user)}>
                             <Ban className="mr-2 h-4 w-4" />
                             {user.status === 'Active' ? 'Suspend' : 'Activate'}
                           </DropdownMenuItem>
@@ -226,6 +274,11 @@ export default function UserManagementPage() {
                 ))}
               </TableBody>
             </Table>
+            {!isLoading && filteredUsers.length === 0 && (
+                <div className="text-center text-muted-foreground p-8">
+                    {searchTerm ? "No users match your search." : "No registered users yet."}
+                </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -243,7 +296,7 @@ export default function UserManagementPage() {
              <div className="space-y-4 py-4">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
-                        <AvatarImage src={selectedUser.profilePicUrl} alt={selectedUser.name} />
+                        <AvatarImage src={selectedUser.photoURL} alt={selectedUser.name} />
                         <AvatarFallback>{selectedUser.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -272,7 +325,7 @@ export default function UserManagementPage() {
                             </Badge>
                         </div>
                         <div className="font-semibold text-muted-foreground">Joined Date:</div>
-                        <div>{new Date(selectedUser.joined).toLocaleDateString()}</div>
+                        <div>{selectedUser.createdAt ? selectedUser.createdAt.toDate().toLocaleDateString() : 'N/A'}</div>
                     </div>
                  </div>
             </div>
@@ -303,3 +356,4 @@ export default function UserManagementPage() {
     </>
   );
 }
+    

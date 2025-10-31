@@ -86,21 +86,28 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+        // This check is important. If the error is for a different reason
+        // than permissions, we might not want to create a contextual error.
+        // For admin queries that might fail if no user is logged in, this is expected.
+        if (error.code === 'permission-denied') {
+            const path: string =
+            memoizedTargetRefOrQuery.type === 'collection'
+                ? (memoizedTargetRefOrQuery as CollectionReference).path
+                : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
 
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path,
-        })
+            const contextualError = new FirestorePermissionError({
+                operation: 'list',
+                path,
+            })
+            
+            setError(contextualError)
+            errorEmitter.emit('permission-error', contextualError);
+        } else {
+            setError(error);
+        }
 
-        setError(contextualError)
         setData(null)
         setIsLoading(false)
-
-        errorEmitter.emit('permission-error', contextualError);
       }
     );
 
@@ -114,3 +121,4 @@ export function useCollection<T = any>(
 
   return { data, isLoading, error };
 }
+    

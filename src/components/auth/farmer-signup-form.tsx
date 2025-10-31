@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -76,16 +76,22 @@ export function FarmerSignUpForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
-      // 2. Update the user's profile with their name
-      await updateProfile(user, { displayName: values.name });
+      // 2. Update the user's profile with their name and a default picture
+      const defaultPhotoURL = `https://i.pravatar.cc/150?u=${user.uid}`;
+      await updateProfile(user, { 
+          displayName: values.name,
+          photoURL: defaultPhotoURL,
+      });
 
       // 3. Prepare user data for Firestore
       const userData = {
         id: user.uid,
         name: values.name,
         email: values.email,
-        phone: values.mobile, // Changed from 'mobile' to 'phone' to match backend.json
-        createdAt: new Date(),
+        phone: values.mobile,
+        status: 'Active',
+        createdAt: serverTimestamp(),
+        photoURL: defaultPhotoURL,
       };
       
       const userDocRef = doc(db, "farmers", user.uid);
@@ -218,3 +224,4 @@ export function FarmerSignUpForm() {
     </Form>
   );
 }
+    
