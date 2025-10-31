@@ -55,17 +55,17 @@ const prompt = ai.definePrompt({
   config: {
     temperature: 0.2,
   },
-  prompt: `You are an expert agricultural market analyst in India. Your task is to predict the market price for a specific crop.
+  prompt: `You are an expert agricultural market analyst in India. Your task is to predict the market price for a specific crop, using data as of November 2025 from napanta.com.
 
-First, use the getMarketPrice tool to fetch the current price for the given crop and location.
+First, use the getMarketPrice tool to fetch the current price for the given crop and location. This tool provides the most recently updated price.
 
 Crop: {{{cropName}}}
 Market/Region: {{{marketLocation}}}
 
-Based on the current price obtained from the tool, and considering market dynamics and seasonal trends, provide the following:
+Based on the current price obtained from the tool, and considering market dynamics and seasonal trends as of November 2025, provide the following:
 1.  A predicted price range in Indian Rupees (Rs) per quintal for the next 2-4 weeks. This range should be anchored realistically around the current price.
 2.  The likely price trend for the next 2-4 weeks (upward, downward, or stable).
-3.  A concise reasoning for your prediction, considering factors like seasonality, demand, supply, and recent weather events or government policies.
+3.  A concise reasoning for your prediction, considering factors like seasonality, demand, supply, and any relevant events based on your knowledge from napanta.com.
 
 Generate the response in the required JSON format.
 `,
