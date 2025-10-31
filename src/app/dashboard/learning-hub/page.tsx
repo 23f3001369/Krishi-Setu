@@ -236,9 +236,9 @@ function AskAgriVaani() {
                          <Card key={index} className="bg-muted/40">
                              <CardHeader>
                                  <CardTitle className="text-base">{article.title}</CardTitle>
-                                 <CardDescription>
+                                 <div>
                                     <Badge variant="outline" className="mt-1">{article.source}</Badge>
-                                 </CardDescription>
+                                 </div>
                              </CardHeader>
                              <CardContent className="p-6 pt-0">
                                 <p className="text-sm text-muted-foreground">{article.reasoning}</p>
@@ -261,9 +261,9 @@ function AskAgriVaani() {
                        <Card key={index} className="bg-muted/40">
                            <CardHeader>
                                <CardTitle className="text-base">{video.title}</CardTitle>
-                               <CardDescription>
+                               <div>
                                    <Badge variant="outline" className="mt-1">YouTube</Badge>
-                               </CardDescription>
+                               </div>
                            </CardHeader>
                            <CardContent className="p-6 pt-0">
                               <p className="text-sm text-muted-foreground">{video.reasoning}</p>
@@ -285,7 +285,7 @@ function AskAgriVaani() {
                         <Bot className="h-4 w-4" />
                         <AlertTitle>No specific recommendations found</AlertTitle>
                         <AlertDescription>
-                            I couldn't find specific content for your query, but feel free to browse the articles and videos below.
+                            I couldn't find specific content for your query, but feel free to browse the articles below.
                         </AlertDescription>
                     </Alert>
                )}
