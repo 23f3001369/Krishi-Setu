@@ -58,7 +58,7 @@ const navItems = [
   { href: '/dashboard/cultivation-guide', icon: ClipboardList, label: 'New Guide' },
   { href: '/dashboard/crop-recommendation', icon: BrainCircuit, label: 'AI Crop Tool' },
   { href: '/dashboard/disease-detection', icon: TestTubeDiagonal, label: 'AI Disease Detection' },
-  { href: '/dashboard/market-price-prediction', icon: TrendingUp, label: 'Market Price AI' },
+  { href: '/dashboard/market-price-prediction', icon: TrendingUp, label: 'Mandi Price' },
   { href: '/dashboard/krishi-ai', icon: MessageSquare, label: 'Krishi AI' },
   { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
