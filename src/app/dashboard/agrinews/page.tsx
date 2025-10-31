@@ -30,11 +30,13 @@ import { TrendingUp, TrendingDown, ArrowRight, Rss, Landmark, Scale } from "luci
 const heroImage = PlaceHolderImages.find(p => p.id === "agrinews-hero");
 
 const mandiPrices = [
-    { id: 'wh', crop: 'Wheat', variety: 'Dara', price: 2350, change: 25, trend: 'up' },
-    { id: 'pd', crop: 'Paddy', variety: 'Basmati', price: 3800, change: -50, trend: 'down' },
-    { id: 'cn', crop: 'Corn', variety: 'Hybrid', price: 2100, change: 15, trend: 'up' },
-    { id: 'sb', crop: 'Soybean', variety: 'Yellow', price: 4500, change: -20, trend: 'down' },
-    { id: 'tm', crop: 'Tomato', variety: 'Hybrid', price: 1800, change: 100, trend: 'up' },
+    { id: 'wh', crop: 'Wheat', variety: 'Dara', price: 2375, change: 50, trend: 'up' },
+    { id: 'pd', crop: 'Paddy', variety: 'Basmati', price: 3750, change: -75, trend: 'down' },
+    { id: 'cn', crop: 'Corn', variety: 'Hybrid', price: 2120, change: 20, trend: 'up' },
+    { id: 'sb', crop: 'Soybean', variety: 'Yellow', price: 4480, change: -40, trend: 'down' },
+    { id: 'tm', crop: 'Tomato', variety: 'Hybrid', price: 1850, change: 150, trend: 'up' },
+    { id: 'pt', crop: 'Potato', variety: 'Jyoti', price: 1500, change: -10, trend: 'down'},
+    { id: 'on', crop: 'Onion', variety: 'Red', price: 2200, change: 80, trend: 'up'},
 ];
 
 const governmentSchemes = [
@@ -84,7 +86,7 @@ export default function AgriNewsPage() {
             <Card>
                 <CardHeader>
                 <CardTitle>Live Mandi Prices</CardTitle>
-                <CardDescription>Real-time commodity prices from your local market.</CardDescription>
+                <CardDescription>Real-time commodity prices from your local market, displayed in Rupees (₹).</CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
                 <Table>
@@ -101,7 +103,7 @@ export default function AgriNewsPage() {
                         <TableRow key={item.id}>
                         <TableCell className="font-medium">{item.crop}</TableCell>
                         <TableCell>{item.variety}</TableCell>
-                        <TableCell className="text-right font-bold">₹{item.price.toLocaleString()}</TableCell>
+                        <TableCell className="text-right font-bold">₹{item.price.toLocaleString('en-IN')}</TableCell>
                         <TableCell className="text-right">
                              <Badge variant="outline" className={`flex items-center justify-end gap-1 ${item.trend === 'up' ? 'text-green-600 border-green-400' : 'text-red-600 border-red-400'}`}>
                                 {item.trend === 'up' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
