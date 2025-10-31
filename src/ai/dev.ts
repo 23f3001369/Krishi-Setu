@@ -1,5 +1,6 @@
 
 import { config } from 'dotenv';
+config({ path: '.env.local' });
 config();
 
 import '@/ai/flows/ai-crop-recommendation.ts';
@@ -11,3 +12,4 @@ import '@/ai/flows/extract-soil-health-info.ts';
 import '@/ai/flows/speech-to-text.ts';
 import '@/ai/flows/market-price-prediction.ts';
 import '@/ai/flows/save-soil-report-tool.ts';
+import '@/ai/flows/get-weather-forecast.ts';
