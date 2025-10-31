@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Check, MapPin, Image as ImageIcon, ChevronsRight, ChevronsLeft, Send, X } from "lucide-react";
+import { Check, MapPin, Link as LinkIcon, ChevronsRight, ChevronsLeft, Send, X, Plus } from "lucide-react";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -43,8 +43,7 @@ export default function FarmRegistrationPage() {
     address: "",
   });
   const [photos, setPhotos] = useState<string[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
+  
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
@@ -85,23 +84,9 @@ export default function FarmRegistrationPage() {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-        const files = Array.from(e.target.files);
-        const newPhotos: string[] = [];
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                if (e.target?.result) {
-                    newPhotos.push(e.target.result as string);
-                    // This is a bit of a trick to update the state after all files are read
-                    if (newPhotos.length === files.length) {
-                         setPhotos(prev => [...prev, ...newPhotos]);
-                    }
-                }
-            }
-            reader.readAsDataURL(file);
-        })
+  const addPhotoUrl = (url: string) => {
+    if (url && !photos.includes(url)) {
+      setPhotos(prev => [...prev, url]);
     }
   };
 
@@ -130,8 +115,6 @@ export default function FarmRegistrationPage() {
         return;
     }
 
-    // In a real app, you would upload photos to Firebase Storage and get URLs.
-    // For this example, we'll store the base64 strings directly in Firestore, which is NOT recommended for production.
     const farmData = {
         farmerId: user.uid,
         name: formData.farmName,
@@ -207,7 +190,7 @@ export default function FarmRegistrationPage() {
         <CardHeader className="p-6">
             <CardTitle>Step {step}: {step === 1 ? 'Farm Details' : step === 2 ? 'Location' : 'Photos'}</CardTitle>
             <CardDescription>
-                {step === 1 ? 'Provide basic information about your farm.' : step === 2 ? 'Pin your farm\'s location.' : 'Upload some photos of your farm.'}
+                {step === 1 ? 'Provide basic information about your farm.' : step === 2 ? 'Pin your farm\'s location.' : 'Add links to photos of your farm.'}
             </CardDescription>
             <Progress value={progress} className="w-full mt-2" />
         </CardHeader>
@@ -228,8 +211,7 @@ export default function FarmRegistrationPage() {
                     {step === 3 && (
                       <Step3 
                         photos={photos} 
-                        fileInputRef={fileInputRef} 
-                        handlePhotoChange={handlePhotoChange} 
+                        addPhotoUrl={addPhotoUrl} 
                         removePhoto={removePhoto} 
                       />
                     )}
@@ -314,41 +296,42 @@ function Step2({ formData, handleChange }: Step2Props) {
 
 type Step3Props = {
   photos: string[];
-  fileInputRef: React.RefObject<HTMLInputElement>;
-  handlePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  addPhotoUrl: (url: string) => void;
   removePhoto: (index: number) => void;
 };
 
-function Step3({ photos, fileInputRef, handlePhotoChange, removePhoto }: Step3Props) {
+function Step3({ photos, addPhotoUrl, removePhoto }: Step3Props) {
+    const [currentUrl, setCurrentUrl] = useState('');
+
+    const handleAddClick = () => {
+        addPhotoUrl(currentUrl);
+        setCurrentUrl('');
+    }
+
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
         <div className="space-y-2">
-            <Label>Upload Farm Photos</Label>
-            <div 
-              className="border-2 border-dashed border-muted-foreground/50 rounded-lg p-8 text-center bg-muted/20 hover:bg-muted/40 cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-            >
-                <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">Drag & drop files here, or click to select files</p>
-                <Input 
-                  ref={fileInputRef} 
-                  id="picture" 
-                  type="file" 
-                  className="sr-only" 
-                  multiple 
-                  accept="image/*"
-                  onChange={handlePhotoChange}
+            <Label htmlFor="photoUrl">Add Photo URL</Label>
+            <div className="flex gap-2">
+                 <Input 
+                  id="photoUrl"
+                  placeholder="https://example.com/image.jpg"
+                  value={currentUrl}
+                  onChange={(e) => setCurrentUrl(e.target.value)}
                 />
+                <Button type="button" onClick={handleAddClick} disabled={!currentUrl}>
+                    <Plus className="mr-2 h-4 w-4" /> Add
+                </Button>
             </div>
         </div>
         
         {photos.length > 0 &&
             <div className="space-y-2">
-                <Label>Uploaded Photos</Label>
+                <Label>Photo Previews</Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {photos.map((photo, index) => (
-                        <div key={index} className="relative aspect-square w-full overflow-hidden rounded-md">
-                            <Image src={photo} alt={`Farm photo ${index + 1}`} fill className="object-cover"/>
+                        <div key={index} className="relative aspect-square w-full overflow-hidden rounded-md border">
+                            <Image src={photo} alt={`Farm photo ${index + 1}`} fill className="object-cover" unoptimized/>
                             <Button 
                               variant="destructive" 
                               size="icon" 
@@ -365,3 +348,5 @@ function Step3({ photos, fileInputRef, handlePhotoChange, removePhoto }: Step3Pr
     </div>
   );
 }
+
+    
