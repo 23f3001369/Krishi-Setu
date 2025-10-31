@@ -25,18 +25,18 @@ export default function KrishiYantraMitraPage() {
                             <Database className="mr-2 h-5 w-5 text-primary"/>
                             How It Will Work
                         </h3>
-                        <p className="text-muted-foreground">
-                            Krishi Yantra Mitra will connect farmers who need equipment with those who have machinery to spare. You'll be able to list your own tractors, tillers, or harvesters for rent, setting your own prices and availability. Other farmers in your area can then search for and book the equipment they need directly from you, creating a community-based rental ecosystem.
-                        </p>
+                        <div className="text-muted-foreground">
+                           <span>Krishi Yantra Mitra will connect farmers who need equipment with those who have machinery to spare. You'll be able to list your own tractors, tillers, or harvesters for rent, setting your own prices and availability. Other farmers in your area can then search for and book the equipment they need directly from you, creating a community-based rental ecosystem.</span>
+                        </div>
                     </div>
                      <div className="space-y-4">
                         <h3 className="font-semibold text-lg flex items-center">
                             <Code className="mr-2 h-5 w-5 text-primary"/>
                             Implementation Details
                         </h3>
-                        <p className="text-muted-foreground">
-                           This feature will be powered by <Badge variant="secondary">Firebase Firestore</Badge> to manage equipment listings, availability, and booking information in real-time. Integrating with existing <Badge variant="secondary">Firebase Authentication</Badge> profiles will ensure that all rental interactions are between verified members of the farming community, building a trustworthy and reliable network.
-                        </p>
+                        <div className="text-muted-foreground">
+                           <span>This feature will be powered by </span><Badge variant="secondary">Firebase Firestore</Badge><span> to manage equipment listings, availability, and booking information in real-time. Integrating with existing </span><Badge variant="secondary">Firebase Authentication</Badge><span> profiles will ensure that all rental interactions are between verified members of the farming community, building a trustworthy and reliable network.</span>
+                        </div>
                     </div>
                 </CardContent>
             </Card>

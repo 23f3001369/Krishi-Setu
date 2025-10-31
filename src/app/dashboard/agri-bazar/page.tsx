@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,18 +25,18 @@ export default function AgriBazarPage() {
                             <Database className="mr-2 h-5 w-5 text-primary"/>
                             How It Will Work
                         </h3>
-                        <p className="text-muted-foreground">
-                            The Agri Bazar will be a real-time marketplace where you can list your produce for sale or browse listings from other farmers and verified local suppliers. You'll be able to find everything from fresh produce and seeds to fertilizers and small tools. The platform will facilitate direct communication, helping you get the best prices without intermediaries.
-                        </p>
+                        <div className="text-muted-foreground">
+                            <span>The Agri Bazar will be a real-time marketplace where you can list your produce for sale or browse listings from other farmers and verified local suppliers. You'll be able to find everything from fresh produce and seeds to fertilizers and small tools. The platform will facilitate direct communication, helping you get the best prices without intermediaries.</span>
+                        </div>
                     </div>
                      <div className="space-y-4">
                         <h3 className="font-semibold text-lg flex items-center">
                             <Code className="mr-2 h-5 w-5 text-primary"/>
                             Implementation Details
                         </h3>
-                        <p className="text-muted-foreground">
-                            This feature will be built using <Badge variant="secondary">Firebase Firestore</Badge> to manage product listings, inventory, and user transactions securely and in real-time. User profiles from <Badge variant="secondary">Firebase Authentication</Badge> will be integrated to ensure trust and reliability. The interface will be designed for ease of use, allowing for quick searches, filtering, and communication between buyers and sellers.
-                        </p>
+                        <div className="text-muted-foreground">
+                            <span>This feature will be built using </span><Badge variant="secondary">Firebase Firestore</Badge><span> to manage product listings, inventory, and user transactions securely and in real-time. User profiles from </span><Badge variant="secondary">Firebase Authentication</Badge><span> will be integrated to ensure trust and reliability. The interface will be designed for ease of use, allowing for quick searches, filtering, and communication between buyers and sellers.</span>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
