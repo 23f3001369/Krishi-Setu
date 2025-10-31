@@ -60,7 +60,6 @@ const navItems = [
   { href: '/dashboard/crop-recommendation', icon: BrainCircuit, label: 'AI Crop Tool' },
   { href: '/dashboard/disease-detection', icon: TestTubeDiagonal, label: 'AI Disease Detection' },
   { href: '/dashboard/market-price-prediction', icon: TrendingUp, label: 'Market Price AI' },
-  { href: '/dashboard/soil-reports', icon: FlaskConical, label: 'Soil Reports' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'AgriVaani' },
   { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
