@@ -24,24 +24,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Edit, Phone, Shield, Tractor, PlusCircle, Trash2, AlertTriangle } from 'lucide-react';
+import { Camera, Phone, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, collection, query, where, deleteDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -71,7 +58,6 @@ export default function ProfilePage() {
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const { user, isUserLoading: isAuthUserLoading } = useUser();
   const db = useFirestore();
-  const [farmToDelete, setFarmToDelete] = useState<any>(null);
 
 
   const farmerDocRef = useMemoFirebase(() => {
@@ -79,14 +65,6 @@ export default function ProfilePage() {
     return doc(db, 'farmers', user.uid);
   }, [db, user?.uid]);
   
-  const farmsQuery = useMemoFirebase(() => {
-    if (!db || !user?.uid) return null;
-    // This query is now memoized, preventing re-renders from creating new query objects
-    return query(collection(db, 'farms'), where('farmerId', '==', user.uid));
-  }, [db, user?.uid]);
-
-  const { data: farmsData, isLoading: isFarmsLoading } = useCollection(farmsQuery);
-
   const isUserLoading = isAuthUserLoading;
 
   const profileForm = useForm<ProfileFormValues>({
@@ -156,29 +134,6 @@ export default function ProfilePage() {
     setIsPasswordLoading(false);
   }
 
-  const handleDeleteFarm = async () => {
-    if (!farmToDelete || !db) return;
-    
-    try {
-        const farmDoc = doc(db, 'farms', farmToDelete.id);
-        await deleteDoc(farmDoc);
-        toast({
-            title: 'Farm Deleted',
-            description: `The farm "${farmToDelete.name}" has been removed.`,
-        });
-    } catch (error) {
-        console.error("Error deleting farm:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Could not delete the farm. Please try again.',
-        });
-    } finally {
-        setFarmToDelete(null);
-    }
-  };
-
-
   return (
     <>
         <div className="space-y-8">
@@ -191,240 +146,149 @@ export default function ProfilePage() {
                 </p>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-3">
-                <div className="md:col-span-2 space-y-8">
-                        <Card>
-                            <Form {...profileForm}>
-                            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
-                                <CardHeader>
-                                    <CardTitle>Account Information</CardTitle>
-                                    <CardDescription>Update your personal details here.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6 p-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative">
-                                            <Avatar className="h-20 w-20">
-                                                <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/avatar/200/200"} alt={user?.displayName || "Farmer"} />
-                                                <AvatarFallback>{user?.displayName?.charAt(0) || 'F'}</AvatarFallback>
-                                            </Avatar>
-                                            <Button size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full h-7 w-7">
-                                                <Camera className="h-4 w-4" />
-                                                <span className="sr-only">Change Photo</span>
-                                            </Button>
-                                        </div>
-                                        {isUserLoading ? (
-                                            <div className="space-y-2">
-                                                <Skeleton className="h-6 w-32" />
-                                                <Skeleton className="h-4 w-48" />
-                                            </div>
-                                        ) : (
-                                            <div>
-                                                <h2 className="text-xl font-semibold">{profileForm.watch('name') || 'No Name'}</h2>
-                                                <p className="text-sm text-muted-foreground">{profileForm.watch('email')}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <FormField
-                                        control={profileForm.control}
-                                        name="name"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Full Name</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Your Name" {...field} disabled={isUserLoading} />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                        />
-                                    <FormField
-                                        control={profileForm.control}
-                                        name="email"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Email Address</FormLabel>
-                                            <FormControl>
-                                                <Input type="email" placeholder="your.email@example.com" {...field} disabled />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                        />
-                                    <FormField
-                                        control={profileForm.control}
-                                        name="mobile"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Mobile Number</FormLabel>
-                                            <FormControl>
-                                            <div className="relative">
-                                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input placeholder="Your mobile number" {...field} className="pl-9" disabled={isUserLoading}/>
-                                            </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                        />
-                                </CardContent>
-                                <CardFooter className="p-6">
-                                    <Button type="submit" disabled={isLoading || isUserLoading}>
-                                        {isLoading ? 'Saving...' : 'Save Changes'}
+            <div className="grid gap-8">
+                <Card>
+                    <Form {...profileForm}>
+                    <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
+                        <CardHeader>
+                            <CardTitle>Account Information</CardTitle>
+                            <CardDescription>Update your personal details here.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6 p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <Avatar className="h-20 w-20">
+                                        <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/avatar/200/200"} alt={user?.displayName || "Farmer"} />
+                                        <AvatarFallback>{user?.displayName?.charAt(0) || 'F'}</AvatarFallback>
+                                    </Avatar>
+                                    <Button size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full h-7 w-7">
+                                        <Camera className="h-4 w-4" />
+                                        <span className="sr-only">Change Photo</span>
                                     </Button>
-                                </CardFooter>
-                            </form>
-                            </Form>
-                        </Card>
-
-                        <Card>
-                            <Form {...passwordForm}>
-                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Shield className="w-5 h-5 text-primary" />
-                                        Security
-                                    </CardTitle>
-                                    <CardDescription>Change your password.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4 p-6">
-                                    <FormField
-                                        control={passwordForm.control}
-                                        name="currentPassword"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Current Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                        />
-                                    <FormField
-                                        control={passwordForm.control}
-                                        name="newPassword"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>New Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                        />
-                                    <FormField
-                                        control={passwordForm.control}
-                                        name="confirmPassword"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Confirm New Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                        />
-                                </CardContent>
-                                <CardFooter className="p-6">
-                                    <Button type="submit" disabled={isPasswordLoading}>
-                                        {isPasswordLoading ? 'Updating...' : 'Change Password'}
-                                    </Button>
-                                </CardFooter>
-                            </form>
-                            </Form>
-                        </Card>
-                </div>
-
-                <div className="space-y-8">
-                        <Card>
-                            <CardHeader className='flex-row items-center justify-between'>
-                                <div>
-                                    <CardTitle>Registered Farms</CardTitle>
-                                    <CardDescription>Your registered farm details.</CardDescription>
                                 </div>
-                                <Button asChild variant="outline" size="sm">
-                                    <Link href="/dashboard/farm-registration">
-                                        <PlusCircle className="w-4 h-4 mr-2" />
-                                        Add New
-                                    </Link>
-                                </Button>
-                            </CardHeader>
-                            
-                            <CardContent className="p-6 pt-2">
-                                {isFarmsLoading ? (
-                                    <div className="space-y-4 text-sm">
-                                        <Skeleton className="h-5 w-3/4" />
-                                        <Skeleton className="h-5 w-1/2" />
-                                        <Skeleton className="h-5 w-2/3" />
-                                        <Skeleton className="h-5 w-1/2" />
-                                    </div>
-                                ) : farmsData && farmsData.length > 0 ? (
-                                    <div className="space-y-6">
-                                        {farmsData.map((farm, index) => (
-                                          <AlertDialog key={farm.id}>
-                                            <div>
-                                                {index > 0 && <Separator className="my-4" />}
-                                                <div className="space-y-3 text-sm">
-                                                    <div className="flex justify-between items-center">
-                                                        <span className="font-semibold text-base">{farm.name}</span>
-                                                        <div className="flex items-center gap-1">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                                                                <Link href={`/dashboard/farm-registration?id=${farm.id}`}>
-                                                                    <Edit className="w-4 h-4" />
-                                                                </Link>
-                                                            </Button>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setFarmToDelete(farm)}>
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Location:</span>
-                                                        <span className="font-medium text-right">{farm.location}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Area:</span>
-                                                        <span className="font-medium">{farm.size} acres</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-muted-foreground">Main Crops:</span>
-                                                        <span className="font-medium text-right">{(Array.isArray(farm.mainCrops) ? farm.mainCrops : []).join(', ')}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                             <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle className="flex items-center gap-2">
-                                                        <AlertTriangle className="text-destructive"/>
-                                                        Confirm Deletion
-                                                    </AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Are you sure you want to delete the farm "<strong>{farm?.name}</strong>"? This action cannot be undone.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel onClick={() => setFarmToDelete(null)}>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={handleDeleteFarm} className="bg-destructive hover:bg-destructive/90">
-                                                        Delete
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                          </AlertDialog>
-                                        ))}
+                                {isUserLoading ? (
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-6 w-32" />
+                                        <Skeleton className="h-4 w-48" />
                                     </div>
                                 ) : (
-                                    <div className="text-center text-muted-foreground py-8">
-                                        <Tractor className="mx-auto h-12 w-12" />
-                                        <p className="mt-4">You have not registered any farms yet.</p>
+                                    <div>
+                                        <h2 className="text-xl font-semibold">{profileForm.watch('name') || 'No Name'}</h2>
+                                        <p className="text-sm text-muted-foreground">{profileForm.watch('email')}</p>
                                     </div>
                                 )}
-                            </CardContent>
-                        </Card>
-                </div>
+                            </div>
+                            <FormField
+                                control={profileForm.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Full Name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Your Name" {...field} disabled={isUserLoading} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                            <FormField
+                                control={profileForm.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Email Address</FormLabel>
+                                    <FormControl>
+                                        <Input type="email" placeholder="your.email@example.com" {...field} disabled />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                            <FormField
+                                control={profileForm.control}
+                                name="mobile"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Mobile Number</FormLabel>
+                                    <FormControl>
+                                    <div className="relative">
+                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input placeholder="Your mobile number" {...field} className="pl-9" disabled={isUserLoading}/>
+                                    </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                        </CardContent>
+                        <CardFooter className="p-6">
+                            <Button type="submit" disabled={isLoading || isUserLoading}>
+                                {isLoading ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                        </CardFooter>
+                    </form>
+                    </Form>
+                </Card>
+
+                <Card>
+                    <Form {...passwordForm}>
+                    <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Shield className="w-5 h-5 text-primary" />
+                                Security
+                            </CardTitle>
+                            <CardDescription>Change your password.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4 p-6">
+                            <FormField
+                                control={passwordForm.control}
+                                name="currentPassword"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Current Password</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                            <FormField
+                                control={passwordForm.control}
+                                name="newPassword"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>New Password</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                            <FormField
+                                control={passwordForm.control}
+                                name="confirmPassword"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Confirm New Password</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                        </CardContent>
+                        <CardFooter className="p-6">
+                            <Button type="submit" disabled={isPasswordLoading}>
+                                {isPasswordLoading ? 'Updating...' : 'Change Password'}
+                            </Button>
+                        </CardFooter>
+                    </form>
+                    </Form>
+                </Card>
             </div>
         </div>
     </>
