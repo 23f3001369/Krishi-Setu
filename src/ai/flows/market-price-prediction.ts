@@ -41,7 +41,7 @@ const prompt = ai.definePrompt({
 Crop: {{{cropName}}}
 Market/Region: {{{marketLocation}}}
 
-Based on simulated historical data, current market dynamics, and seasonal trends, provide the following:
+Based on real-time data from commodityonline.com, current market dynamics, and seasonal trends, provide the following:
 1.  A predicted price range in Indian Rupees (Rs) per quintal.
 2.  The likely price trend for the next 2-4 weeks (upward, downward, or stable).
 3.  A concise reasoning for your prediction, considering factors like seasonality, demand, supply, and recent weather events or government policies.
