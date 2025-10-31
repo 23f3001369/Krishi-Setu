@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Card,
@@ -16,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Check, MapPin, Image as ImageIcon, ChevronsRight, ChevronsLeft, Send } from "lucide-react";
+import { Check, MapPin, Image as ImageIcon, ChevronsRight, ChevronsLeft, Send, X } from "lucide-react";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -34,14 +35,15 @@ export default function FarmRegistrationPage() {
 
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(!!farmId); // Start loading if in edit mode
+  const [isLoading, setIsLoading] = useState(!!farmId);
   const [formData, setFormData] = useState({
     farmName: "",
     farmSize: "",
     mainCrops: "",
     address: "",
   });
-  const farmImage = PlaceHolderImages.find(p => p.id === 'farm-photo-1');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { user } = useUser();
   const db = useFirestore();
@@ -64,6 +66,7 @@ export default function FarmRegistrationPage() {
             mainCrops: Array.isArray(data.mainCrops) ? data.mainCrops.join(', ') : '',
             address: data.location || '',
           });
+          setPhotos(data.photos || []);
         } else {
           toast({ variant: 'destructive', title: 'Error', description: 'Farm not found.' });
         }
@@ -81,6 +84,30 @@ export default function FarmRegistrationPage() {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
   };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+        const files = Array.from(e.target.files);
+        const newPhotos: string[] = [];
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (e.target?.result) {
+                    newPhotos.push(e.target.result as string);
+                    // This is a bit of a trick to update the state after all files are read
+                    if (newPhotos.length === files.length) {
+                         setPhotos(prev => [...prev, ...newPhotos]);
+                    }
+                }
+            }
+            reader.readAsDataURL(file);
+        })
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+  }
 
   const isStep1Valid = formData.farmName.trim() !== "" && formData.farmSize.trim() !== "" && formData.mainCrops.trim() !== "";
   const isStep2Valid = formData.address.trim() !== "";
@@ -103,13 +130,15 @@ export default function FarmRegistrationPage() {
         return;
     }
 
+    // In a real app, you would upload photos to Firebase Storage and get URLs.
+    // For this example, we'll store the base64 strings directly in Firestore, which is NOT recommended for production.
     const farmData = {
         farmerId: user.uid,
         name: formData.farmName,
         size: Number(formData.farmSize),
         mainCrops: formData.mainCrops.split(',').map(s => s.trim()),
         location: formData.address,
-        photos: [], // Placeholder for photo URLs
+        photos: photos,
     };
 
     try {
@@ -196,7 +225,14 @@ export default function FarmRegistrationPage() {
                 <>
                     {step === 1 && <Step1 formData={formData} handleChange={handleChange} />}
                     {step === 2 && <Step2 formData={formData} handleChange={handleChange} />}
-                    {step === 3 && <Step3 image={farmImage} />}
+                    {step === 3 && (
+                      <Step3 
+                        photos={photos} 
+                        fileInputRef={fileInputRef} 
+                        handlePhotoChange={handlePhotoChange} 
+                        removePhoto={removePhoto} 
+                      />
+                    )}
                 </>
             )}
         </CardContent>
@@ -222,17 +258,16 @@ export default function FarmRegistrationPage() {
   );
 }
 
-type StepProps = {
+type Step1Props = {
     formData: {
         farmName: string;
         farmSize: string;
         mainCrops: string;
-        address: string;
     };
     handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 
-function Step1({ formData, handleChange }: StepProps) {
+function Step1({ formData, handleChange }: Step1Props) {
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
       <div className="space-y-2">
@@ -251,7 +286,14 @@ function Step1({ formData, handleChange }: StepProps) {
   );
 }
 
-function Step2({ formData, handleChange }: StepProps) {
+type Step2Props = {
+    formData: {
+        address: string;
+    };
+    handleChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+}
+
+function Step2({ formData, handleChange }: Step2Props) {
   return (
     <div className="space-y-4">
         <div className="space-y-2 max-w-2xl mx-auto">
@@ -269,22 +311,54 @@ function Step2({ formData, handleChange }: StepProps) {
   );
 }
 
-function Step3({image}: {image?: {imageUrl: string, description: string, imageHint: string}}) {
+
+type Step3Props = {
+  photos: string[];
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  handlePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  removePhoto: (index: number) => void;
+};
+
+function Step3({ photos, fileInputRef, handlePhotoChange, removePhoto }: Step3Props) {
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
         <div className="space-y-2">
             <Label>Upload Farm Photos</Label>
-            <div className="border-2 border-dashed border-muted-foreground/50 rounded-lg p-8 text-center bg-muted/20 hover:bg-muted/40 cursor-pointer">
+            <div 
+              className="border-2 border-dashed border-muted-foreground/50 rounded-lg p-8 text-center bg-muted/20 hover:bg-muted/40 cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
                 <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">Drag &amp; drop files here, or click to select files</p>
-                <Input id="picture" type="file" className="sr-only" />
+                <p className="mt-2 text-sm text-muted-foreground">Drag & drop files here, or click to select files</p>
+                <Input 
+                  ref={fileInputRef} 
+                  id="picture" 
+                  type="file" 
+                  className="sr-only" 
+                  multiple 
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                />
             </div>
         </div>
-        {image &&
+        
+        {photos.length > 0 &&
             <div className="space-y-2">
                 <Label>Uploaded Photos</Label>
-                <div className="relative aspect-video w-full overflow-hidden rounded-md">
-                    <Image src={image.imageUrl} alt={image.description} data-ai-hint={image.imageHint} fill className="object-cover"/>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {photos.map((photo, index) => (
+                        <div key={index} className="relative aspect-square w-full overflow-hidden rounded-md">
+                            <Image src={photo} alt={`Farm photo ${index + 1}`} fill className="object-cover"/>
+                            <Button 
+                              variant="destructive" 
+                              size="icon" 
+                              className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                              onClick={() => removePhoto(index)}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
                 </div>
             </div>
         }
