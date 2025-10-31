@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import * as React from 'react';
@@ -17,7 +18,6 @@ import {
   ClipboardList,
   Users,
   MessageSquare,
-  Bell,
   List,
   TrendingUp,
   ShoppingCart,
@@ -34,6 +34,9 @@ import {
   SidebarProvider,
   SidebarInset,
   SidebarMenuBadge,
+  SidebarSeparator,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import Logo from '@/components/shared/logo';
 import { Button } from '@/components/ui/button';
@@ -58,10 +61,13 @@ const navItems = [
   { href: '/dashboard/market-price-prediction', icon: TrendingUp, label: 'Market Price AI' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'AgriVaani' },
   { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
-  { href: '/dashboard/agri-bazar', icon: ShoppingCart, label: 'Agri Bazar' },
-  { href: '/dashboard/krishi-yantra-mitra', icon: Tractor, label: 'Krishi Yantra Mitra' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
+
+const upcomingFeatures = [
+    { href: '/dashboard/agri-bazar', icon: ShoppingCart, label: 'Agri Bazar' },
+    { href: '/dashboard/krishi-yantra-mitra', icon: Tractor, label: 'Krishi Yantra Mitra' },
+]
 
 const logoutItem = { href: '/', icon: LogOut, label: 'Log out' };
 
@@ -118,6 +124,24 @@ function DesktopDashboardLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
+             <SidebarGroup>
+                <SidebarGroupLabel>Upcoming Features</SidebarGroupLabel>
+                 <SidebarMenu>
+                    {upcomingFeatures.map((item) => (
+                        <SidebarMenuItem key={item.href}>
+                        <Link href={item.href}>
+                            <SidebarMenuButton
+                            isActive={pathname === item.href}
+                            tooltip={item.label}
+                            >
+                            <item.icon />
+                            <span>{item.label}</span>
+                            </SidebarMenuButton>
+                        </Link>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarMenu>
+            </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
               <SidebarMenu>
@@ -164,14 +188,14 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0">
+          <SheetContent side="left" className="p-0 flex flex-col">
             <SheetHeader className="p-2">
                 <VisuallyHidden>
                     <SheetTitle>Navigation Menu</SheetTitle>
                     <SheetDescription>Main navigation for the application.</SheetDescription>
                 </VisuallyHidden>
             </SheetHeader>
-            <nav className="grid gap-6 text-lg font-medium p-4">
+            <nav className="grid gap-6 text-lg font-medium p-4 overflow-y-auto">
               <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
                 <Logo />
                 <span className="sr-only">AgriAssist</span>
@@ -191,7 +215,28 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
                    {item.badge && <span className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{item.badge}</span>}
                 </Link>
               ))}
-               <Link
+
+              <Separator className="my-2" />
+              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase">Upcoming</p>
+                {upcomingFeatures.map((item) => (
+                    <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 transition-all',
+                        pathname === item.href ? 'text-primary bg-muted' : 'text-muted-foreground hover:text-primary'
+                    )}
+                    >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                    </Link>
+                ))}
+
+
+            </nav>
+            <div className="mt-auto p-4 border-t">
+                 <Link
                   href={logoutItem.href}
                   onClick={() => setOpen(false)}
                   className={'flex items-center gap-3 rounded-lg px-3 py-2 transition-all text-muted-foreground hover:text-primary'}
@@ -199,7 +244,7 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
                   <logoutItem.icon className="h-4 w-4" />
                   {logoutItem.label}
                 </Link>
-            </nav>
+            </div>
           </SheetContent>
         </Sheet>
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
