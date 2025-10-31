@@ -1,12 +1,13 @@
 
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useRef, useState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
 import { aiCropRecommendation } from '@/ai/flows/ai-crop-recommendation';
 import { agriQa } from '@/ai/flows/agri-qa';
 import { extractSoilHealthInfo } from '@/ai/flows/extract-soil-health-info';
+import { transcribeAudio } from '@/ai/flows/speech-to-text';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,7 +20,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Leaf, Lightbulb, Upload, Bot, Sparkles, Wand2 } from 'lucide-react';
+import { Leaf, Lightbulb, Upload, Bot, Sparkles, Wand2, Mic, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { useUser } from '@/firebase';
@@ -85,10 +86,85 @@ function GeneralAgriBot() {
     const [question, setQuestion] = useState('');
     const [answer, setAnswer] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<React.ReactNode | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [micDisabled, setMicDisabled] = useState(false);
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && !navigator.mediaDevices?.getUserMedia) {
+            setError("Sorry, your browser doesn't support microphone access.");
+            setMicDisabled(true);
+        }
+    }, []);
+
+    const handleMicClick = async () => {
+        setError(null);
+        if (isRecording) {
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+        } else {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                mediaRecorderRef.current = recorder;
+                audioChunksRef.current = [];
+
+                recorder.ondataavailable = (event) => {
+                    audioChunksRef.current.push(event.data);
+                };
+
+                recorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = async () => {
+                        const base64Audio = reader.result as string;
+                        setIsLoading(true);
+                        setQuestion('Transcribing audio...');
+                        try {
+                            const result = await transcribeAudio({ audio: base64Audio });
+                            setQuestion(result.text);
+                        } catch (e) {
+                            console.error(e);
+                            setError('Could not transcribe audio. Please try again.');
+                            setQuestion('');
+                        } finally {
+                            setIsLoading(false);
+                        }
+                    };
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                recorder.start();
+                setIsRecording(true);
+            } catch (err) {
+                console.error(err);
+                let errorMessage: React.ReactNode = 'Could not access the microphone. Please check permissions and try again.';
+                if (err instanceof DOMException) {
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                        errorMessage = 'Microphone permission was denied. Please allow it in your browser settings.';
+                    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                        errorMessage = 'No microphone was found. Please ensure one is connected and enabled.';
+                    } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError' || err.name === 'audio-capture') {
+                        errorMessage = (
+                            <div>
+                                <p className="font-bold">Microphone is unavailable.</p>
+                                <p className="mt-2">The browser could not access your microphone. Please close other apps or tabs using it, check permissions, then refresh the page.</p>
+                            </div>
+                        );
+                        setMicDisabled(true);
+                    }
+                }
+                setError(errorMessage);
+            }
+        }
+    };
 
     const handleAskQuestion = async () => {
-        if (!question) return;
+        if (!question || question === 'Transcribing audio...') return;
         setIsLoading(true);
         setError(null);
         setAnswer('');
@@ -114,24 +190,38 @@ function GeneralAgriBot() {
             <CardContent className="space-y-4 p-6">
                 <div className="space-y-2">
                     <Label htmlFor="general-question">Your Question</Label>
-                    <Textarea 
-                        id="general-question"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        placeholder='e.g., "Which soil is suitable for soybean?" or "What are the crop varieties of Corn ?"'
-                    />
+                    <div className="flex gap-2">
+                        <Textarea 
+                            id="general-question"
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            placeholder='e.g., "Which soil is suitable for soybean?" or "What are the crop varieties of Corn ?"'
+                            disabled={isLoading}
+                        />
+                        <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={handleMicClick} 
+                            disabled={micDisabled || isLoading}
+                            title={micDisabled ? "Microphone is unavailable" : (isRecording ? "Stop recording" : "Use microphone")}
+                            className="h-auto"
+                        >
+                            <Mic className={isRecording ? 'text-primary animate-pulse' : ''} />
+                        </Button>
+                    </div>
                 </div>
                  {error && (
                     <Alert variant="destructive">
-                        <AlertTitle>Error</AlertTitle>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Microphone Error</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}
             </CardContent>
             <CardFooter className="p-6">
-                <Button onClick={handleAskQuestion} disabled={isLoading || !question}>
+                <Button onClick={handleAskQuestion} disabled={isLoading || !question || question === 'Transcribing audio...'}>
                     <Bot className="mr-2 h-4 w-4" />
-                    {isLoading ? 'Thinking...' : 'Ask Agri-Bot'}
+                    {isLoading ? (question === 'Transcribing audio...' ? 'Transcribing...' : 'Thinking...') : 'Ask Agri-Bot'}
                 </Button>
             </CardFooter>
             {answer && (
