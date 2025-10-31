@@ -10,6 +10,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { saveSoilReportTool } from './save-soil-report-tool';
+import { getCurrentUser } from 'firebase/auth/web-extension';
+import { getAuth } from 'firebase/auth';
 
 const AICropRecommendationInputSchema = z.object({
   soilAnalysis: z.string().optional().describe('The analysis of the soil on the farm.'),
@@ -23,6 +26,7 @@ const AICropRecommendationInputSchema = z.object({
     .string()
     .describe('The real time weather conditions on the farm.'),
   seasonalData: z.string().describe('The seasonal data for the farm.'),
+  farmerId: z.string().describe("The current user's ID.")
 });
 export type AICropRecommendationInput = z.infer<typeof AICropRecommendationInputSchema>;
 
@@ -42,20 +46,25 @@ const prompt = ai.definePrompt({
   name: 'aiCropRecommendationPrompt',
   input: {schema: AICropRecommendationInputSchema},
   output: {schema: AICropRecommendationOutputSchema},
-  prompt: `You are an expert agricultural advisor. You will analyze the farm\'s soil analysis, real-time weather conditions, and seasonal data to suggest the most optimal crops for planting.
+  tools: [saveSoilReportTool],
+  prompt: `You are an expert agricultural advisor. 
+  
+  Your tasks are:
+  1. Analyze the farm's soil analysis, real-time weather conditions, and seasonal data to suggest the most optimal crops for planting.
+  2. After analysis, you MUST call the 'saveSoilReportTool' to save the soil details for the user's records.
 
-{{#if soilHealthCardImage}}
-You have been provided an image of a soil health report. Extract the soil analysis details from this image.
-Soil Health Report Image: {{media url=soilHealthCardImage}}
-{{else}}
-Use the provided soil analysis text.
-Soil Analysis: {{{soilAnalysis}}}
-{{/if}}
+  {{#if soilHealthCardImage}}
+  You have been provided an image of a soil health report. Extract the soil analysis details from this image.
+  Soil Health Report Image: {{media url=soilHealthCardImage}}
+  {{else}}
+  Use the provided soil analysis text.
+  Soil Analysis: {{{soilAnalysis}}}
+  {{/if}}
 
-Real-time Weather Conditions: {{{realTimeWeatherConditions}}}
-Seasonal Data: {{{seasonalData}}}
+  Real-time Weather Conditions: {{{realTimeWeatherConditions}}}
+  Seasonal Data: {{{seasonalData}}}
 
-Based on this information, what are the optimal crops for planting, and what is the reasoning behind this recommendation?`,
+  Based on this information, what are the optimal crops for planting, and what is the reasoning behind this recommendation? After providing the recommendation, save the soil report.`,
 });
 
 const aiCropRecommendationFlow = ai.defineFlow(

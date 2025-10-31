@@ -362,6 +362,32 @@
         }
       },
       "required": ["authorId", "authorName", "replyText", "createdAt"]
+    },
+    "SoilReport": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SoilReport",
+      "description": "Represents a soil health report for a farmer, either manually entered or extracted from an image.",
+      "type": "object",
+      "properties": {
+        "farmerId": {
+          "type": "string",
+          "description": "The UID of the farmer who owns this report."
+        },
+        "reportText": {
+          "type": "string",
+          "description": "The soil analysis details as text."
+        },
+        "reportImage": {
+          "type": "string",
+          "description": "A photo of the soil health card, as a data URI."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the report was recorded."
+        }
+      },
+      "required": ["farmerId", "reportText", "createdAt"]
     }
   },
   "auth": {
@@ -424,6 +450,26 @@
               "description": "The unique ID for the cultivation guide."
             }
           ]
+        }
+      },
+      {
+        "path": "/farmers/{farmerId}/soilReports/{reportId}",
+        "definition": {
+            "entityName": "SoilReport",
+            "schema": {
+                "$ref": "#/backend/entities/SoilReport"
+            },
+            "description": "Stores soil health reports for a specific farmer.",
+            "params": [
+                {
+                    "name": "farmerId",
+                    "description": "The Firebase Auth UID of the farmer."
+                },
+                {
+                    "name": "reportId",
+                    "description": "The unique ID for the soil report."
+                }
+            ]
         }
       },
       {

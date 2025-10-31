@@ -22,6 +22,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Leaf, Lightbulb, Upload, Bot, Sparkles, Wand2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { useUser } from '@/firebase';
 
 type RecommendationState = {
   data?: {
@@ -51,11 +52,16 @@ async function recommendCrops(
   const soilHealthCardImage = formData.get('soilHealthCardImage') as string;
   const realTimeWeatherConditions = "Temp: 25°C, Humidity: 70%, Wind: 10km/h, Last rainfall: 2 days ago";
   const seasonalData = "Current season: Late Spring, Average rainfall for this period: 50mm, Frost risk: Low";
+  const farmerId = formData.get('farmerId') as string;
 
   if (
     (!soilAnalysis && !soilHealthCardImage)
   ) {
     return { error: 'Soil details are required.' };
+  }
+  
+  if (!farmerId) {
+    return { error: 'User not authenticated. Please log in.' };
   }
 
   try {
@@ -64,6 +70,7 @@ async function recommendCrops(
       soilHealthCardImage: soilHealthCardImage || undefined,
       realTimeWeatherConditions,
       seasonalData,
+      farmerId,
     });
     return { data: result };
   } catch (e) {
@@ -144,6 +151,7 @@ function GeneralAgriBot() {
 
 export default function CropRecommendationPage() {
   const [recommendationState, formAction] = useActionState(recommendCrops, initialRecommendationState);
+  const { user } = useUser();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hiddenImageInputRef = useRef<HTMLInputElement>(null);
@@ -217,10 +225,11 @@ export default function CropRecommendationPage() {
             <CardTitle>Specific Crop Recommendation</CardTitle>
             <CardDescription>
               Enter the latest data from your farm to receive tailored crop
-              recommendations.
+              recommendations and save the report.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
+            <input type="hidden" name="farmerId" value={user?.uid || ''} />
             <div className="space-y-2">
               <Label>Soil Details</Label>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

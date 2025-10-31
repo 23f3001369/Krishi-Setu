@@ -11,6 +11,7 @@
  * - /farmers/{farmerId}: Farmer profiles, where farmerId is the Firebase Auth UID.
  * - /farmers/{farmerId}/transactions/{transactionId}: Financial transactions for a farmer.
  * - /farmers/{farmerId}/cultivationGuides/{guideId}: Cultivation guides for a farmer.
+ * - /farmers/{farmerId}/soilReports/{reportId}: Soil health reports for a farmer.
  * - /farms/{farmId}: Farm data, with a `farmerId` field indicating ownership.
  * - /weather_forecasts/{weatherForecastId}: Public weather forecast data.
  * - /learning_articles/{learningArticleId}: Public learning articles.
@@ -80,47 +81,35 @@ service cloud.firestore {
       allow create: if isOwner(farmerId) && request.resource.data.id == farmerId; // Ensure UID matches document ID
       allow update: if isExistingOwner(farmerId);
       allow delete: if isExistingOwner(farmerId);
+
+       /**
+       * @description Manages access to farmer transactions.
+       * @path /farmers/{farmerId}/transactions/{transactionId}
+       * @principle Strict owner-only access.
+       */
+      match /transactions/{transactionId} {
+        allow read, write: if isOwner(farmerId);
+      }
+
+      /**
+       * @description Manages access to farmer cultivation guides.
+       * @path /farmers/{farmerId}/cultivationGuides/{guideId}
+       * @principle Strict owner-only access.
+       */
+      match /cultivationGuides/{guideId} {
+        allow read, write: if isOwner(farmerId);
+      }
+
+      /**
+       * @description Manages access to farmer soil reports.
+       * @path /farmers/{farmerId}/soilReports/{reportId}
+       * @principle Strict owner-only access.
+       */
+      match /soilReports/{reportId} {
+        allow read, write: if isOwner(farmerId);
+      }
     }
 
-    /**
-     * @description Manages access to farmer transactions.
-     * @path /farmers/{farmerId}/transactions/{transactionId}
-     * @allow (get) User A can read their own transaction: `request.auth.uid == "user_a"`.
-     * @allow (list) User A can list their own transaction: `request.auth.uid == "user_a"`.
-     * @allow (create) User A can create their own transaction: `request.auth.uid == "user_a"`.
-     * @allow (update) User A can update their own transaction: `request.auth.uid == "user_a"`.
-     * @allow (delete) User A can delete their own transaction: `request.auth.uid == "user_a"`.
-     * @deny (get) User B cannot read User A's transaction: `request.auth.uid != "user_a"`.
-     * @deny (create) User B cannot create User A's transaction: `request.auth.uid != "user_a"`.
-     * @principle Strict owner-only access.
-     */
-    match /farmers/{farmerId}/transactions/{transactionId} {
-      allow get: if isOwner(farmerId);
-      allow list: if isOwner(farmerId);
-      allow create: if isOwner(farmerId);
-      allow update: if isExistingOwner(farmerId);
-      allow delete: if isExistingOwner(farmerId);
-    }
-
-    /**
-     * @description Manages access to farmer cultivation guides.
-     * @path /farmers/{farmerId}/cultivationGuides/{guideId}
-     * @allow (get) User A can read their own cultivation guide: `request.auth.uid == "user_a"`.
-     * @allow (list) User A can list their own cultivation guide: `request.auth.uid == "user_a"`.
-     * @allow (create) User A can create their own cultivation guide: `request.auth.uid == "user_a"`.
-     * @allow (update) User A can update their own cultivation guide: `request.auth.uid == "user_a"`.
-     * @allow (delete) User A can delete their own cultivation guide: `request.auth.uid == "user_a"`.
-     * @deny (get) User B cannot read User A's cultivation guide: `request.auth.uid != "user_a"`.
-     * @deny (create) User B cannot create User A's cultivation guide: `request.auth.uid != "user_a"`.
-     * @principle Strict owner-only access.
-     */
-    match /farmers/{farmerId}/cultivationGuides/{guideId} {
-      allow get: if isOwner(farmerId);
-      allow list: if isOwner(farmerId);
-      allow create: if isOwner(farmerId);
-      allow update: if isExistingOwner(farmerId);
-      allow delete: if isExistingOwner(farmerId);
-    }
 
     /**
      * @description Manages access to farm data.
