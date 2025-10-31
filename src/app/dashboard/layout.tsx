@@ -20,6 +20,7 @@ import {
   Bell,
   List,
   TrendingUp,
+  ShoppingCart,
 } from 'lucide-react';
 
 import {
@@ -57,6 +58,8 @@ const navItems = [
   { href: '/dashboard/market-price-prediction', icon: TrendingUp, label: 'Market Price AI' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'AgriVaani' },
   { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
+  { href: '/dashboard/agri-bazar', icon: ShoppingCart, label: 'Agri Bazar' },
+  { href: '/dashboard/krishi-yantra-mitra', icon: Tractor, label: 'Krishi Yantra Mitra' },
   { href: '/dashboard/profile', icon: User, label: 'Profile' },
 ];
 
@@ -236,29 +239,6 @@ function UserMenu() {
             <span>Profile</span>
           </Link>
         </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function NotificationMenu() {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Toggle notifications</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <Link href="/dashboard" passHref>
-          <DropdownMenuItem className="flex-col items-start gap-1 cursor-pointer">
-              <p className="font-bold text-destructive">Weather Alert: Heavy Rain</p>
-              <p className="text-xs text-muted-foreground">Heavy rain expected today. Ensure proper drainage.</p>
-          </DropdownMenuItem>
-        </Link>
       </DropdownMenuContent>
     </DropdownMenu>
   );
