@@ -106,15 +106,6 @@ export default function MarketPricePredictionPage() {
         </p>
       </div>
 
-      {heroImage && (
-        <div className="relative h-48 w-full overflow-hidden rounded-lg">
-          <Image src={heroImage.imageUrl} alt={heroImage.description} data-ai-hint={heroImage.imageHint} fill className="object-cover" />
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <h2 className="text-4xl font-bold text-white font-headline">Forecast Your Earnings</h2>
-          </div>
-        </div>
-      )}
-
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Get Price Prediction</CardTitle>
