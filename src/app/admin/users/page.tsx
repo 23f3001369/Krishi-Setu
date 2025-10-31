@@ -20,25 +20,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Search, Users, Trash2, Eye, Ban, AlertTriangle, Wheat } from "lucide-react";
+import { MoreHorizontal, Search, Users, Eye, Ban, Wheat } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import {
   Dialog,
   DialogContent,
@@ -49,7 +38,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, deleteDoc, Timestamp, query, where } from 'firebase/firestore';
+import { collection, doc, updateDoc, Timestamp, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -82,7 +71,6 @@ export default function UserManagementPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState<EnrichedFarmer | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
     const db = useFirestore();
     const { toast } = useToast();
@@ -148,29 +136,6 @@ export default function UserManagementPage() {
         }
     };
     
-    const openDeleteConfirm = (user: EnrichedFarmer) => {
-        setSelectedUser(user);
-        setIsDeleteConfirmOpen(true);
-    };
-
-    const handleDeleteUser = async () => {
-        if (!selectedUser || !db) return;
-        const userDocRef = doc(db, 'farmers', selectedUser.id);
-        try {
-            await deleteDoc(userDocRef);
-            toast({
-                title: 'User Deleted',
-                description: `${selectedUser.name}'s account has been permanently deleted.`,
-            });
-            // Note: This only deletes the farmer doc. Associated farms/etc. would need a Cloud Function.
-        } catch (error) {
-            console.error("Error deleting user:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete user account.' });
-        }
-        setIsDeleteConfirmOpen(false);
-        setSelectedUser(null);
-    };
-    
     const isLoading = isLoadingFarmers || isLoadingFarms;
 
   return (
@@ -209,10 +174,9 @@ export default function UserManagementPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  <TableHead>User</TableHead>
                   <TableHead className="hidden sm:table-cell">Farm Name</TableHead>
                   <TableHead className="hidden md:table-cell">Joined</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
                   </TableHead>
@@ -222,28 +186,30 @@ export default function UserManagementPage() {
                 {isLoading ? (
                     [...Array(4)].map((_, i) => (
                         <TableRow key={i}>
-                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-full" /><div className="space-y-1"><Skeleton className="h-5 w-32" /><Skeleton className="h-4 w-40" /></div></div></TableCell>
                             <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-28" /></TableCell>
                             <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
                             <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                         </TableRow>
                     ))
                 ) : filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-sm text-muted-foreground md:hidden">
-                          {user.email}
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.photoURL} alt={user.name} />
+                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                              {user.email}
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{user.farmName}</TableCell>
                     <TableCell className="hidden md:table-cell">{user.createdAt ? user.createdAt.toDate().toLocaleDateString() : 'N/A'}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.status === 'Active' ? 'default' : user.status === 'Pending' ? 'secondary' : 'destructive'}>
-                        {user.status}
-                      </Badge>
-                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -261,11 +227,6 @@ export default function UserManagementPage() {
                           <DropdownMenuItem onSelect={() => handleSuspendUser(user)}>
                             <Ban className="mr-2 h-4 w-4" />
                             {user.status === 'Active' ? 'Suspend' : 'Activate'}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive" onSelect={() => openDeleteConfirm(user)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete User
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -332,27 +293,6 @@ export default function UserManagementPage() {
           )}
         </DialogContent>
       </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="text-destructive"/>
-                Are you sure?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the account for <strong>{selectedUser?.name}</strong>.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive hover:bg-destructive/90">
-                Delete User
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
