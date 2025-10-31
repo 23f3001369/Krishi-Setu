@@ -270,6 +270,11 @@
           "type": "string",
           "description": "The content of the post/question."
         },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of an optional image attached to the post.",
+          "format": "uri"
+        },
         "likes": {
           "type": "number",
           "description": "The number of likes the post has received."

@@ -3,6 +3,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Card,
   CardContent,
@@ -13,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, ThumbsUp, PlusCircle, Search, CornerDownRight, Trash2 } from "lucide-react";
+import { MessageSquare, ThumbsUp, PlusCircle, Search, CornerDownRight, Trash2, Image as ImageIcon, XCircle } from "lucide-react";
 import { Separator } from '@/components/ui/separator';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -43,6 +44,7 @@ type Post = {
     authorName: string;
     authorAvatar: string;
     question: string;
+    imageUrl?: string;
     likes: number; // Denormalized count
     comments: number; // Denormalized count
     createdAt: Timestamp;
@@ -634,10 +636,15 @@ function PostCard({ post }: { post: EnrichedPost }) {
                     )}
                 </div>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 pt-0">
                 <p className="text-sm">{post.question}</p>
+                {post.imageUrl && (
+                    <div className="mt-4 relative aspect-video w-full max-w-lg mx-auto overflow-hidden rounded-lg border">
+                        <Image src={post.imageUrl} alt="Post image" layout="fill" objectFit="contain" />
+                    </div>
+                )}
             </CardContent>
-            <CardFooter className="flex-col items-start p-6">
+            <CardFooter className="flex-col items-start p-6 pt-0">
                  <div className="flex justify-between items-center w-full mb-4">
                     <div className="flex gap-2 text-sm text-muted-foreground">
                         <Button variant="ghost" size="sm" className="flex items-center gap-1" onClick={handleLikePost} disabled={!user}>
@@ -700,6 +707,9 @@ export default function CommunityForumPage() {
     const [newPost, setNewPost] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imageData, setImageData] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // --- Data Fetching ---
     const postsQuery = useMemoFirebase(() => db ? query(collection(db, 'forumPosts'), orderBy('createdAt', 'desc')) : null, [db]);
@@ -728,17 +738,41 @@ export default function CommunityForumPage() {
 
     // --- End Data Fetching ---
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const dataUrl = reader.result as string;
+                setImagePreview(dataUrl);
+                setImageData(dataUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const removeImage = () => {
+        setImagePreview(null);
+        setImageData(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleCreatePost = async () => {
-        if (!user || !db || !newPost.trim()) return;
+        if (!user || !db || (!newPost.trim() && !imageData)) return;
 
         setIsSubmitting(true);
+        // Note: In a real app, upload the image to Firebase Storage and get the URL
+        // For this example, we'll use the base64 data URL directly, which is not optimal
         const postData = {
             authorId: user.uid,
             authorName: user.displayName || 'Anonymous',
             authorAvatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
             question: newPost,
-            likes: 0, // Initialize denormalized counts
-            comments: 0, // Initialize denormalized counts
+            imageUrl: imageData, // Using data URL, switch to storage URL in production
+            likes: 0,
+            comments: 0,
             createdAt: serverTimestamp()
         };
         const postsCollection = collection(db, 'forumPosts');
@@ -746,6 +780,7 @@ export default function CommunityForumPage() {
         addDoc(postsCollection, postData)
             .then(() => {
                 setNewPost('');
+                removeImage();
                 toast({ title: 'Post Created', description: 'Your question has been added to the forum.' });
             })
             .catch((serverError) => {
@@ -772,23 +807,40 @@ export default function CommunityForumPage() {
                 <div className="md:w-3/4 space-y-6">
                     <Card>
                         <CardHeader>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-start gap-4">
                                 <Avatar>
                                     <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/avatar/100/100"} alt={user?.displayName || "Farmer"} />
                                     <AvatarFallback>{user?.displayName?.charAt(0) || 'F'}</AvatarFallback>
                                 </Avatar>
-                                <Input
-                                    placeholder="Ask a question or share an update..."
-                                    className="flex-1"
-                                    value={newPost}
-                                    onChange={(e) => setNewPost(e.target.value)}
-                                    disabled={isSubmitting || !user}
-                                />
-                                <Button onClick={handleCreatePost} disabled={isSubmitting || !newPost.trim() || !user}>
-                                    {isSubmitting ? 'Posting...' : ( <><PlusCircle className="mr-2 h-4 w-4"/>Create Post</> )}
-                                </Button>
+                                <div className="flex-1 space-y-2">
+                                    <Input
+                                        placeholder="Ask a question or share an update..."
+                                        value={newPost}
+                                        onChange={(e) => setNewPost(e.target.value)}
+                                        disabled={isSubmitting || !user}
+                                    />
+                                    {imagePreview && (
+                                        <div className="relative w-32 h-32">
+                                            <Image src={imagePreview} alt="Preview" layout="fill" objectFit="cover" className="rounded-md" />
+                                            <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={removeImage}>
+                                                <XCircle className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </CardHeader>
+                        <CardFooter className="flex justify-between">
+                            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || !user}>
+                                <ImageIcon className="mr-2 h-4 w-4" />
+                                Attach Image
+                            </Button>
+                            <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+
+                            <Button onClick={handleCreatePost} disabled={isSubmitting || (!newPost.trim() && !imageData) || !user}>
+                                {isSubmitting ? 'Posting...' : ( <><PlusCircle className="mr-2 h-4 w-4"/>Create Post</> )}
+                            </Button>
+                        </CardFooter>
                     </Card>
 
                     <div className="space-y-6">

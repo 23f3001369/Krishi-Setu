@@ -207,7 +207,7 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
       allow update: if
         isExistingOwner(resource.data.authorId) || // Post author can update anything
-        (isSignedIn() && hasOnlyChangedFields(['likes', 'comments'])); // Any signed-in user can update only likes/comments counts
+        (isSignedIn() && hasOnlyChangedFields(['likes', 'comments', 'imageUrl'])); // Any signed-in user can update only likes/comments counts and imageUrl
       allow delete: if isExistingOwner(resource.data.authorId); // Only post author can delete the post
 
       /**
