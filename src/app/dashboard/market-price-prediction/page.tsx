@@ -99,10 +99,10 @@ export default function MarketPricePredictionPage() {
     <div className="space-y-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">
-          AI Market Price Prediction
+          AI Mandi Price Prediction
         </h1>
         <p className="text-muted-foreground">
-          Get AI-powered price forecasts to help you sell your crops at the right time.
+          Get AI-powered forecasts based on data from well-known agricultural market websites.
         </p>
       </div>
 
