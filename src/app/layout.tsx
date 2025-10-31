@@ -7,7 +7,7 @@ import { FirebaseClientProvider } from '@/firebase';
 
 
 export const metadata: Metadata = {
-  title: 'AgriAssist',
+  title: 'Krishi Setu',
   description: 'Your smart farming companion',
 };
 

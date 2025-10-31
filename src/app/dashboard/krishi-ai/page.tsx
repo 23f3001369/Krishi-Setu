@@ -83,7 +83,7 @@ export default function KrishiAIChatPage() {
       </div>
       <Card className="flex-1 flex flex-col">
         <CardHeader>
-          <CardTitle>Chat with Agri-Bot</CardTitle>
+          <CardTitle>Chat with Krishi-Bot</CardTitle>
           <CardDescription>Ask any farming-related question.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col p-0">

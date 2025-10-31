@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A general-purpose agricultural Q&A agent.
@@ -28,7 +29,7 @@ const prompt = ai.definePrompt({
   name: 'agriQaPrompt',
   input: { schema: AgriQaInputSchema },
   output: { schema: AgriQaOutputSchema },
-  prompt: `You are an expert agricultural advisor named Agri-Bot. Your role is to provide clear, accurate, and concise answers to general farming questions.
+  prompt: `You are an expert agricultural advisor named Krishi-Bot. Your role is to provide clear, accurate, and concise answers to general farming questions.
 
 User's Question:
 "{{{question}}}"

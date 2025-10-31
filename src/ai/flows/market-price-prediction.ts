@@ -24,7 +24,7 @@ const MarketPricePredictionInputSchema = z.object({
 });
 
 const MarketPricePredictionOutputSchema = z.object({
-  predictedPrice: z.string().describe('The predicted price range in Indian Rupees (Rs) per standard unit (e.g., "Rs 1800 - Rs 2200 per quintal").'),
+  predictedPrice: z.string().describe('The predicted price range in Indian Rupees (Rs.) per standard unit (e.g., "Rs. 1800 - Rs. 2200 per quintal").'),
   trend: z.enum(['upward', 'downward', 'stable']).describe('The anticipated price trend over the next 2-4 weeks.'),
   reasoning: z.string().describe('A brief explanation for the prediction, mentioning factors like seasonality, demand, and recent events.'),
 });
@@ -44,7 +44,7 @@ Crop: {{{cropName}}}
 Market/Region: {{{marketLocation}}}
 
 Based on your knowledge, provide the following:
-1.  A predicted price range in Indian Rupees (Rs) per quintal for the next 2-4 weeks from November 2025.
+1.  A predicted price range in Indian Rupees (Rs.) per quintal for the next 2-4 weeks from November 2025.
 2.  The likely price trend for the next 2-4 weeks (upward, downward, or stable).
 3.  A concise reasoning for your prediction, considering factors like seasonality, demand, supply, and any relevant events based on your knowledge from napanta.com.
 

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState } from 'react';
@@ -23,7 +22,7 @@ export default function AdminDashboardPage() {
       <div className="space-y-8">
         <div className='mb-8'>
             <h1 className="text-3xl font-bold font-headline">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Welcome to the AgriAssist admin panel. Manage users, content, and system settings from here.</p>
+            <p className="text-muted-foreground">Welcome to the Krishi Setu admin panel. Manage users, content, and system settings from here.</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

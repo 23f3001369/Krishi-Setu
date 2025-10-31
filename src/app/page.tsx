@@ -15,7 +15,7 @@ export default function Home() {
       <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-10">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
           <Logo />
-          <span className="sr-only">AgriAssist</span>
+          <span className="sr-only">Krishi Setu</span>
         </Link>
         <nav className="ml-auto flex items-center gap-4 sm:gap-6">
           <Button asChild variant="ghost">
@@ -39,12 +39,12 @@ export default function Home() {
             <div className="grid max-w-[1300px] mx-auto gap-4 px-4 sm:px-6 md:px-10 md:grid-cols-2 md:gap-16">
               <div>
                 <h1 className="lg:leading-tighter text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl xl:text-[3.4rem] 2xl:text-[3.75rem] font-headline">
-                  Welcome to <span className="text-primary">AgriAssist</span>
+                  Welcome to <span className="text-primary">Krishi Setu</span>
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-4">
                   Your smart farming companion. We provide AI-powered insights, real-time weather data, and a community hub to help you grow smarter and more efficiently.
                 </p>
-                <div className="space-x-4 mt-6">
+                <div className="space-x-4 mt-4">
                   <Button asChild size="lg">
                     <Link href="/signup" prefetch={false}>
                       Get Started
@@ -73,7 +73,7 @@ export default function Home() {
                 <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">Our Features</div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">Smarter Farming, Better Yields</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  AgriAssist integrates cutting-edge technology to provide you with the tools you need for modern agriculture.
+                  Krishi Setu integrates cutting-edge technology to provide you with the tools you need for modern agriculture.
                 </p>
               </div>
             </div>
@@ -101,7 +101,7 @@ export default function Home() {
         </section>
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">&copy; 2024 AgriAssist. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">&copy; 2025 Krishi Setu. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
             Terms of Service

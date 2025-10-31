@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useActionState, useEffect } from "react";
@@ -43,9 +44,9 @@ export function AdminLoginForm() {
           id="email"
           name="email"
           type="email"
-          placeholder="admin@agriassist.com"
+          placeholder="admin@krishusetu.com"
           required
-          defaultValue="admin@agriassist.com"
+          defaultValue="admin@krishusetu.com"
         />
       </div>
       <div className="space-y-2">

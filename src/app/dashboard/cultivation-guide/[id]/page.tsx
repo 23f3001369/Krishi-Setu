@@ -204,7 +204,7 @@ export default function ViewGuidePage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent className="p-6">
-                        <div className="text-2xl font-bold">₹{guide.estimatedExpenses.toLocaleString()}</div>
+                        <div className="text-2xl font-bold">Rs.{guide.estimatedExpenses.toLocaleString()}</div>
                     </CardContent>
                 </Card>
             </div>

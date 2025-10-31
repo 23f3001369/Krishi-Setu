@@ -1,3 +1,4 @@
+
 "use server";
 
 import { redirect } from "next/navigation";
@@ -27,7 +28,7 @@ export async function adminLogin(
 
   // IMPORTANT: This is a mock login with fixed credentials.
   // In a real application, use a secure authentication method.
-  if (email === "admin@agriassist.com" && password === "admin123") {
+  if (email === "admin@krishusetu.com" && password === "admin123") {
     // In a real app, you would set a session cookie here.
     redirect("/admin/dashboard");
   }

@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import * as React from 'react';
@@ -176,7 +175,7 @@ function MobileDashboardLayout({children}: {children: React.ReactNode}){
             <nav className="grid gap-6 text-lg font-medium p-4 overflow-y-auto">
               <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
                 <Logo />
-                <span className="sr-only">AgriAssist</span>
+                <span className="sr-only">Krishi Setu</span>
               </Link>
               {navItems.map((item) => (
                 <Link

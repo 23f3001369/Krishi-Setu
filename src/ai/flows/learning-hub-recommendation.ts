@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent for recommending learning materials from the web.
@@ -56,7 +57,7 @@ const prompt = ai.definePrompt({
   name: 'learningHubRecommendationPrompt',
   input: { schema: LearningHubRecommendationInputSchema },
   output: { schema: LearningHubRecommendationOutputSchema },
-  prompt: `You are AgriVaani, an AI assistant for farmers. Your task is to act as a search engine to recommend relevant, existing learning materials from specific online sources based on a user's question.
+  prompt: `You are Krishi-Bot, an AI assistant for farmers. Your task is to act as a search engine to recommend relevant, existing learning materials from specific online sources based on a user's question.
 
 Analyze the user's query and find the most relevant articles and videos.
 

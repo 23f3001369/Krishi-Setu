@@ -146,7 +146,7 @@ export default function KrishiKhataPage() {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent className="p-6">
-            {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-2xl font-bold">₹{totalIncome.toLocaleString()}</div>}
+            {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-2xl font-bold">Rs.{totalIncome.toLocaleString()}</div>}
           </CardContent>
         </Card>
         <Card>
@@ -155,7 +155,7 @@ export default function KrishiKhataPage() {
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent className="p-6">
-            {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-2xl font-bold">₹{totalExpenses.toLocaleString()}</div>}
+            {isLoading ? <Skeleton className="h-8 w-32" /> : <div className="text-2xl font-bold">Rs.{totalExpenses.toLocaleString()}</div>}
           </CardContent>
         </Card>
         <Card className={profitLoss >= 0 ? 'border-green-500/50' : 'border-red-500/50'}>
@@ -167,7 +167,7 @@ export default function KrishiKhataPage() {
             {isLoading ? <Skeleton className="h-8 w-32" /> : (
                 <>
                  <div className={`text-2xl font-bold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ₹{Math.abs(profitLoss).toLocaleString()}
+                    Rs.{Math.abs(profitLoss).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">{profitLoss >= 0 ? 'Profit' : 'Loss'}</p>
                 </>
@@ -227,7 +227,7 @@ export default function KrishiKhataPage() {
                             </TableCell>
                             <TableCell>{t.category}</TableCell>
                             <TableCell>{t.description}</TableCell>
-                            <TableCell className="text-right font-medium">₹{t.amount.toLocaleString()}</TableCell>
+                            <TableCell className="text-right font-medium">Rs.{t.amount.toLocaleString()}</TableCell>
                             <TableCell className="text-right">
                                 <Button variant="ghost" size="icon" onClick={() => deleteTransaction(t.id)}>
                                     <Trash2 className="h-4 w-4 text-muted-foreground" />
@@ -313,7 +313,7 @@ function TransactionDialog({ onSubmit }: { onSubmit: (data: Omit<Transaction, 'i
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="amount">Amount (₹)</Label>
+                        <Label htmlFor="amount">Amount (Rs.)</Label>
                         <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} required />
                     </div>
                      <div className="space-y-2">
