@@ -44,7 +44,7 @@ export default function Home() {
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl mt-4">
                   Your smart farming companion. We provide AI-powered insights, real-time weather data, and a community hub to help you grow smarter and more efficiently.
                 </p>
-                <div className="space-x-4 mt-4">
+                <div className="space-x-4 mt-6">
                   <Button asChild size="lg">
                     <Link href="/signup" prefetch={false}>
                       Get Started
