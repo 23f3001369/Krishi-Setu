@@ -42,7 +42,7 @@ export const MarketPricePredictionInputSchema = z.object({
 export type MarketPricePredictionInput = z.infer<typeof MarketPricePredictionInputSchema>;
 
 export const MarketPricePredictionOutputSchema = z.object({
-  predictedPrice: z.string().describe('The predicted price range per standard unit (e.g., "₹1800 - ₹2200 per quintal").'),
+  predictedPrice: z.string().describe('The predicted price range in Indian Rupees (₹) per standard unit (e.g., "₹1800 - ₹2200 per quintal").'),
   trend: z.enum(['upward', 'downward', 'stable']).describe('The anticipated price trend over the next 2-4 weeks.'),
   reasoning: z.string().describe('A brief explanation for the prediction, mentioning factors like seasonality, demand, and recent events.'),
 });
