@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview An AI agent for recommending learning materials.
+ * @fileOverview An AI agent for recommending learning materials from the web.
  *
  * - learningHubRecommendation - A function that handles the recommendation process.
  * - LearningHubRecommendationInput - The input type for the function.
@@ -10,42 +10,36 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-const ArticleSchema = z.object({
-  id: z.string().describe('The unique identifier for the article.'),
-  title: z.string().describe('The title of the article.'),
-  description: z.string().describe('A brief description of the article.'),
-});
-
-const VideoSchema = z.object({
-  id: z.string().describe('The unique identifier for the video.'),
-  title: z.string().describe('The title of the video.'),
-  description: z.string().describe('A brief description of the video.'),
-});
-
-const LearningHubRecommendationInputSchema = z.object({
-  query: z.string().describe('The user\'s question about farming or crops.'),
-  articles: z.array(ArticleSchema).describe('A list of available articles.'),
-  videos: z.array(VideoSchema).describe('A list of available videos.'),
-});
-export type LearningHubRecommendationInput = z.infer<
-  typeof LearningHubRecommendationInputSchema
->;
-
-const RecommendedItemSchema = z.object({
-  id: z
-    .string()
-    .describe('The ID of the recommended article or video, matching the input.'),
+const RecommendedArticleSchema = z.object({
+  title: z.string().describe('The title of the recommended article.'),
+  link: z.string().url().describe('A direct link to the article.'),
+  source: z.string().describe('The website where the article was found (e.g., "agriculturejournal.org").'),
   reasoning: z
     .string()
     .describe('A brief, user-facing explanation for why this item was recommended.'),
 });
 
+const RecommendedVideoSchema = z.object({
+  title: z.string().describe('The title of the recommended YouTube video.'),
+  link: z.string().url().describe('A direct link to the YouTube video.'),
+  reasoning: z
+    .string()
+    .describe('A brief, user-facing explanation for why this item was recommended.'),
+});
+
+const LearningHubRecommendationInputSchema = z.object({
+  query: z.string().describe('The user\'s question about farming or crops.'),
+});
+export type LearningHubRecommendationInput = z.infer<
+  typeof LearningHubRecommendationInputSchema
+>;
+
 const LearningHubRecommendationOutputSchema = z.object({
   articles: z
-    .array(RecommendedItemSchema)
+    .array(RecommendedArticleSchema)
     .describe('A list of recommended articles. Return at most 2.'),
   videos: z
-    .array(RecommendedItemSchema)
+    .array(RecommendedVideoSchema)
     .describe('A list of recommended videos. Return at most 2.'),
 });
 export type LearningHubRecommendationOutput = z.infer<
@@ -62,26 +56,18 @@ const prompt = ai.definePrompt({
   name: 'learningHubRecommendationPrompt',
   input: { schema: LearningHubRecommendationInputSchema },
   output: { schema: LearningHubRecommendationOutputSchema },
-  prompt: `You are AgriVaani, an AI assistant for farmers. Your task is to recommend relevant learning materials based on a user's question.
+  prompt: `You are AgriVaani, an AI assistant for farmers. Your task is to recommend relevant learning materials from specific online sources based on a user's question.
 
-Analyze the user's query and select the most relevant articles and videos from the provided lists.
+Analyze the user's query and find the most relevant articles and videos.
 
-- You can recommend up to 2 articles and up to 2 videos.
-- If no content is relevant, return empty arrays for both 'articles' and 'videos'.
-- For each recommendation, provide a short, user-friendly 'reasoning' for why it's a good match for their query.
+- You MUST search for videos ONLY on youtube.com.
+- you MUST search for articles ONLY from these websites: https://www.agriculturejournal.org/, https://agriarticles.com/, and https://epubs.icar.org.in/index.php/IndFarm.
+- Recommend up to 2 articles and up to 2 videos.
+- For each recommendation, provide the title, a direct link, the source (for articles), and a short 'reasoning' for why it's a good match.
+- If no relevant content is found, return empty arrays.
 
 User Query:
 "{{{query}}}"
-
-Available Articles:
-{{#each articles}}
-- ID: {{id}}, Title: "{{title}}", Description: "{{description}}"
-{{/each}}
-
-Available Videos:
-{{#each videos}}
-- ID: {{id}}, Title: "{{title}}", Description: "{{description}}"
-{{/each}}
 `,
 });
 

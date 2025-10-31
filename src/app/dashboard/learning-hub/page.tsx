@@ -18,16 +18,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   ArrowRight,
   PlayCircle,
   Mic,
   Send,
   Bot,
-  Radio,
   Library,
   AlertCircle,
+  Book,
 } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
@@ -67,9 +66,6 @@ const qnaData = [
       'You can use a simple soil testing kit available at most garden stores. You take a soil sample, mix it with the provided solution, and compare the color to a chart. For more accurate results, you can send a soil sample to a professional agricultural lab.'
   },
 ];
-
-const articles: any[] = [];
-const videos: any[] = [];
 
 
 function AskAgriVaani() {
@@ -162,11 +158,7 @@ function AskAgriVaani() {
     setError(null);
 
     try {
-      const result = await learningHubRecommendation({
-        query,
-        articles,
-        videos,
-      });
+      const result = await learningHubRecommendation({ query });
       setRecommendations(result);
     } catch (err) {
       setError('Sorry, I couldn\'t find any recommendations. Please try a different question.');
@@ -176,14 +168,6 @@ function AskAgriVaani() {
     }
   };
   
-  const recommendedArticles = recommendations?.articles
-    .map(rec => articles.find(a => a.id === rec.id))
-    .filter(Boolean);
-    
-  const recommendedVideos = recommendations?.videos
-    .map(rec => videos.find(v => v.id === rec.id))
-    .filter(Boolean);
-
   return (
     <section>
       <h2 className="text-2xl font-bold font-headline mb-4">Ask AgriVaani</h2>
@@ -229,81 +213,74 @@ function AskAgriVaani() {
              <CardFooter className="p-6">
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Microphone Error</AlertTitle>
+                    <AlertTitle>Error</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
             </CardFooter>
         )}
         {recommendations && (
-           <CardFooter className="flex-col items-start gap-4 p-6">
-               {recommendedArticles && recommendedArticles.length > 0 && (
-                 <div className="w-full">
-                    <h3 className="font-semibold mb-2 flex items-center gap-2"><Badge variant="secondary">Suggested Articles</Badge> - {recommendations.articles[0].reasoning}</h3>
-                     <div className="grid gap-4 md:grid-cols-2">
-                         {recommendedArticles.map((article) => {
-                             const image = PlaceHolderImages.find(p => p.id === article!.imageId);
-                             return (
-                                 <Card key={article!.id} className="flex flex-col">
-                                     <CardHeader className="p-0">
-                                         {image && (
-                                             <div className="relative aspect-video w-full overflow-hidden rounded-t-lg">
-                                                 <Image src={image.imageUrl} alt={image.description} data-ai-hint={image.imageHint} fill className="object-cover" />
-                                             </div>
-                                         )}
-                                     </CardHeader>
-                                     <CardContent className="flex-grow pt-4 p-6">
-                                         <CardTitle>{article!.title}</CardTitle>
-                                     </CardContent>
-                                     <CardFooter className="p-6">
-                                         <Button variant="outline" size="sm" asChild>
-                                             <Link href={article!.link} target="_blank">
-                                                 Read More <ArrowRight className="ml-2 h-4 w-4" />
-                                             </Link>
-                                         </Button>
-                                     </CardFooter>
-                                 </Card>
-                             )
-                         })}
-                     </div>
+           <CardFooter className="flex-col items-start gap-6 p-6">
+               {(recommendations.articles.length > 0 || recommendations.videos.length > 0) && (
+                <Alert>
+                    <Bot className="h-4 w-4" />
+                    <AlertTitle>AI Recommendations</AlertTitle>
+                    <AlertDescription>
+                        Here are some articles and videos I found based on your question.
+                    </AlertDescription>
+                </Alert>
+               )}
+               {recommendations.articles.length > 0 && (
+                 <div className="w-full space-y-4">
+                    <h3 className="font-semibold text-lg flex items-center gap-2"><Book className="w-5 h-5 text-primary"/> Suggested Articles</h3>
+                     {recommendations.articles.map((article, index) => (
+                         <Card key={index} className="bg-muted/40">
+                             <CardHeader>
+                                 <CardTitle className="text-base">{article.title}</CardTitle>
+                                 <CardDescription>
+                                    <Badge variant="outline" className="mt-1">{article.source}</Badge>
+                                 </CardDescription>
+                             </CardHeader>
+                             <CardContent className="p-6 pt-0">
+                                <p className="text-sm text-muted-foreground">{article.reasoning}</p>
+                             </CardContent>
+                             <CardFooter className="p-6 pt-0">
+                                 <Button variant="outline" size="sm" asChild>
+                                     <Link href={article.link} target="_blank" rel="noopener noreferrer">
+                                         Read More <ArrowRight className="ml-2 h-4 w-4" />
+                                     </Link>
+                                 </Button>
+                             </CardFooter>
+                         </Card>
+                     ))}
                  </div>
                )}
-                {recommendedVideos && recommendedVideos.length > 0 && (
-                 <div className="w-full">
-                    <h3 className="font-semibold mb-2 flex items-center gap-2"><Badge variant="secondary">Suggested Videos</Badge> - {recommendations.videos[0].reasoning}</h3>
-                     <div className="grid gap-4 md:grid-cols-2">
-                         {recommendedVideos.map((video) => {
-                             const image = PlaceHolderImages.find(p => p.id === video!.imageId);
-                             return (
-                               <Card key={video!.id} className="overflow-hidden">
-                                   <div className="flex flex-col sm:flex-row">
-                                       <div className="sm:w-1/3 relative aspect-video sm:aspect-square">
-                                       {image && (
-                                           <Image src={image.imageUrl} alt={image.description} data-ai-hint={image.imageHint} fill className="object-cover" />
-                                       )}
-                                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                           <PlayCircle className="h-10 w-10 text-white/80" />
-                                       </div>
-                                       </div>
-                                       <div className="sm:w-2/3 flex flex-col p-4">
-                                            <CardTitle>{video!.title}</CardTitle>
-                                            <CardDescription className="text-xs mt-1 flex-grow">{video!.description}</CardDescription>
-                                            <div className="mt-2">
-                                                 <Button size="sm" asChild>
-                                                    <Link href={video!.link} target="_blank">
-                                                        Watch <PlayCircle className="ml-2 h-4 w-4" />
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                       </div>
-                                   </div>
-                               </Card>
-                             )
-                         })}
-                     </div>
+                {recommendations.videos.length > 0 && (
+                 <div className="w-full space-y-4">
+                    <h3 className="font-semibold text-lg flex items-center gap-2"><PlayCircle className="w-5 h-5 text-primary"/> Suggested Videos</h3>
+                     {recommendations.videos.map((video, index) => (
+                       <Card key={index} className="bg-muted/40">
+                           <CardHeader>
+                               <CardTitle className="text-base">{video.title}</CardTitle>
+                               <CardDescription>
+                                   <Badge variant="outline" className="mt-1">YouTube</Badge>
+                               </CardDescription>
+                           </CardHeader>
+                           <CardContent className="p-6 pt-0">
+                              <p className="text-sm text-muted-foreground">{video.reasoning}</p>
+                           </CardContent>
+                           <CardFooter className="p-6 pt-0">
+                                <Button size="sm" asChild>
+                                   <Link href={video.link} target="_blank" rel="noopener noreferrer">
+                                       Watch Video <PlayCircle className="ml-2 h-4 w-4" />
+                                   </Link>
+                               </Button>
+                           </CardFooter>
+                       </Card>
+                     ))}
                  </div>
                )}
 
-               {recommendedArticles?.length === 0 && recommendedVideos?.length === 0 && (
+               {recommendations.articles.length === 0 && recommendations.videos.length === 0 && (
                     <Alert>
                         <Bot className="h-4 w-4" />
                         <AlertTitle>No specific recommendations found</AlertTitle>
