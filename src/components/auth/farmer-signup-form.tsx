@@ -81,7 +81,7 @@ export function FarmerSignUpForm() {
 
       // 3. Prepare user data for Firestore
       const userData = {
-        uid: user.uid,
+        id: user.uid,
         name: values.name,
         email: values.email,
         phone: values.mobile, // Changed from 'mobile' to 'phone' to match backend.json
