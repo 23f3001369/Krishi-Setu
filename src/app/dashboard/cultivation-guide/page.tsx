@@ -100,6 +100,11 @@ export default function CultivationGuidePage() {
   const { toast } = useToast();
   const router = useRouter();
 
+  const guidesCollectionRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null;
+    return collection(db, 'farmers', user.uid, 'cultivationGuides');
+  }, [db, user?.uid]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -142,10 +147,6 @@ export default function CultivationGuidePage() {
         variety: formData.variety,
       });
       
-      const guidesCollectionRef = useMemoFirebase(() => {
-        if (!db || !user?.uid) return null;
-        return collection(db, 'farmers', user.uid, 'cultivationGuides');
-      }, [db, user?.uid]);
 
       if (guidesCollectionRef) {
         await addDoc(guidesCollectionRef, {
