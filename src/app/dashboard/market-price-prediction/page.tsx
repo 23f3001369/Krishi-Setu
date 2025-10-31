@@ -32,11 +32,13 @@ import {
 } from '@/ai/flows/market-price-prediction';
 import { Skeleton } from '@/components/ui/skeleton';
 import { z } from 'zod';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart";
 
 // Define schemas and types here, in the client component.
@@ -116,6 +118,19 @@ export default function MarketPricePredictionPage() {
       upward: { label: 'Upward', color: 'hsl(var(--chart-1))' },
       downward: { label: 'Downward', color: 'hsl(var(--chart-2))' },
       stable: { label: 'Stable', color: 'hsl(var(--chart-3))' },
+  };
+
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-bold">
+        {`${(percent * 100).toFixed(0)}%`}
+        </text>
+    );
   };
 
   return (
@@ -212,11 +227,21 @@ export default function MarketPricePredictionPage() {
                         <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
                             <PieChart>
                                 <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                                <Pie data={trendChartData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
+                                <Pie 
+                                    data={trendChartData} 
+                                    dataKey="value" 
+                                    nameKey="name" 
+                                    cx="50%" 
+                                    cy="50%" 
+                                    outerRadius={100}
+                                    labelLine={false}
+                                    label={renderCustomizedLabel}
+                                >
                                     {trendChartData.map((entry) => (
                                         <Cell key={`cell-${entry.name}`} fill={entry.fill} />
                                     ))}
                                 </Pie>
+                                <ChartLegend content={<ChartLegendContent />} />
                             </PieChart>
                         </ChartContainer>
                     </CardContent>
