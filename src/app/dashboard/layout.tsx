@@ -15,7 +15,6 @@ import {
   TestTubeDiagonal,
   Wallet,
   ClipboardList,
-  Newspaper,
   Users,
   ShoppingCart,
   MessageSquare,
@@ -56,7 +55,6 @@ const navItems = [
   { href: '/dashboard/crop-recommendation', icon: BrainCircuit, label: 'AI Crop Tool' },
   { href: '/dashboard/disease-detection', icon: TestTubeDiagonal, label: 'AI Disease Detection' },
   { href: '/dashboard/learning-hub', icon: BookOpen, label: 'AgriVaani' },
-  { href: '/dashboard/agrinews', icon: Newspaper, label: 'AgriNews & Updates' },
   { href: '/dashboard/community-forum', icon: Users, label: 'Community Forum' },
   { href: '/dashboard/agri-bazar', icon: ShoppingCart, label: 'Agri Bazar' },
   { href: '/dashboard/krishi-yantra-mitra', icon: Tractor, label: 'Krishi Yantra Mitra' },
@@ -261,20 +259,6 @@ function NotificationMenu() {
           <DropdownMenuItem className="flex-col items-start gap-1 cursor-pointer">
               <p className="font-bold text-destructive">Weather Alert: Heavy Rain</p>
               <p className="text-xs text-muted-foreground">Heavy rain expected today. Ensure proper drainage.</p>
-          </DropdownMenuItem>
-        </Link>
-        <DropdownMenuSeparator />
-        <Link href="/dashboard/agrinews" passHref>
-          <DropdownMenuItem className="flex-col items-start gap-1 cursor-pointer">
-              <p className="font-bold">Price Alert: Wheat</p>
-              <p className="text-xs text-muted-foreground">Mandi prices have increased by 5% in your region.</p>
-          </DropdownMenuItem>
-        </Link>
-        <DropdownMenuSeparator />
-        <Link href="/dashboard/agrinews" passHref>
-          <DropdownMenuItem className="flex-col items-start gap-1 cursor-pointer">
-              <p className="font-bold">New Govt. Scheme</p>
-              <p className="text-xs text-muted-foreground">The PM Fasal Bima Yojana deadline has been extended.</p>
           </DropdownMenuItem>
         </Link>
       </DropdownMenuContent>

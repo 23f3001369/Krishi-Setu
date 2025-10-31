@@ -41,20 +41,6 @@ function NotificationMenu() {
               <p className="text-xs text-muted-foreground">Heavy rain expected today. Ensure proper drainage.</p>
           </DropdownMenuItem>
         </Link>
-        <DropdownMenuSeparator />
-        <Link href="/dashboard/agrinews" passHref>
-          <DropdownMenuItem className="flex-col items-start gap-1 cursor-pointer">
-              <p className="font-bold">Price Alert: Wheat</p>
-              <p className="text-xs text-muted-foreground">Mandi prices have increased by 5% in your region.</p>
-          </DropdownMenuItem>
-        </Link>
-        <DropdownMenuSeparator />
-        <Link href="/dashboard/agrinews" passHref>
-          <DropdownMenuItem className="flex-col items-start gap-1 cursor-pointer">
-              <p className="font-bold">New Govt. Scheme</p>
-              <p className="text-xs text-muted-foreground">The PM Fasal Bima Yojana deadline has been extended.</p>
-          </DropdownMenuItem>
-        </Link>
       </DropdownMenuContent>
     </DropdownMenu>
   );
