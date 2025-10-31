@@ -29,10 +29,25 @@ import {
 } from 'lucide-react';
 import {
   marketPricePrediction,
-  type MarketPricePredictionOutput,
 } from '@/ai/flows/market-price-prediction';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
+import { z } from 'zod';
+
+// Define schemas and types here, in the client component.
+export const MarketPricePredictionInputSchema = z.object({
+  cropName: z.string().describe('The name of the crop (e.g., "Wheat", "Tomato").'),
+  marketLocation: z.string().describe('The name of the market or region (e.g., "Nashik, Maharashtra", "Indore").'),
+});
+export type MarketPricePredictionInput = z.infer<typeof MarketPricePredictionInputSchema>;
+
+export const MarketPricePredictionOutputSchema = z.object({
+  predictedPrice: z.string().describe('The predicted price range per standard unit (e.g., "₹1800 - ₹2200 per quintal").'),
+  trend: z.enum(['upward', 'downward', 'stable']).describe('The anticipated price trend over the next 2-4 weeks.'),
+  reasoning: z.string().describe('A brief explanation for the prediction, mentioning factors like seasonality, demand, and recent events.'),
+});
+export type MarketPricePredictionOutput = z.infer<typeof MarketPricePredictionOutputSchema>;
+
 
 const heroImage = PlaceHolderImages.find(p => p.id === 'market-price-hero');
 
